@@ -1,5 +1,4 @@
 import { getAdminOverview } from '@/lib/admin'
-import SiteLogo from '@/components/SiteLogo'
 import AdminShopsList from '@/components/AdminShopsList'
 
 export const dynamic = 'force-dynamic'
@@ -8,15 +7,7 @@ export default async function AdminPage() {
   const { shops, totals } = await getAdminOverview()
 
   return (
-    <main className="max-w-5xl mx-auto px-4 py-10 w-full">
-      <div className="mb-8">
-        <SiteLogo className="h-20 mb-4" />
-        <h1 className="text-xl font-semibold">Shops Admin</h1>
-        <p className="text-sm text-neutral-500">
-          Internal overview — no login required yet, do not expose this URL publicly.
-        </p>
-      </div>
-
+    <>
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-10">
         <StatTile label="Shops" value={totals.shopCount} />
         <StatTile label="Active Subscriptions" value={totals.activeSubscriptionCount} />
@@ -26,7 +17,7 @@ export default async function AdminPage() {
       </div>
 
       <AdminShopsList shops={shops} />
-    </main>
+    </>
   )
 }
 
