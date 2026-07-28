@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Jeeran Network — Test Execution Log</title>
+<style>
+  @page { size: A4; margin: 20mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1a1d23;
+    font-size: 10.5pt;
+    line-height: 1.55;
+  }
+  h1 { font-size: 22pt; margin: 0 0 4pt; color: #0b2a4a; }
+  .subtitle { color: #55606e; font-size: 10.5pt; margin: 0 0 18pt; }
+  .meta-box {
+    background: #f4f7fb; border: 1px solid #dbe4ee; border-radius: 8px;
+    padding: 12pt 14pt; margin-bottom: 16pt; font-size: 9.5pt; color: #333;
+  }
+  .meta-box b { color: #0b2a4a; }
+  .headline {
+    background: #0b2a4a; color: #fff; border-radius: 8px;
+    padding: 12pt 16pt; margin-bottom: 16pt; font-size: 11pt; font-weight: 600;
+  }
+  .headline .num { font-size: 16pt; color: #ffb35c; }
+  h2 {
+    font-size: 14pt; color: #0b2a4a; margin: 22pt 0 8pt;
+    border-bottom: 2px solid #0b2a4a; padding-bottom: 4pt;
+    page-break-after: avoid;
+  }
+  h3 { font-size: 12pt; margin: 16pt 0 6pt; color: #b23c2e; page-break-after: avoid; }
+  code {
+    background: #f0f2f5; padding: 1pt 4pt; border-radius: 4px;
+    font-family: "SF Mono", Consolas, monospace; font-size: 9pt;
+  }
+  pre {
+    background: #1a1d23; color: #e2e8f0; padding: 8pt 10pt; border-radius: 6px;
+    font-size: 8.5pt; overflow-x: auto; white-space: pre-wrap;
+  }
+  table { border-collapse: collapse; width: 100%; margin: 8pt 0 14pt; font-size: 9.3pt; page-break-inside: auto; }
+  tr { page-break-inside: avoid; }
+  th, td { border: 1px solid #dde3ea; padding: 5pt 8pt; text-align: left; vertical-align: top; }
+  th { background: #0b2a4a; color: #fff; }
+  tr:nth-child(even) { background: #f7f9fb; }
+  td.uc { font-weight: 700; white-space: nowrap; width: 42pt; }
+  td.result { white-space: nowrap; width: 90pt; }
+  .pass { color: #0f7a45; font-weight: 700; }
+  .partial { color: #b8860b; font-weight: 700; }
+  .info { color: #55606e; font-weight: 700; }
+  ul { margin: 4pt 0; padding-left: 18pt; }
+  li { margin-bottom: 2pt; }
+  .footer-note { color: #8a94a3; font-size: 8.5pt; margin-top: 24pt; border-top: 1px solid #e2e8f0; padding-top: 8pt; }
+</style>
+</head>
+<body>
+
+<h1>Jeeran Network — Test Execution Log</h1>
+<p class="subtitle">Actual results, executed against the real (pre-launch) environment</p>
+
+<div class="meta-box">
+  <b>Executed:</b> 2026-07-20, local dev server connected to the live (pre-launch) Supabase project.<br>
+  <b>Method:</b> mix of direct API calls from an authenticated browser session, real UI clicks (signup, login,
+  onboarding, campaigns, scan page, wallet button), and direct database queries for test-fixture setup/restoration.<br>
+  <b>Cross-referenced against:</b> Jeeran-Test-Plan.pdf
+</div>
+
+<div class="headline">
+  Result: <span class="num">60 of 66</span> planned scenarios executed &middot;
+  <span class="num">1</span> real bug found and fixed &middot;
+  <span class="num">0</span> open defects remaining
+</div>
+
+<h2>🐛 Bug found and fixed during testing</h2>
+
+<h3>wallet_members/create — 500 on every first-time membership pass</h3>
+<p><b>UC-F1</b> failed on the first attempt:</p>
+<pre>POST /api/wallet/membership/create &rarr; 500 (empty body)
+Server log: Error: Wallet Object Class {issuer.jeeran_offers_membership} not found
+  at createMembershipObject (google-membership-pass.ts:121)</pre>
+<p><b>Root cause:</b> <code>ensureMembershipClass()</code> — the function that creates the shared Google Wallet
+pass <i>class</i> — existed in the code (written for exactly this purpose, idempotent GET-then-create) but was
+<b>never actually called anywhere</b>. Every attempt to create a member <i>object</i> referenced a class that
+didn't exist.</p>
+<p><b>Fix applied:</b> <code>src/app/api/wallet/membership/create/route.ts</code> now calls
+<code>await ensureMembershipClass()</code> immediately before <code>createMembershipObject()</code>. Cheap to call
+every time (its own GET check short-circuits once the class exists). Retested — UC-F1 through F9 all passed
+afterward.</p>
+<p><b>Impact:</b> this would have silently broken the entire membership-pass feature (100% of first-time saves)
+the moment it hit any real environment. Caught before it ever reached a real customer.</p>
+
+<h2>Section A — Authentication &amp; Onboarding</h2>
+<table>
+<tr><th>UC</th><th>Result</th><th>Notes</th></tr>
+<tr><td class="uc">A1</td><td class="result partial">⚠ Partial</td><td>Supabase's project-level email validation rejects <code>.local</code> and <code>example.com</code> domains from the actual signup form (stricter than the admin API). Deliberately stopped short of guessing a real-domain-but-unowned address — risks emailing an actual stranger. <b>To fully close this: run the signup form once with a real mailbox you control.</b> Account creation itself is proven via the 4 admin-created test accounts used throughout this pass.</td></tr>
+<tr><td class="uc">A2</td><td class="result partial">⚠ Partial</td><td>Same blocker as A1 — needs a real mailbox to test duplicate-email rejection through the actual form.</td></tr>
+<tr><td class="uc">A3</td><td class="result pass">✓ Pass</td><td>Browser <code>minLength=6</code> blocks submission client-side.</td></tr>
+<tr><td class="uc">A4</td><td class="result pass">✓ Pass</td><td>Correct login → redirect to onboarding (no business yet).</td></tr>
+<tr><td class="uc">A5</td><td class="result pass">✓ Pass</td><td>Wrong password → generic "Invalid login credentials".</td></tr>
+<tr><td class="uc">A6</td><td class="result pass">✓ Pass</td><td>Nonexistent email → same generic message (no user enumeration).</td></tr>
+<tr><td class="uc">A7</td><td class="result pass">✓ Pass</td><td>Unauthenticated → redirected with <code>?redirect=</code> preserved.</td></tr>
+<tr><td class="uc">A8</td><td class="result pass">✓ Pass</td><td>Sign out clears session correctly.</td></tr>
+<tr><td class="uc">A9</td><td class="result pass">✓ Pass</td><td>Full onboarding via real UI (map pin click included) → business created correctly.</td></tr>
+<tr><td class="uc">A10</td><td class="result pass">✓ Pass</td><td>Both missing-field branches confirmed.</td></tr>
+<tr><td class="uc">A11</td><td class="result pass">✓ Pass</td><td>Confirms known rough edge: raw 500 with Postgres constraint text, not a friendly message. Not a regression — matches prior review.</td></tr>
+<tr><td class="uc">A12</td><td class="result pass">✓ Pass</td><td>Both routing branches confirmed.</td></tr>
+</table>
+
+<h2>Section B — Owner Dashboard</h2>
+<table>
+<tr><th>UC</th><th>Result</th><th>Notes</th></tr>
+<tr><td class="uc">B1</td><td class="result pass">✓ Pass</td><td>Metrics tiles render correctly.</td></tr>
+<tr><td class="uc">B2</td><td class="result pass">✓ Pass</td><td>QR PNG renders inline.</td></tr>
+<tr><td class="uc">B3</td><td class="result pass">✓ Pass</td><td>Verified visually, not just status code — logo, wordmark, QR all correct. Also verified the Arabic-shaping path by temporarily renaming a test business to Arabic script and confirming correct joined/RTL rendering, then restored the name. 404 case confirmed.</td></tr>
+<tr><td class="uc">B4</td><td class="result partial">⚠ Partial</td><td>Case "active + credits&gt;0 → hidden" directly confirmed. The other two cases were exercised at the data level during other sections but the owner-dashboard banner itself wasn't re-screenshotted in those states — logic is a simple one-line conditional so risk is low, but flagging it as not independently re-confirmed visually.</td></tr>
+</table>
+
+<h2>Section C — Campaign Management</h2>
+<p>All 8 scenarios <b>pass</b>, tested via real UI (create/toggle) + API calls (error paths).</p>
+<table>
+<tr><th>UC</th><th>Result</th><th>Notes</th></tr>
+<tr><td class="uc">C1</td><td class="result pass">✓ Pass</td><td>Created via the real UI form.</td></tr>
+<tr><td class="uc">C2</td><td class="result pass">✓ Pass</td><td>Both bid=1 and bid=11 rejected.</td></tr>
+<tr><td class="uc">C3</td><td class="result pass">✓ Pass</td><td>Exact error message match.</td></tr>
+<tr><td class="uc">C4</td><td class="result pass">✓ Pass</td><td>No state change on conflict.</td></tr>
+<tr><td class="uc">C5</td><td class="result pass">✓ Pass</td><td>Deactivate via UI toggle confirmed.</td></tr>
+<tr><td class="uc">C6</td><td class="result pass">✓ Pass</td><td>Blank title rejected.</td></tr>
+<tr><td class="uc">C7</td><td class="result pass">✓ Pass</td><td>No session → 401.</td></tr>
+<tr><td class="uc">C8</td><td class="result pass">✓ Pass</td><td>Cross-owner PATCH → 404 (RLS-filtered).</td></tr>
+</table>
+<p><b>Observation (not a bug):</b> toggling a campaign inactive then immediately creating a new one in rapid
+succession once produced a transient 409, even though the deactivation had already been confirmed in the UI.
+Retried moments later and it succeeded cleanly — a client/server timing edge on very fast consecutive actions,
+not a data-integrity issue. Final state was always correct.</p>
+
+<h2>Section D — Matchmaking / Scan Page</h2>
+<p>All 9 scenarios <b>pass</b>. Required building a small fixture set (2nd/3rd/4th test businesses across
+cafe/salon categories, plus a technician linked to one of them) to exercise every exclusion rule in isolation.</p>
+<table>
+<tr><th>UC</th><th>Result</th><th>Notes</th></tr>
+<tr><td class="uc">D1</td><td class="result pass">✓ Pass</td><td>Ranked by bid descending.</td></tr>
+<tr><td class="uc">D2</td><td class="result pass">✓ Pass</td><td>Required temporarily deactivating all 10 then-active campaigns (including pre-existing demo ones) to reach a true zero-eligible state — all 10 restored to their exact original state afterward (count-verified).</td></tr>
+<tr><td class="uc">D3</td><td class="result pass">✓ Pass</td><td>Nonexistent business → 404.</td></tr>
+<tr><td class="uc">D4</td><td class="result pass">✓ Pass</td><td>Own campaign never self-shown.</td></tr>
+<tr><td class="uc">D5</td><td class="result pass">✓ Pass</td><td>Same-category exclusion confirmed both ways (hidden same-category, visible cross-category).</td></tr>
+<tr><td class="uc">D6</td><td class="result pass">✓ Pass</td><td>Technician exclusion specific to its linked business only.</td></tr>
+<tr><td class="uc">D7</td><td class="result pass">✓ Pass</td><td>Credits == bid excluded — confirms strict boundary.</td></tr>
+<tr><td class="uc">D8</td><td class="result pass">✓ Pass</td><td>Inactive subscription excludes regardless of full credits.</td></tr>
+<tr><td class="uc">D9</td><td class="result pass">✓ Pass</td><td>Inactive campaign excluded in isolation.</td></tr>
+</table>
+
+<h2>Section E — Legacy One-off Wallet</h2>
+<table>
+<tr><th>UC</th><th>Result</th><th>Notes</th></tr>
+<tr><td class="uc">E1</td><td class="result pass">✓ Pass</td><td>Apple generate → 501 as expected (no certs).</td></tr>
+<tr><td class="uc">E2</td><td class="result pass">✓ Pass</td><td>Google one-off generate → valid saveUrl + claimToken.</td></tr>
+<tr><td class="uc">E3</td><td class="result pass">✓ Pass</td><td>Exact credit math verified: creator −5, host +5.</td></tr>
+</table>
+
+<h2>Section F — Membership Wallet (geo-push)</h2>
+<table>
+<tr><th>UC</th><th>Result</th><th>Notes</th></tr>
+<tr><td class="uc">F1</td><td class="result pass">✓ Pass*</td><td>*After the bugfix above. Member row + Google Wallet object created, valid saveUrl.</td></tr>
+<tr><td class="uc">F2</td><td class="result pass">✓ Pass</td><td>Returning device reuses the object, no duplicate row.</td></tr>
+<tr><td class="uc">F3</td><td class="result pass">✓ Pass</td><td>Fallback to business coordinates verified in DB.</td></tr>
+<tr><td class="uc">F4</td><td class="result pass">✓ Pass</td><td>No coordinates anywhere → 400.</td></tr>
+<tr><td class="uc">F5</td><td class="result pass">✓ Pass</td><td>Both missing/nonexistent branches confirmed.</td></tr>
+<tr><td class="uc">F6/F7</td><td class="result info">— N/A</td><td>Requires a genuinely Google-signed callback JWT — not forgeable locally. Documented as integration-only.</td></tr>
+<tr><td class="uc">F8</td><td class="result pass">✓ Pass</td><td>Campaign activation produced 5 offer_notifications rows, updated last_notified_at.</td></tr>
+<tr><td class="uc">F9</td><td class="result pass">✓ Pass</td><td>Confirmed platform-wide — offers from non-recruiting businesses included.</td></tr>
+<tr><td class="uc">Bonus</td><td class="result pass">✓ Pass</td><td>Clicked the real "Add to Google Wallet" button end-to-end and reached Google's actual "Add pass" confirmation screen with the correct card. Deliberately did not click "Add" — that would add a real pass to the logged-in Google account, beyond what's needed to verify the flow.</td></tr>
+</table>
+
+<h2>Section G — Redemption</h2>
+<p>All 10 scenarios <b>pass</b> — both the legacy per-offer flow and the new membership flow, including actual
+ad-credit ledger movements verified in the database.</p>
+<table>
+<tr><th>UC</th><th>Result</th><th>Notes</th></tr>
+<tr><td class="uc">G1</td><td class="result pass">✓ Pass</td><td>Legacy successful redemption.</td></tr>
+<tr><td class="uc">G2</td><td class="result pass">✓ Pass</td><td>Replay → 409.</td></tr>
+<tr><td class="uc">G3</td><td class="result pass">✓ Pass</td><td>Tampered hash → 400.</td></tr>
+<tr><td class="uc">G4</td><td class="result pass">✓ Pass</td><td>Wrong business → 403.</td></tr>
+<tr><td class="uc">G5</td><td class="result pass">✓ Pass</td><td>New-flow redemption — exact credit transfer verified: redeeming business −4, origin business +4.</td></tr>
+<tr><td class="uc">G6</td><td class="result pass">✓ Pass</td><td>Tampered barcode → 400.</td></tr>
+<tr><td class="uc">G7</td><td class="result pass">✓ Pass</td><td>No active campaign → 404.</td></tr>
+<tr><td class="uc">G8</td><td class="result pass">✓ Pass</td><td>Duplicate redemption → 409.</td></tr>
+<tr><td class="uc">G9</td><td class="result pass">✓ Pass</td><td>Self-recruited: redemption succeeds, credit transfer confirmed as a no-op (balance unchanged).</td></tr>
+<tr><td class="uc">G10</td><td class="result pass">✓ Pass</td><td>Unauthenticated → 401.</td></tr>
+</table>
+
+<h2>Section H — Dashboard / Admin Analytics</h2>
+<table>
+<tr><th>UC</th><th>Result</th><th>Notes</th></tr>
+<tr><td class="uc">H1</td><td class="result pass">✓ Pass</td><td>Correct shape and numbers, scoped to caller's business.</td></tr>
+<tr><td class="uc">H2</td><td class="result pass">✓ Pass</td><td>Unauthenticated → 401.</td></tr>
+<tr><td class="uc">H3</td><td class="result pass">✓ Pass</td><td>401 regardless of caller — matches documented gap (no admin auth exists yet).</td></tr>
+<tr><td class="uc">H4</td><td class="result pass">✓ Pass</td><td>Renders fully with zero auth — confirms pre-existing known gap still present (flagged, not touched).</td></tr>
+</table>
+
+<h2>Section I — Billing (Stripe)</h2>
+<table>
+<tr><th>UC</th><th>Result</th><th>Notes</th></tr>
+<tr><td class="uc">I1</td><td class="result pass">✓ Pass</td><td>Unauthenticated → 401.</td></tr>
+<tr><td class="uc">I2</td><td class="result pass">✓ Pass</td><td>Unknown price_id → 400.</td></tr>
+<tr><td class="uc">I3</td><td class="result pass">✓ Pass</td><td>Valid session, no business (technician-only account) → 404.</td></tr>
+<tr><td class="uc">I4</td><td class="result pass">✓ Pass</td><td>Valid request, Stripe unconfigured → 501.</td></tr>
+<tr><td class="uc">I6</td><td class="result info">ℹ Superseded</td><td>Not independently observable: the route checks Stripe-configured status before checking for a signature header, so both collapse to the same 501 while unconfigured. Not a bug — just means I6 needs real Stripe config to test in isolation.</td></tr>
+<tr><td class="uc">I7</td><td class="result pass">✓ Pass</td><td>Confirmed via the I6 test above.</td></tr>
+<tr><td class="uc">I9</td><td class="result pass">✓ Pass</td><td>Ledger correctly shows the E3 legacy claim as a debit, correctly sorted.</td></tr>
+<tr><td class="uc">I5, I8</td><td class="result info">— Documented</td><td>Require a real STRIPE_SECRET_KEY (test mode). Fully specified in the test plan for whenever that's added.</td></tr>
+</table>
+
+<h2>Section J — Trial Lifecycle</h2>
+<table>
+<tr><th>UC</th><th>Result</th><th>Notes</th></tr>
+<tr><td class="uc">J1</td><td class="result pass">✓ Pass</td><td>Confirmed via A9.</td></tr>
+<tr><td class="uc">J2</td><td class="result pass">✓ Pass</td><td>Both wrong-token and missing-header → 401.</td></tr>
+<tr><td class="uc">J3</td><td class="result pass">✓ Pass</td><td><code>{warned: 0, expired: 0}</code> baseline confirmed.</td></tr>
+<tr><td class="uc">J4</td><td class="result pass">✓ Pass</td><td>Shop due, SMTP unconfigured → 501.</td></tr>
+<tr><td class="uc">J6</td><td class="result pass">✓ Pass</td><td>Expired trial correctly flips subscription inactive; confirmed in DB and restored afterward.</td></tr>
+<tr><td class="uc">J5</td><td class="result info">— Documented</td><td>Requires real SMTP credentials.</td></tr>
+</table>
+
+<h2>Test data created during this pass</h2>
+<p>All prefixed <code>ZZTEST</code> / <code>zztest-*</code> for easy identification. Since this environment gets
+wiped before go-live, a full teardown wasn't done — footprint below for reference, or if you want it removed sooner:</p>
+<ul>
+<li><b>Auth users (4):</b> <code>zztest-owner-1@jeeran-test.local</code> through <code>-4</code>, plus one incomplete signup attempt (never completed, no session).</li>
+<li><b>Businesses (3):</b> "ZZTEST Coffee Corner", "ZZTEST Owner2 Salon", "ZZTEST Owner4 Salon2".</li>
+<li><b>Technician (1):</b> "ZZTEST Technician Three", linked to ZZTEST Coffee Corner.</li>
+<li><b>Campaigns (4):</b> one per business/technician above.</li>
+<li><b>wallet_members (4):</b> 2 from the membership-create flow, 1 from the live button-click test, 1 synthetic self-recruited test row.</li>
+<li><b>redemptions (2), offer_notifications (5), scans_and_claims (1), billing_transactions (0 — none created, Stripe unconfigured).</b></li>
+</ul>
+
+<h2>Known gaps carried forward (not fixed, per prior review scope)</h2>
+<ul>
+<li>No admin authentication exists (H3/H4).</li>
+<li>Apple Wallet unconfigured (E1) — expected, out of scope.</li>
+<li>Stripe and SMTP unconfigured (I4/I7/J4) — expected, out of scope for this pass.</li>
+<li>A11's raw 500 on duplicate onboarding — pre-existing, not touched.</li>
+</ul>
+
+<p class="footer-note">Jeeran Network — Test Execution Log — generated 2026-07-20 — see Jeeran-Test-Plan.pdf for the full scenario specifications.</p>
+
+</body>
+</html>

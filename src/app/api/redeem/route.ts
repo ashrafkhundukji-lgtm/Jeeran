@@ -2,10 +2,19 @@
  * Redemption endpoint — called from the shop staff-facing scan UI.
  *
  * Flow: staff scans the customer's membership-pass barcode -> this decodes
- * the member token -> checks whether that member currently qualifies for
- * an ACTIVE, UNREDEEMED offer from the scanning shop's own business ->
- * logs the redemption (blocks re-claiming the same offer) -> returns the
- * offer details for staff to honor.
+ * the member token -> confirms the pass hasn't been removed from the
+ * customer's wallet (google_object_id still set) -> checks whether that
+ * member currently qualifies for an ACTIVE, UNREDEEMED offer from the
+ * scanning shop's own business -> logs the redemption (blocks re-claiming
+ * the same offer) -> returns the offer details for staff to honor.
+ *
+ * The google_object_id check exists because a screenshotted/copied barcode
+ * decodes fine on its own — without it, a customer could delete the pass
+ * and keep redeeming offers from a screenshot, defeating the "keep the pass
+ * saved" retention design. google_object_id is nulled by the Google Wallet
+ * callback's delete event (src/app/api/wallet/google/callback/route.ts),
+ * which requires a genuinely Google-signed JWT and is not forgeable
+ * locally — see docs/test-plan.md UC-F6/F7.
  *
  * One active campaign per business is a real DB constraint today
  * (campaigns_one_active_per_creator), not a scaffold assumption — see
@@ -35,6 +44,26 @@ export async function POST(req: NextRequest) {
   const decoded = verifyMemberToken(barcodeValue)
   if (!decoded) {
     return NextResponse.json({ error: 'invalid or tampered barcode' }, { status: 400 })
+  }
+
+  // Retention gate: a screenshotted/copied barcode still decodes fine even
+  // after the customer removes the pass from their wallet, which would let
+  // them keep redeeming offers with no pass installed — defeating the whole
+  // point of gating offers behind "keep the pass saved." google_object_id is
+  // set null by the Google Wallet callback's delete event (see
+  // src/app/api/wallet/google/callback/route.ts), so a null here means the
+  // pass is gone and this barcode should stop working.
+  const { data: member, error: memberErr } = await supabaseAdmin
+    .from('wallet_members')
+    .select('google_object_id')
+    .eq('id', decoded.memberId)
+    .maybeSingle()
+
+  if (memberErr) {
+    return NextResponse.json({ error: memberErr.message }, { status: 500 })
+  }
+  if (!member || !member.google_object_id) {
+    return NextResponse.json({ error: 'pass no longer active' }, { status: 410 })
   }
 
   // Does this business currently have an active offer this member hasn't

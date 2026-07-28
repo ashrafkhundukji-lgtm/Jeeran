@@ -48,7 +48,7 @@ export default function BillingActions({
         <button
           onClick={() => handleCheckout(subscriptionEntry.priceId, subscriptionEntry.key)}
           disabled={loadingKey !== null}
-          className="bg-black text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50"
+          className="bg-[#FF6B4A] text-white rounded-lg py-2.5 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
         >
           {loadingKey === subscriptionEntry.key ? 'Redirecting…' : `Subscribe — $${subscriptionEntry.amountUsd}/mo`}
         </button>
@@ -63,7 +63,7 @@ export default function BillingActions({
                 key={entry.key}
                 onClick={() => handleCheckout(entry.priceId, entry.key)}
                 disabled={loadingKey !== null}
-                className="border border-neutral-200 rounded-xl p-4 text-center hover:border-neutral-400 transition-colors disabled:opacity-50"
+                className="border border-neutral-200 rounded-xl p-4 text-center hover:border-[#1E3A8A] transition-colors disabled:opacity-50"
               >
                 <div className="text-lg font-semibold">{entry.creditsGranted.toLocaleString()}</div>
                 <div className="text-xs text-neutral-500 mb-2">credits</div>

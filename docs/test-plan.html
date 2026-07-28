@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Jeeran Network — Use Cases &amp; Test Plan</title>
+<style>
+  @page { size: A4; margin: 20mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1a1d23;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    max-width: 100%;
+  }
+  h1 { font-size: 22pt; margin: 0 0 4pt; color: #0b2a4a; }
+  .subtitle { color: #55606e; font-size: 10.5pt; margin: 0 0 18pt; }
+  .meta-box {
+    background: #f4f7fb; border: 1px solid #dbe4ee; border-radius: 8px;
+    padding: 12pt 14pt; margin-bottom: 16pt; font-size: 9.5pt; color: #333;
+  }
+  .meta-box b { color: #0b2a4a; }
+  h2 {
+    font-size: 14pt; color: #0b2a4a; margin: 22pt 0 8pt;
+    border-bottom: 2px solid #0b2a4a; padding-bottom: 4pt;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 11pt; margin: 12pt 0 4pt; page-break-after: avoid;
+  }
+  .status { display: inline-block; font-size: 9pt; font-weight: 600; padding: 1pt 7pt; border-radius: 10px; margin-left: 6pt; }
+  .status-ok { background: #e3f5ec; color: #0f7a45; }
+  .status-blocked { background: #fdeceb; color: #b23c2e; }
+  .status-doc { background: #eef1f5; color: #55606e; }
+  .uc {
+    border: 1px solid #e2e8f0; border-radius: 8px; padding: 8pt 12pt;
+    margin-bottom: 8pt; page-break-inside: avoid; background: #fff;
+  }
+  .uc-title { font-weight: 700; font-size: 10.5pt; }
+  .uc dl { margin: 6pt 0 0; }
+  .uc dt { font-weight: 600; color: #55606e; font-size: 8.8pt; text-transform: uppercase; letter-spacing: 0.02em; margin-top: 5pt; }
+  .uc dd { margin: 1pt 0 0; }
+  code {
+    background: #f0f2f5; padding: 1pt 4pt; border-radius: 4px;
+    font-family: "SF Mono", Consolas, monospace; font-size: 9pt;
+  }
+  table { border-collapse: collapse; width: 100%; margin: 10pt 0; font-size: 9pt; }
+  th, td { border: 1px solid #dde3ea; padding: 5pt 8pt; text-align: left; }
+  th { background: #0b2a4a; color: #fff; }
+  tr:nth-child(even) { background: #f7f9fb; }
+  .legend { display: flex; gap: 16pt; margin-bottom: 14pt; font-size: 9.5pt; }
+  .footer-note { color: #8a94a3; font-size: 8.5pt; margin-top: 24pt; border-top: 1px solid #e2e8f0; padding-top: 8pt; }
+</style>
+</head>
+<body>
+
+<h1>Jeeran Network — Use Cases &amp; Test Plan</h1>
+<p class="subtitle">Full application test scenarios: preconditions, inputs, and expected outputs</p>
+
+<div class="meta-box">
+  <b>Generated:</b> 2026-07-20, from a complete read of the codebase (routes, business logic, database schema).<br>
+  <b>Environment:</b> Pre-launch — the Supabase project in use will be wiped before go-live.<br>
+  <b>Not yet configured in this environment:</b> Stripe billing (no secret key), SMTP email, Apple Wallet certificates.
+  Those use cases document the intended happy path for later, and confirm the app fails <i>cleanly</i> (a clear
+  error, not a crash) in their absence today.
+</div>
+
+<div class="legend">
+  <span><span class="status status-ok">EXECUTABLE</span> can be tested right now</span>
+  <span><span class="status status-blocked">BLOCKED</span> needs a credential not yet configured</span>
+  <span><span class="status status-doc">DOCUMENTED</span> scenario specified, needs real 3rd-party integration to run</span>
+</div>
+
+<h2>A. Authentication &amp; Onboarding</h2>
+
+<div class="uc"><div class="uc-title">A1 — Sign up new business owner <span class="status status-ok">EXECUTABLE</span></div>
+<dl>
+<dt>Preconditions</dt><dd>Fresh email not already registered.</dd>
+<dt>Input</dt><dd>Signup form: <code>email</code>, <code>password</code> (≥6 chars).</dd>
+<dt>Expected output</dt><dd>Account created. If email confirmation is required, shows confirmation notice; otherwise redirects to <code>/dashboard</code> → <code>/dashboard/onboarding</code> (no business yet).</dd>
+</dl></div>
+
+<div class="uc"><div class="uc-title">A2 — Sign up with an already-registered email <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Input</dt><dd>Same email as an existing account.</dd>
+<dt>Expected output</dt><dd>Inline error, no new account created.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">A3 — Sign up with a short password <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Input</dt><dd>Password under 6 characters.</dd>
+<dt>Expected output</dt><dd>Client-side validation blocks submission.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">A4 — Login with correct credentials <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Input</dt><dd>Registered email + correct password.</dd>
+<dt>Expected output</dt><dd>Redirects to <code>?redirect=</code> target or <code>/dashboard</code>.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">A5 — Login with wrong password <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Inline error, no session created.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">A6 — Login with unregistered email <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Generic invalid-credentials message (doesn't reveal whether the email exists).</dd></dl></div>
+
+<div class="uc"><div class="uc-title">A7 — Access /dashboard while unauthenticated <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Redirect to <code>/login</code>.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">A8 — Sign out <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Session cleared; subsequent <code>/dashboard</code> visit redirects to login.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">A9 — Complete onboarding (happy path) <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Input</dt><dd><code>POST /api/onboarding</code> — <code>{ fullName, businessName, category, latitude, longitude }</code>, all valid.</dd>
+<dt>Expected output</dt><dd><code>200 { success: true }</code>. Business created with a 3-month trial (<code>is_subscription_active=true</code>, <code>trial_ends_at = now()+3mo</code>). Redirects to <code>/dashboard/owner</code>.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">A10 — Onboarding with missing required fields <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>400</code> with a field-specific error message; no rows written.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">A11 — Onboarding when a business already exists for this owner <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>500</code> — unique constraint violation (one business per owner, DB-enforced). Not pre-checked client-side.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">A12 — /dashboard routing logic <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>No business → onboarding. Business exists → owner dashboard.</dd></dl></div>
+
+<h2>B. Owner Dashboard</h2>
+
+<div class="uc"><div class="uc-title">B1 — Owner dashboard metrics render <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Business name/category, subscription banner (conditional), 3 metric tiles (credits, scans hosted, customers acquired).</dd></dl></div>
+
+<div class="uc"><div class="uc-title">B2 — QR PNG generation <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Input</dt><dd><code>GET /api/qr/{business_id}</code></dd>
+<dt>Expected output</dt><dd><code>200</code>, PNG encoding the scan URL.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">B3 — QR PDF generation <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Input</dt><dd><code>GET /api/qr/{business_id}/pdf</code></dd>
+<dt>Expected output</dt><dd><code>200</code>, print-ready card with logo, shop name (Arabic-shaped if applicable), QR code. Nonexistent business → <code>404</code>.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">B4 — Subscription banner visibility <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Inactive subscription or zero credits → banner shows. Active + credits &gt; 0 → hidden.</dd></dl></div>
+
+<h2>C. Campaign Management</h2>
+
+<div class="uc"><div class="uc-title">C1 — Create campaign (happy path) <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Input</dt><dd><code>POST /api/campaigns</code> — <code>{ title, description?, bid_per_view: 2..10 }</code>.</dd>
+<dt>Expected output</dt><dd><code>200</code>, campaign created active. Triggers geo-push notification (best-effort).</dd></dl></div>
+
+<div class="uc"><div class="uc-title">C2 — Create campaign with out-of-range bid <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Input</dt><dd><code>bid_per_view</code> = 1 or 11.</dd><dt>Expected output</dt><dd><code>400</code>.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">C3 — Second campaign while one is active <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>409</code> — one active campaign per creator, DB-enforced.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">C4 — Reactivate a campaign while another is active <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>409</code>.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">C5 — Deactivate a campaign <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>200</code>. No geo-push triggered on deactivation.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">C6 — Missing title on create <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>400</code>.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">C7 — Unauthenticated campaign requests <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>401</code>.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">C8 — PATCH a campaign not owned by the caller <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>404</code> (RLS-filtered, treated as not-found).</dd></dl></div>
+
+<h2>D. Matchmaking / Scan Page (customer-facing, anonymous)</h2>
+
+<div class="uc"><div class="uc-title">D1 — Scan a business with eligible ads <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Up to 3 ad cards, ranked by bid descending, then randomized tiebreak.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">D2 — Scan a business with no eligible ads <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>"No offers nearby right now — check back later."</dd></dl></div>
+
+<div class="uc"><div class="uc-title">D3 — Scan a non-existent business_id <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>404</code>.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">D4 — Host's own campaign excluded from its own scan page <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Never shown on the creating business's own scan page.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">D5 — Same-category business excluded <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Excluded from same-category businesses' pages; still shown to different categories.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">D6 — Technician campaign excluded from linked business <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Excluded only from the specifically linked business's page.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">D7 — Insufficient-credit creator excluded <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Excluded when <code>credits &lt;= bid_per_view</code> (strict boundary).</dd></dl></div>
+
+<div class="uc"><div class="uc-title">D8 — Inactive-subscription creator excluded <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Excluded regardless of credit balance.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">D9 — Inactive campaign excluded <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Never appears.</dd></dl></div>
+
+<h2>E. Wallet — Legacy One-off Passes</h2>
+
+<div class="uc"><div class="uc-title">E1 — Apple Wallet one-off generate <span class="status status-blocked">BLOCKED</span></div>
+<dl><dt>Expected output today</dt><dd><code>501</code> — no signer certificate configured.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">E2 — Google Wallet one-off generate <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>200 { saveUrl, claimToken }</code>.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">E3 — Wallet callback records the ad-credit claim <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>200</code>, credits move from creator to host by <code>bid_per_view</code>.</dd></dl></div>
+
+<h2>F. Wallet — Membership Pass (geo-push, new)</h2>
+
+<div class="uc"><div class="uc-title">F1 — First-time device creates a membership pass <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>200 { alreadyMember: false, saveUrl }</code>. New member row, Google Wallet object created, device cookie set.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">F2 — Returning device reuses the existing pass <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>200 { alreadyMember: true, saveUrl }</code>, no duplicate row.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">F3 — No geolocation, business has coordinates <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Falls back to the business's own coordinates.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">F4 — No geolocation, business has no coordinates <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>400</code>.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">F5 — Missing/invalid businessId <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>400</code> (missing) / <code>404</code> (nonexistent).</dd></dl></div>
+
+<div class="uc"><div class="uc-title">F6/F7 — Google Wallet save/delete callback <span class="status status-doc">DOCUMENTED</span></div>
+<dl><dt>Note</dt><dd>Requires a genuinely Google-signed JWT — verifiable only against real Google Wallet app events.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">F8 — Geo-push on campaign activation <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Nearby members within push radius get their pass PATCHed; <code>offer_notifications</code> logged.</dd></dl></div>
+
+<div class="uc"><div class="uc-title">F9 — nearby_active_offers is platform-wide, not origin-scoped <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Offers from businesses other than the member's recruiting shop still appear.</dd></dl></div>
+
+<h2>G. Redemption</h2>
+
+<div class="uc"><div class="uc-title">G1 — Legacy /validate: successful redemption <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>200</code>, marks redeemed.</dd></dl></div>
+<div class="uc"><div class="uc-title">G2 — Legacy /validate: already redeemed <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>409</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">G3 — Legacy /validate: tampered hash <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>400</code> signature failure.</dd></dl></div>
+<div class="uc"><div class="uc-title">G4 — Legacy /validate: wrong business redeeming <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>403</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">G5 — New /api/redeem: successful redemption <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>200</code>, credits move from redeeming business to member's origin business.</dd></dl></div>
+<div class="uc"><div class="uc-title">G6 — New /api/redeem: invalid barcode <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>400</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">G7 — New /api/redeem: no active offer for scanning business <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>404</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">G8 — New /api/redeem: already redeemed <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>409</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">G9 — New /api/redeem: self-recruited redemption <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Redemption succeeds; credit transfer is a no-op.</dd></dl></div>
+<div class="uc"><div class="uc-title">G10 — New /api/redeem: unauthenticated <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>401</code>.</dd></dl></div>
+
+<h2>H. Dashboard / Admin Analytics</h2>
+
+<div class="uc"><div class="uc-title">H1 — /api/dashboard/redemptions happy path <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>200 { summary, series, conversion }</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">H2 — /api/dashboard/redemptions unauthenticated <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>401</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">H3 — /api/admin/redemptions — always unauthorized <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>401</code> regardless of caller — no admin auth exists yet (documented gap).</dd></dl></div>
+<div class="uc"><div class="uc-title">H4 — /admin page renders with no authentication <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Full shop list visible to anyone with the URL (documented gap).</dd></dl></div>
+
+<h2>I. Billing (Stripe)</h2>
+
+<div class="uc"><div class="uc-title">I1 — Checkout unauthenticated <span class="status status-ok">EXECUTABLE</span></div><dl><dt>Expected output</dt><dd><code>401</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">I2 — Checkout with unknown price_id <span class="status status-ok">EXECUTABLE</span></div><dl><dt>Expected output</dt><dd><code>400</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">I3 — Checkout with no business account <span class="status status-ok">EXECUTABLE</span></div><dl><dt>Expected output</dt><dd><code>404</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">I4 — Checkout, valid request, Stripe not configured <span class="status status-blocked">BLOCKED</span></div><dl><dt>Expected output today</dt><dd><code>501</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">I5 — Checkout happy path <span class="status status-doc">DOCUMENTED</span></div>
+<dl><dt>Input (once configured)</dt><dd><code>POST /api/billing/checkout</code> with a real catalog <code>price_id</code>.</dd>
+<dt>Expected output</dt><dd><code>200 { url }</code> — real Stripe Checkout session. Test card <code>4242 4242 4242 4242</code> completes and grants credits via webhook.</dd></dl></div>
+<div class="uc"><div class="uc-title">I6 — Webhook missing signature <span class="status status-doc">DOCUMENTED</span></div><dl><dt>Note</dt><dd>Currently collapses into I7 (not-configured check runs first).</dd></dl></div>
+<div class="uc"><div class="uc-title">I7 — Webhook, Stripe not configured <span class="status status-blocked">BLOCKED</span></div><dl><dt>Expected output today</dt><dd><code>501</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">I8 — Webhook happy path <span class="status status-doc">DOCUMENTED</span></div>
+<dl><dt>Input</dt><dd>Real <code>checkout.session.completed</code> event (Stripe CLI or test-mode purchase).</dd>
+<dt>Expected output</dt><dd>Credits granted once; a replayed webhook event does not double-grant (deduped on <code>stripe_event_id</code>).</dd></dl></div>
+<div class="uc"><div class="uc-title">I9 — Billing page ledger rendering <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd>Credits (green) and usage debits (grey) merged, sorted newest-first.</dd></dl></div>
+
+<h2>J. Trial Lifecycle</h2>
+
+<div class="uc"><div class="uc-title">J1 — New business gets a 3-month trial <span class="status status-ok">EXECUTABLE</span></div><dl><dt>Expected output</dt><dd>Confirmed via A9.</dd></dl></div>
+<div class="uc"><div class="uc-title">J2 — Cron endpoint auth check <span class="status status-ok">EXECUTABLE</span></div><dl><dt>Expected output</dt><dd><code>401</code> on wrong/missing Bearer token.</dd></dl></div>
+<div class="uc"><div class="uc-title">J3 — Cron endpoint, correct token, nothing due <span class="status status-ok">EXECUTABLE</span></div><dl><dt>Expected output</dt><dd><code>200 { warned: 0, expired: N }</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">J4 — Cron endpoint, a shop is due, email not configured <span class="status status-blocked">BLOCKED</span></div><dl><dt>Expected output today</dt><dd><code>501</code>.</dd></dl></div>
+<div class="uc"><div class="uc-title">J5 — Cron happy path <span class="status status-doc">DOCUMENTED</span></div>
+<dl><dt>Input (once SMTP configured)</dt><dd>A business due within 7 days, not yet notified.</dd>
+<dt>Expected output</dt><dd>Owner receives the trial-ending email; won't re-send on next run.</dd></dl></div>
+<div class="uc"><div class="uc-title">J6 — Expired trial auto-deactivates <span class="status status-ok">EXECUTABLE</span></div>
+<dl><dt>Expected output</dt><dd><code>is_subscription_active</code> flips to <code>false</code> once <code>trial_ends_at</code> has passed with no paid subscription.</dd></dl></div>
+
+<h2>Summary counts</h2>
+<table>
+<tr><th>Area</th><th>Executable</th><th>Blocked</th><th>Documented-only</th></tr>
+<tr><td>Auth / Onboarding</td><td>12</td><td>0</td><td>0</td></tr>
+<tr><td>Owner Dashboard</td><td>4</td><td>0</td><td>0</td></tr>
+<tr><td>Campaigns</td><td>8</td><td>0</td><td>0</td></tr>
+<tr><td>Matchmaking / Scan</td><td>9</td><td>0</td><td>0</td></tr>
+<tr><td>Wallet (legacy)</td><td>2</td><td>1 (Apple)</td><td>0</td></tr>
+<tr><td>Wallet (membership)</td><td>7</td><td>0</td><td>2 (Google-signed callback)</td></tr>
+<tr><td>Redemption</td><td>10</td><td>0</td><td>0</td></tr>
+<tr><td>Dashboard / Admin</td><td>4</td><td>0</td><td>0</td></tr>
+<tr><td>Billing</td><td>6</td><td>2</td><td>2</td></tr>
+<tr><td>Trial lifecycle</td><td>4</td><td>1</td><td>1</td></tr>
+</table>
+
+<p class="footer-note">Jeeran Network — Use Cases &amp; Test Plan — generated 2026-07-20 — see test-log.pdf for actual execution results.</p>
+
+</body>
+</html>

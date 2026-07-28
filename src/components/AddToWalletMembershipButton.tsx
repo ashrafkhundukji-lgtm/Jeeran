@@ -65,7 +65,7 @@ export default function AddToWalletMembershipButton({ businessId }: { businessId
         type="button"
         onClick={handleClick}
         disabled={status === 'working'}
-        className="w-full rounded-lg bg-black text-white text-sm font-medium py-3 active:opacity-80 transition-opacity disabled:opacity-50"
+        className="w-full rounded-lg bg-[#FF6B4A] text-white text-sm font-medium py-3 transition-colors hover:bg-[#e85a3b] active:opacity-80 disabled:opacity-50"
       >
         {status === 'working' ? 'Saving…' : 'Add to Google Wallet'}
       </button>

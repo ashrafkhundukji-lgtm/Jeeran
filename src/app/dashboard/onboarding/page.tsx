@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
+import SiteLogo from '@/components/SiteLogo'
 
 // Leaflet touches window/document at import time — must never run during SSR.
 const LocationPicker = dynamic(() => import('@/components/LocationPicker'), {
@@ -73,6 +74,7 @@ export default function OnboardingPage() {
 
   return (
     <main className="max-w-md mx-auto px-4 py-12">
+      <SiteLogo className="h-14 mb-6" />
       <h1 className="text-xl font-semibold mb-1">Welcome to Jeeran Network</h1>
       <p className="text-sm text-neutral-500 mb-6">Tell us a bit about yourself to get started.</p>
 
@@ -121,7 +123,7 @@ export default function OnboardingPage() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-black text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50"
+          className="bg-[#FF6B4A] text-white rounded-lg py-2.5 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
         >
           {loading ? 'Saving…' : 'Finish setup'}
         </button>

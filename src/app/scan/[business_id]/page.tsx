@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { getHostBusiness, getTopAdsForBusiness } from '@/lib/matchmaking'
 import SaveToWalletButton from '@/components/SaveToWalletButton'
 import AddToWalletMembershipButton from '@/components/AddToWalletMembershipButton'
+import SiteLogo from '@/components/SiteLogo'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +20,10 @@ export default async function ScanPage({
   return (
     <main className="min-h-full flex flex-col bg-neutral-50 px-4 py-8">
       <div className="max-w-sm mx-auto w-full">
+        <div className="flex justify-center mb-6">
+          <SiteLogo className="h-14" />
+        </div>
+
         <div className="text-center mb-6">
           <p className="text-xs uppercase tracking-wide text-neutral-400 mb-1">
             You&apos;re at

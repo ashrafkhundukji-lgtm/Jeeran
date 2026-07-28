@@ -82,10 +82,10 @@ function Connection({
         stroke="#1E3A8A"
         strokeWidth="1.5"
         strokeDasharray="6 6"
-        opacity="0.07"
+        opacity="0.12"
         markerEnd="url(#arrowhead)"
       />
-      <circle r="3.5" fill="#FF6B4A" opacity="0.55">
+      <circle r="3.5" fill="#FF6B4A" opacity="0.65">
         <animateMotion dur={`${duration}s`} begin={`${delay}s`} repeatCount="indefinite" path={d} />
       </circle>
     </>
@@ -109,7 +109,7 @@ export default function MapBackground() {
             markerHeight="5"
             orient="auto-start-reverse"
           >
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1E3A8A" opacity="0.35" />
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1E3A8A" opacity="0.4" />
           </marker>
         </defs>
 
@@ -123,7 +123,7 @@ export default function MapBackground() {
         })}
 
         {PIN_POSITIONS.map(([x, y], i) => (
-          <g key={i} opacity="0.18">
+          <g key={i} opacity="0.28">
             <Pin x={x} y={y} />
           </g>
         ))}

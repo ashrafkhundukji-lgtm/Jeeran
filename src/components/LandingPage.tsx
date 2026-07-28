@@ -30,12 +30,16 @@ export default function LandingPage() {
           className="h-32 sm:h-40 w-auto mx-auto mb-8"
         />
 
+        <div className="w-10 h-1 rounded-full bg-[#FF6B4A] mx-auto mb-4" />
         {copy.brandSubtitle && <p className="text-sm text-neutral-400 mb-3">{copy.brandSubtitle}</p>}
         <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight mb-5">{copy.headline}</h1>
         <p className="text-lg text-neutral-600 max-w-xl mx-auto mb-10">{copy.subheadline}</p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <a href="/signup" className="bg-black text-white rounded-lg px-6 py-3 text-sm font-medium">
+          <a
+            href="/signup"
+            className="bg-[#FF6B4A] text-white rounded-lg px-6 py-3 text-sm font-medium shadow-sm shadow-[#FF6B4A]/20 transition-colors hover:bg-[#e85a3b]"
+          >
             {copy.ctaBusiness}
           </a>
         </div>
@@ -57,7 +61,7 @@ export default function LandingPage() {
 function Step({ number, title, body }: { number: string; title: string; body: string }) {
   return (
     <div>
-      <div className="w-8 h-8 rounded-full bg-black text-white text-sm font-medium flex items-center justify-center mb-3">
+      <div className="w-8 h-8 rounded-full bg-[#1E3A8A] text-white text-sm font-medium flex items-center justify-center mb-3">
         {number}
       </div>
       <h3 className="font-medium mb-1.5">{title}</h3>

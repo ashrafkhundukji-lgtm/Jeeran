@@ -110,7 +110,7 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
           <button
             type="submit"
             disabled={saving}
-            className="bg-black text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50"
+            className="bg-[#FF6B4A] text-white rounded-lg py-2 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
           >
             {saving ? 'Creating…' : 'Create campaign'}
           </button>

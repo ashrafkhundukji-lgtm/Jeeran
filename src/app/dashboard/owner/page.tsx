@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import CampaignManager from '@/components/CampaignManager'
 import SignOutButton from '@/components/SignOutButton'
 import SubscriptionBanner from '@/components/SubscriptionBanner'
+import SiteLogo from '@/components/SiteLogo'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,9 +42,12 @@ export default async function OwnerDashboardPage() {
   return (
     <main className="max-w-3xl mx-auto px-4 py-10">
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-semibold">{business.name}</h1>
-          <p className="text-sm text-neutral-500">{business.category}</p>
+        <div className="flex items-center gap-4">
+          <SiteLogo className="h-14" />
+          <div>
+            <h1 className="text-xl font-semibold">{business.name}</h1>
+            <p className="text-sm text-neutral-500">{business.category}</p>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <a href="/dashboard/billing" className="text-sm text-neutral-500 underline">
@@ -77,7 +81,7 @@ export default async function OwnerDashboardPage() {
             </p>
             <a
               href={`/api/qr/${business.id}/pdf`}
-              className="inline-block bg-black text-white text-sm font-medium rounded-lg px-4 py-2"
+              className="inline-block bg-[#FF6B4A] text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors hover:bg-[#e85a3b]"
             >
               Download Print-Ready PDF
             </a>

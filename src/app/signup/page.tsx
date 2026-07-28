@@ -7,6 +7,7 @@ import { SIGNUP_COPY } from '@/lib/i18n/auth'
 import { getDir } from '@/lib/i18n/locale'
 import { useLocale } from '@/lib/i18n/useLocale'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import SiteLogo from '@/components/SiteLogo'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -47,6 +48,9 @@ export default function SignupPage() {
   if (needsConfirmation) {
     return (
       <div dir={dir} className="max-w-sm mx-auto mt-24 px-4 text-center">
+        <div className="flex justify-center mb-6">
+          <SiteLogo className="h-14" />
+        </div>
         <p className="text-sm text-neutral-600">{copy.confirmationNotice}</p>
       </div>
     )
@@ -54,7 +58,8 @@ export default function SignupPage() {
 
   return (
     <div dir={dir} className="min-h-screen">
-      <div className="max-w-sm mx-auto pt-8 px-4 flex justify-end">
+      <div className="max-w-sm mx-auto pt-8 px-4 flex items-center justify-between">
+        <SiteLogo className="h-14" />
         <LanguageSwitcher locale={locale} onChange={setLocale} />
       </div>
 
@@ -81,7 +86,7 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-black text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50"
+          className="bg-[#FF6B4A] text-white rounded-lg py-2 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
         >
           {loading ? copy.submitting : copy.submit}
         </button>

@@ -8,6 +8,7 @@ import { LOGIN_COPY } from '@/lib/i18n/auth'
 import { getDir } from '@/lib/i18n/locale'
 import { useLocale } from '@/lib/i18n/useLocale'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import SiteLogo from '@/components/SiteLogo'
 
 function LoginForm() {
   const router = useRouter()
@@ -41,7 +42,8 @@ function LoginForm() {
 
   return (
     <div dir={dir} className="min-h-screen">
-      <div className="max-w-sm mx-auto pt-8 px-4 flex justify-end">
+      <div className="max-w-sm mx-auto pt-8 px-4 flex items-center justify-between">
+        <SiteLogo className="h-14" />
         <LanguageSwitcher locale={locale} onChange={setLocale} />
       </div>
 
@@ -67,7 +69,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-black text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50"
+          className="bg-[#FF6B4A] text-white rounded-lg py-2 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
         >
           {loading ? copy.submitting : copy.submit}
         </button>
