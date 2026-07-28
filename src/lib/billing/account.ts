@@ -7,6 +7,7 @@ export interface BillingAccount {
   stripeCustomerId: string | null
   isSubscriptionActive: boolean
   adCredits: number
+  isFrozen: boolean
 }
 
 // Resolves the caller's billing account. Pass a session-scoped client so
@@ -17,7 +18,7 @@ export async function getBillingAccountForUser(
 ): Promise<BillingAccount | null> {
   const { data: business, error: businessError } = await supabase
     .from('businesses')
-    .select('id, name, stripe_customer_id, is_subscription_active, ad_credits')
+    .select('id, name, stripe_customer_id, is_subscription_active, ad_credits, is_frozen')
     .eq('owner_id', userId)
     .maybeSingle()
   if (businessError) throw new Error(businessError.message)
@@ -30,5 +31,6 @@ export async function getBillingAccountForUser(
     stripeCustomerId: business.stripe_customer_id,
     isSubscriptionActive: business.is_subscription_active,
     adCredits: business.ad_credits,
+    isFrozen: business.is_frozen,
   }
 }

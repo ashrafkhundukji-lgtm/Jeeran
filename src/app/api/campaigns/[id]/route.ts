@@ -3,20 +3,12 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { hasActiveCampaign } from '@/lib/campaigns'
 import { notifyMembersNearBusiness } from '@/lib/wallet/geo-notify'
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-
-  const body = await req.json().catch(() => null)
-  if (typeof body?.is_active !== 'boolean') {
-    return NextResponse.json({ error: 'is_active must be a boolean' }, { status: 400 })
-  }
-
-  if (body.is_active) {
+async function handleToggle(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  id: string,
+  isActive: boolean,
+) {
+  if (isActive) {
     const { data: campaign, error: fetchError } = await supabase
       .from('campaigns')
       .select('creator_type, creator_id')
@@ -31,6 +23,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         { status: 409 },
       )
     }
+
+    if (campaign.creator_type === 'business') {
+      const { data: creatorBusiness } = await supabase
+        .from('businesses')
+        .select('is_frozen')
+        .eq('id', campaign.creator_id)
+        .maybeSingle()
+      if (creatorBusiness?.is_frozen) {
+        return NextResponse.json({ error: 'This account is frozen' }, { status: 403 })
+      }
+    }
   }
 
   // RLS silently filters rows the caller doesn't own rather than erroring,
@@ -38,7 +41,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // explicitly, or an unauthorized PATCH would report success.
   const { data, error } = await supabase
     .from('campaigns')
-    .update({ is_active: body.is_active })
+    .update({ is_active: isActive })
     .eq('id', id)
     .select('id, creator_type, creator_id')
 
@@ -51,7 +54,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // geo-targeted yet; nearby_active_offers() excludes them on purpose).
   // Best-effort: never let a push failure fail the toggle response.
   const updated = data[0]
-  if (body.is_active && updated.creator_type === 'business') {
+  if (isActive && updated.creator_type === 'business') {
     const { data: activatedBusiness } = await supabase
       .from('businesses')
       .select('latitude, longitude')
@@ -66,4 +69,56 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   return NextResponse.json({ success: true })
+}
+
+async function handleEdit(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  id: string,
+  body: { title?: string; description?: string | null; bid_per_view?: number; start_date?: string | null; end_date?: string | null },
+) {
+  const title = body.title?.trim() || ''
+  const description = body.description?.trim() || null
+  const bidPerView = Number(body.bid_per_view)
+  const startDate = body.start_date?.trim() || null
+  const endDate = body.end_date?.trim() || null
+
+  if (!title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+  if (!Number.isFinite(bidPerView) || bidPerView < 2 || bidPerView > 10) {
+    return NextResponse.json({ error: 'bid_per_view must be between 2 and 10' }, { status: 400 })
+  }
+  if (startDate && endDate && endDate < startDate) {
+    return NextResponse.json({ error: 'End date must be on or after the start date' }, { status: 400 })
+  }
+
+  const { data, error } = await supabase
+    .from('campaigns')
+    .update({ title, description, bid_per_view: bidPerView, start_date: startDate, end_date: endDate })
+    .eq('id', id)
+    .select('id')
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!data || data.length === 0) {
+    return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+  }
+
+  return NextResponse.json({ success: true })
+}
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
+  const body = await req.json().catch(() => null)
+  if (!body || typeof body !== 'object') {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+
+  if ('title' in body) return handleEdit(supabase, id, body)
+  if (typeof body.is_active === 'boolean') return handleToggle(supabase, id, body.is_active)
+
+  return NextResponse.json({ error: 'is_active must be a boolean' }, { status: 400 })
 }

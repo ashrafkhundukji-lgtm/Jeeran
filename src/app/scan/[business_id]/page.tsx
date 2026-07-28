@@ -15,13 +15,26 @@ export default async function ScanPage({
   const host = await getHostBusiness(business_id)
   if (!host) notFound()
 
+  if (host.isFrozen) {
+    return (
+      <main className="min-h-full flex flex-col items-center justify-center bg-neutral-50 px-4 py-8 text-center">
+        <div className="max-w-sm w-full">
+          <div className="flex justify-center mb-6">
+            <SiteLogo className="h-20" />
+          </div>
+          <p className="text-sm text-neutral-500">This shop is temporarily unavailable.</p>
+        </div>
+      </main>
+    )
+  }
+
   const ads = await getTopAdsForBusiness(host.id, 3)
 
   return (
     <main className="min-h-full flex flex-col bg-neutral-50 px-4 py-8">
       <div className="max-w-sm mx-auto w-full">
         <div className="flex justify-center mb-6">
-          <SiteLogo className="h-14" />
+          <SiteLogo className="h-20" />
         </div>
 
         <div className="text-center mb-6">

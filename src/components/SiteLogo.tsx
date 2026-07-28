@@ -3,7 +3,7 @@
 // src/app/page.tsx itself already redirects a signed-in owner straight back
 // to /dashboard, so this is a safe, working "home" link even from inside an
 // authenticated dashboard page.
-export default function SiteLogo({ className = 'h-14' }: { className?: string }) {
+export default function SiteLogo({ className = 'h-20' }: { className?: string }) {
   return (
     <a href="/" className={`inline-flex items-center shrink-0 ${className}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}

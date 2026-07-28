@@ -2,9 +2,13 @@
 
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { useLocale } from '@/lib/i18n/useLocale'
+import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
 
 export default function SignOutButton() {
   const router = useRouter()
+  const [locale] = useLocale()
+  const copy = DASHBOARD_COPY[locale]
 
   async function handleSignOut() {
     const supabase = createSupabaseBrowserClient()
@@ -14,8 +18,11 @@ export default function SignOutButton() {
   }
 
   return (
-    <button onClick={handleSignOut} className="text-sm text-neutral-500 underline">
-      Sign out
+    <button
+      onClick={handleSignOut}
+      className="text-sm font-medium text-neutral-500 hover:text-neutral-900 transition-colors"
+    >
+      {copy.nav.signOut}
     </button>
   )
 }

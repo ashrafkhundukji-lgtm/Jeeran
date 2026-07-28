@@ -4,14 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import SiteLogo from '@/components/SiteLogo'
+import { CATEGORIES } from '@/lib/categories'
 
 // Leaflet touches window/document at import time — must never run during SSR.
 const LocationPicker = dynamic(() => import('@/components/LocationPicker'), {
   ssr: false,
   loading: () => <div className="h-[260px] rounded-lg bg-neutral-100 animate-pulse" />,
 })
-
-const CATEGORIES = ['cafe', 'salon', 'dry-clean', 'hardware', 'auto', 'other']
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -74,7 +73,7 @@ export default function OnboardingPage() {
 
   return (
     <main className="max-w-md mx-auto px-4 py-12">
-      <SiteLogo className="h-14 mb-6" />
+      <SiteLogo className="h-20 mb-6" />
       <h1 className="text-xl font-semibold mb-1">Welcome to Jeeran Network</h1>
       <p className="text-sm text-neutral-500 mb-6">Tell us a bit about yourself to get started.</p>
 

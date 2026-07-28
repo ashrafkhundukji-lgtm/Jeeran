@@ -17,6 +17,9 @@ export default function LandingPage() {
 
       <header className="relative z-10 max-w-5xl mx-auto px-6 py-6 flex items-center justify-end gap-4">
         <LanguageSwitcher locale={locale} onChange={setLocale} />
+        <a href="/browse" className="text-sm text-neutral-500 underline">
+          {copy.browse}
+        </a>
         <a href="/login" className="text-sm text-neutral-500 underline">
           {copy.login}
         </a>

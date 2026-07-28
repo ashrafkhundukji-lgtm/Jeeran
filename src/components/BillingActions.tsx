@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import type { CatalogEntry } from '@/lib/billing/catalog'
+import { useLocale } from '@/lib/i18n/useLocale'
+import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
 
 export default function BillingActions({
   catalog,
@@ -10,6 +12,9 @@ export default function BillingActions({
   catalog: CatalogEntry[]
   isSubscriptionActive: boolean
 }) {
+  const [locale] = useLocale()
+  const copy = DASHBOARD_COPY[locale].billing
+
   const [loadingKey, setLoadingKey] = useState<string | null>(null)
   const [error, setError] = useState('')
 
@@ -25,7 +30,7 @@ export default function BillingActions({
     const body = await res.json().catch(() => ({}))
 
     if (!res.ok) {
-      setError(body.error || 'Could not start checkout')
+      setError(body.error || copy.checkoutError)
       setLoadingKey(null)
       return
     }
@@ -37,7 +42,7 @@ export default function BillingActions({
   const topupEntries = catalog.filter((c) => c.type === 'topup')
 
   if (!subscriptionEntry && topupEntries.length === 0) {
-    return <p className="text-sm text-neutral-400">Billing isn&apos;t configured yet.</p>
+    return <p className="text-sm text-neutral-400">{copy.notConfigured}</p>
   }
 
   return (
@@ -50,13 +55,15 @@ export default function BillingActions({
           disabled={loadingKey !== null}
           className="bg-[#FF6B4A] text-white rounded-lg py-2.5 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
         >
-          {loadingKey === subscriptionEntry.key ? 'Redirecting…' : `Subscribe — $${subscriptionEntry.amountUsd}/mo`}
+          {loadingKey === subscriptionEntry.key
+            ? copy.redirecting
+            : copy.subscribe.replace('{n}', String(subscriptionEntry.amountUsd))}
         </button>
       )}
 
       {topupEntries.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-neutral-700 mb-2">Buy Credits</h3>
+          <h3 className="text-sm font-medium text-neutral-700 mb-2">{copy.buyCredits}</h3>
           <div className="grid grid-cols-3 gap-3">
             {topupEntries.map((entry) => (
               <button
@@ -66,7 +73,7 @@ export default function BillingActions({
                 className="border border-neutral-200 rounded-xl p-4 text-center hover:border-[#1E3A8A] transition-colors disabled:opacity-50"
               >
                 <div className="text-lg font-semibold">{entry.creditsGranted.toLocaleString()}</div>
-                <div className="text-xs text-neutral-500 mb-2">credits</div>
+                <div className="text-xs text-neutral-500 mb-2">{copy.creditsSuffix}</div>
                 <div className="text-sm font-medium">
                   {loadingKey === entry.key ? '…' : `$${entry.amountUsd}`}
                 </div>

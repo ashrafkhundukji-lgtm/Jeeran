@@ -66,6 +66,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'pass no longer active' }, { status: 410 })
   }
 
+  const { data: redeemingBusiness } = await supabaseAdmin
+    .from('businesses')
+    .select('is_frozen')
+    .eq('id', businessId)
+    .maybeSingle()
+  if (redeemingBusiness?.is_frozen) {
+    return NextResponse.json({ error: 'This account is frozen' }, { status: 403 })
+  }
+
   // Does this business currently have an active offer this member hasn't
   // already redeemed?
   const { data: offer, error: offerErr } = await supabaseAdmin

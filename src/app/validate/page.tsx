@@ -35,7 +35,7 @@ function ValidateInner() {
     return (
       <div className="max-w-sm mx-auto mt-24 px-4 text-center">
         <div className="flex justify-center mb-6">
-          <SiteLogo className="h-14" />
+          <SiteLogo className="h-20" />
         </div>
         <p className="text-red-600 text-sm">Missing or malformed link.</p>
       </div>
@@ -65,7 +65,7 @@ function ValidateInner() {
   return (
     <div className="max-w-sm mx-auto mt-24 px-4 text-center">
       <div className="flex justify-center mb-6">
-        <SiteLogo className="h-14" />
+        <SiteLogo className="h-20" />
       </div>
       <p className="text-sm text-neutral-600 mb-6">
         Confirm this customer&apos;s wallet coupon to mark it redeemed.

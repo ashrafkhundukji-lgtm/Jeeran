@@ -14,20 +14,26 @@ export async function POST(req: NextRequest) {
 
   const { data: business, error: businessError } = await supabase
     .from('businesses')
-    .select('id, latitude, longitude')
+    .select('id, latitude, longitude, is_frozen')
     .eq('owner_id', user.id)
     .maybeSingle()
   if (businessError) return NextResponse.json({ error: businessError.message }, { status: 500 })
   if (!business) return NextResponse.json({ error: 'No business found for this account' }, { status: 404 })
+  if (business.is_frozen) return NextResponse.json({ error: 'This account is frozen' }, { status: 403 })
 
   const body = await req.json().catch(() => null)
   const title: string = body?.title?.trim() || ''
   const description: string | null = body?.description?.trim() || null
   const bidPerView = Number(body?.bid_per_view)
+  const startDate: string | null = body?.start_date?.trim() || null
+  const endDate: string | null = body?.end_date?.trim() || null
 
   if (!title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
   if (!Number.isFinite(bidPerView) || bidPerView < 2 || bidPerView > 10) {
     return NextResponse.json({ error: 'bid_per_view must be between 2 and 10' }, { status: 400 })
+  }
+  if (startDate && endDate && endDate < startDate) {
+    return NextResponse.json({ error: 'End date must be on or after the start date' }, { status: 400 })
   }
 
   if (await hasActiveCampaign(supabase, 'business', business.id)) {
@@ -48,6 +54,8 @@ export async function POST(req: NextRequest) {
       title,
       description,
       bid_per_view: bidPerView,
+      start_date: startDate,
+      end_date: endDate,
       is_active: true,
     })
     .select()

@@ -43,7 +43,7 @@ function LoginForm() {
   return (
     <div dir={dir} className="min-h-screen">
       <div className="max-w-sm mx-auto pt-8 px-4 flex items-center justify-between">
-        <SiteLogo className="h-14" />
+        <SiteLogo className="h-20" />
         <LanguageSwitcher locale={locale} onChange={setLocale} />
       </div>
 

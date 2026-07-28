@@ -57,15 +57,17 @@ export interface HostBusiness {
   id: string
   name: string
   category: string
+  isFrozen: boolean
 }
 
 export async function getHostBusiness(businessId: string): Promise<HostBusiness | null> {
   const { data, error } = await supabaseAdmin
     .from('businesses')
-    .select('id, name, category')
+    .select('id, name, category, is_frozen')
     .eq('id', businessId)
     .maybeSingle()
 
   if (error) throw new Error(error.message)
-  return data
+  if (!data) return null
+  return { id: data.id, name: data.name, category: data.category, isFrozen: data.is_frozen }
 }

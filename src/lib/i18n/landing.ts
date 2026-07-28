@@ -3,6 +3,7 @@ import type { Locale } from './locale'
 export interface LandingCopy {
   brandSubtitle: string | null
   login: string
+  browse: string
   headline: string
   subheadline: string
   ctaBusiness: string
@@ -18,6 +19,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
   ar: {
     brandSubtitle: null,
     login: 'تسجيل الدخول',
+    browse: 'تصفح المحلات',
     headline: 'جيرانك هم أفضل من يعلن عنك.',
     subheadline:
       'استضف حامل رمز QR للمحلات المجاورة واكسب نقاط إعلانية — ثم استخدمها لعرض عروضك في محلاتهم. بلا وكالة إعلانية، بلا هدر، فقط جيرانك.',
@@ -32,6 +34,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
   en: {
     brandSubtitle: 'شبكة جيران الرقمية',
     login: 'Log in',
+    browse: 'Browse shops',
     headline: 'Your neighbors are your best advertisers.',
     subheadline:
       "Host a QR stand for nearby businesses and earn ad credits — then spend them getting your own offers seen at their counters. No ad agency, no wasted spend, just the shops around you.",
@@ -49,6 +52,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
   ur: {
     brandSubtitle: 'شبكة جيران الرقمية',
     login: 'لاگ اِن',
+    browse: 'دکانیں دیکھیں',
     headline: 'آپ کے پڑوسی ہی آپ کے بہترین اشتہاری ہیں۔',
     subheadline:
       'قریبی کاروباروں کے لیے QR اسٹینڈ کی میزبانی کریں اور ایڈ کریڈٹس کمائیں — پھر انہیں اپنے آفرز ان کے کاؤنٹر پر دکھانے کے لیے خرچ کریں۔ نہ کوئی ایڈ ایجنسی، نہ ضائع شدہ خرچ، بس آپ کے ارد گرد کی دکانیں۔',
