@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import { CATEGORIES } from '@/lib/categories'
+import { CATEGORIES, CATEGORY_LABELS } from '@/lib/categories'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
@@ -118,7 +118,7 @@ export default function ProfileForm({
         <select className={inputClass} value={category} onChange={(e) => setCategory(e.target.value)}>
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>
-              {c}
+              {CATEGORY_LABELS[locale][c]}
             </option>
           ))}
         </select>
