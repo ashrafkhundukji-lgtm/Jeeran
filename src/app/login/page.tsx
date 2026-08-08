@@ -9,6 +9,7 @@ import { getDir } from '@/lib/i18n/locale'
 import { useLocale } from '@/lib/i18n/useLocale'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import SiteLogo from '@/components/SiteLogo'
+import Backdrop from '@/components/Backdrop'
 
 function LoginForm() {
   const router = useRouter()
@@ -41,21 +42,28 @@ function LoginForm() {
   }
 
   return (
-    <div dir={dir} className="min-h-screen">
-      <div className="max-w-sm mx-auto pt-8 px-4 flex items-center justify-between">
-        <SiteLogo className="h-20" />
+    <div dir={dir} className="relative min-h-screen overflow-hidden bg-[#FBFCFD] text-[#1a1a1a]">
+      <Backdrop />
+
+      {/* z-20: the language switcher's dropdown must paint above the form
+          below it, not get hidden behind it — see LandingPage.tsx for the
+          full explanation of this z-index sibling-stacking gotcha. */}
+      <div dir="ltr" className="relative z-20 mx-auto flex max-w-sm items-center justify-between px-4 pt-8">
+        <SiteLogo className="h-14 sm:h-16" />
         <LanguageSwitcher locale={locale} onChange={setLocale} />
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-sm mx-auto mt-16 px-4 flex flex-col gap-3">
-        <h1 className="text-xl font-semibold mb-2">{copy.title}</h1>
+      <form onSubmit={handleSubmit} className="relative z-10 mx-auto mt-16 flex max-w-sm flex-col gap-3 px-4">
+        <h1 className="mb-2 font-[family-name:var(--font-archivo)] text-2xl font-black tracking-[-0.01em]">
+          {copy.title}
+        </h1>
         <input
           type="email"
           required
           placeholder={copy.emailPlaceholder}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="border border-neutral-300 rounded-lg px-3 py-2 text-sm"
+          className="rounded-[10px] border border-[#e5e5e5] px-3 py-2 text-sm focus:border-[#1E3A8A] focus:outline-none"
         />
         <input
           type="password"
@@ -63,19 +71,19 @@ function LoginForm() {
           placeholder={copy.passwordPlaceholder}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="border border-neutral-300 rounded-lg px-3 py-2 text-sm"
+          className="rounded-[10px] border border-[#e5e5e5] px-3 py-2 text-sm focus:border-[#1E3A8A] focus:outline-none"
         />
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="bg-[#FF6B4A] text-white rounded-lg py-2 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
+          className="rounded-[10px] bg-[#FF6B4A] py-2.5 text-sm font-semibold text-white shadow-[0_12px_24px_-8px_rgba(255,107,74,0.5)] transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
         >
           {loading ? copy.submitting : copy.submit}
         </button>
-        <p className="text-sm text-neutral-500 text-center">
+        <p className="text-center text-sm text-[#5a5a5a]">
           {copy.noAccount}{' '}
-          <a href="/signup" className="underline">
+          <a href="/signup" className="text-[#1E3A8A] underline">
             {copy.signUpLink}
           </a>
         </p>
