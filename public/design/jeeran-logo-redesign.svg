@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
+  
+  <rect width="100%" height="100%" fill="#F8FAFC"></rect>
+  
+  <g transform="translate(100, 50)">
+    
+    <g id="logo-mark" transform="translate(0, 0)">
+      
+      <circle cx="180" cy="180" r="140" fill="none" stroke="#1E3A8A" stroke-width="2" stroke-dasharray="8 8" opacity="0.15"></circle>
+      
+      
+      
+      <path d="M 100 110 L 260 110" stroke="#1E3A8A" stroke-width="24" stroke-linecap="round"></path>
+      
+      
+      <path d="M 230 110 C 230 110, 280 180, 230 250 C 180 320, 90 290, 90 220" fill="none" stroke="#1E3A8A" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"></path>
+      
+      
+      <path d="M 230 110 L 230 180" stroke="#1E3A8A" stroke-width="24" stroke-linecap="round"></path>
+      
+      
+      <g id="location-pin-dot" transform="translate(160, 205)">
+        
+        <path d="M 0 0 C -12 -12, -18 -24, -18 -36 C -18 -50, -8 -58, 0 -58 C 8 -58, 18 -50, 18 -36 C 18 -24, 12 -12, 0 0 Z" fill="#FF6B4A"></path>
+        
+        <circle cx="0" cy="-36" r="6" fill="#FFFFFF"></circle>
+      </g>
+    </g>
+
+    
+    <g id="logo-text" transform="translate(360, 0)">
+      
+      <text x="0" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="76" font-weight="800" fill="#1E3A8A" letter-spacing="1">Jeeran</text>
+      
+      
+      <text x="5" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" fill="#FF6B4A" letter-spacing="2">جِـيـران</text>
+      
+      
+      <text x="5" y="305" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#64748B" letter-spacing="4">HYPERLOCAL AD NETWORK</text>
+      
+      
+      <line x1="5" y1="110" x2="280" y2="110" stroke="#FF6B4A" stroke-width="4" stroke-linecap="round" opacity="0.8"></line>
+    </g>
+  </g>
+</svg>
