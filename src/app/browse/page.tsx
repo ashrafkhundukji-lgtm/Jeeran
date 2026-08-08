@@ -32,7 +32,7 @@ export default function BrowseCategoriesPage() {
             <a
               key={category}
               href={`/browse/${category}`}
-              className="rounded-xl border border-[#e5e5e5] px-4 py-3 text-sm font-medium transition-colors hover:border-[#1E3A8A]/30 hover:bg-[#1E3A8A]/[0.03]"
+              className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-3 text-sm font-medium transition-colors hover:border-[#1E3A8A]/30 hover:bg-[#1E3A8A]/[0.03]"
             >
               {labels[category]}
             </a>
