@@ -1,26 +1,21 @@
 @import "tailwindcss";
 
+/* Brand base — matches the landing page's #FBFCFD canvas and #1a1a1a ink.
+   No dark-mode variant: no page in this app is dark-mode aware yet, and
+   swapping the base colors under prefers-color-scheme without every
+   component opting in would just produce dark-on-dark/light-on-light spots. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #FBFCFD;
+  --foreground: #1a1a1a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-work-sans);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }

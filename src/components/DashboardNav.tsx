@@ -21,9 +21,9 @@ export default function DashboardNav() {
 
   return (
     <div dir={dir} className="flex flex-wrap items-center justify-between gap-y-3 pb-6 mb-6 border-b border-neutral-200">
-      <SiteLogo className="h-12 sm:h-20" />
+      <SiteLogo className="h-14 sm:h-16" />
       <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-        <nav className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1">
+        <nav className="flex items-center gap-1 bg-[#1E3A8A]/5 rounded-lg p-1">
           {navLinks.map((link) => {
             const active = pathname === link.href
             return (
@@ -31,7 +31,7 @@ export default function DashboardNav() {
                 key={link.href}
                 href={link.href}
                 className={`text-sm font-medium rounded-md px-2.5 sm:px-3 py-1.5 transition-colors ${
-                  active ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'
+                  active ? 'bg-[#1E3A8A] text-white shadow-sm' : 'text-[#5a5a5a] hover:text-[#1a1a1a]'
                 }`}
               >
                 {link.label}

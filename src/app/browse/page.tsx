@@ -1,23 +1,28 @@
 import SiteLogo from '@/components/SiteLogo'
+import Backdrop from '@/components/Backdrop'
 import { CATEGORIES } from '@/lib/categories'
 
 export default function BrowseCategoriesPage() {
   return (
-    <main className="min-h-screen bg-[#FBFCFD] px-4 py-10">
-      <div className="max-w-sm mx-auto w-full">
-        <div className="flex justify-center mb-8">
-          <SiteLogo className="h-20" />
+    <main className="relative min-h-screen overflow-hidden bg-[#FBFCFD] px-4 py-10 text-[#1a1a1a]">
+      <Backdrop />
+
+      <div className="relative z-10 mx-auto w-full max-w-sm">
+        <div className="mb-8 flex justify-center">
+          <SiteLogo className="h-14 sm:h-16" />
         </div>
 
-        <h1 className="text-xl font-semibold text-center mb-1">Browse shops</h1>
-        <p className="text-sm text-neutral-500 text-center mb-8">Pick a category to see shops near you.</p>
+        <h1 className="mb-1 text-center font-[family-name:var(--font-archivo)] text-2xl font-black tracking-[-0.01em]">
+          Browse shops
+        </h1>
+        <p className="mb-8 text-center text-sm text-[#5a5a5a]">Pick a category to see shops near you.</p>
 
         <div className="flex flex-col gap-2">
           {CATEGORIES.map((category) => (
             <a
               key={category}
               href={`/browse/${category}`}
-              className="border border-neutral-200 rounded-xl px-4 py-3 text-sm font-medium capitalize hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
+              className="rounded-xl border border-[#e5e5e5] px-4 py-3 text-sm font-medium capitalize transition-colors hover:border-[#1E3A8A]/30 hover:bg-[#1E3A8A]/[0.03]"
             >
               {category}
             </a>
