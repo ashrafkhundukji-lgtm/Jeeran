@@ -1,57 +1,62 @@
-// Shared decorative page backdrop: grid-line pattern + two large blurred
-// color blobs, matching the landing page's background treatment
-// (docs/Jeeran Landing Redesign - Standalone.html) so other top-level pages
-// can share the same brand texture. Purely decorative — render inside a
-// `relative` ancestor, above z-0 content.
-//
-// The rotated diamond accents are opt-in (`diamonds`) rather than always
-// on: their positions were tuned to land in the landing hero's empty space
-// specifically. Other pages have shorter, narrower, differently-shaped
-// content up top, so the same fixed coordinates can and do land on top of
-// real text (confirmed on /browse, where the second diamond sat on top of
-// the "Dry-Clean" category link). Only opt in on a page after checking the
-// diamond positions actually land somewhere empty there.
-export default function Backdrop({ diamonds = false }: { diamonds?: boolean }) {
+// Shared decorative page backdrop: a "community network" graphic —
+// scattered nodes connected by thin lines, evoking a connected local
+// network — plus two large blurred color blobs for depth. Matches the
+// landing page's background treatment so every top-level page shares the
+// same brand texture. Node/line coordinates are lifted directly from the
+// design handoff's SVG (docs/design/design_handoff_landing_redesign) for
+// pixel fidelity. Purely decorative — render inside a `relative` ancestor,
+// above z-0 content.
+export default function Backdrop() {
   return (
-    <div className="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            'repeating-linear-gradient(0deg, rgba(30,58,138,0.06) 0px, rgba(30,58,138,0.06) 1px, transparent 1px, transparent 64px), repeating-linear-gradient(90deg, rgba(30,58,138,0.06) 0px, rgba(30,58,138,0.06) 1px, transparent 1px, transparent 64px)',
-        }}
-      />
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
+      <svg
+        viewBox="0 0 1240 900"
+        preserveAspectRatio="xMidYMid slice"
+        className="absolute inset-0 h-full w-full"
+      >
+        <g stroke="#1E3A8A" strokeWidth="1.4" opacity="0.16" fill="none">
+          <line x1="120" y1="90" x2="300" y2="180" />
+          <line x1="300" y1="180" x2="260" y2="340" />
+          <line x1="300" y1="180" x2="480" y2="140" />
+          <line x1="480" y1="140" x2="620" y2="240" />
+          <line x1="620" y1="240" x2="820" y2="150" />
+          <line x1="620" y1="240" x2="700" y2="400" />
+          <line x1="700" y1="400" x2="540" y2="470" />
+          <line x1="540" y1="470" x2="380" y2="420" />
+          <line x1="380" y1="420" x2="260" y2="340" />
+          <line x1="820" y1="150" x2="1020" y2="220" />
+          <line x1="1020" y1="220" x2="1120" y2="380" />
+          <line x1="700" y1="400" x2="880" y2="480" />
+          <line x1="880" y1="480" x2="1020" y2="600" />
+          <line x1="540" y1="470" x2="600" y2="650" />
+          <line x1="600" y1="650" x2="420" y2="720" />
+          <line x1="260" y1="340" x2="140" y2="500" />
+          <line x1="140" y1="500" x2="220" y2="680" />
+        </g>
+        <g fill="#FF6B4A" opacity="0.55">
+          <circle cx="120" cy="90" r="5" />
+          <circle cx="480" cy="140" r="4" />
+          <circle cx="820" cy="150" r="6" />
+          <circle cx="700" cy="400" r="5" />
+          <circle cx="1020" cy="600" r="4" />
+          <circle cx="420" cy="720" r="5" />
+          <circle cx="140" cy="500" r="4" />
+        </g>
+        <g fill="#1E3A8A" opacity="0.45">
+          <circle cx="300" cy="180" r="6" />
+          <circle cx="260" cy="340" r="5" />
+          <circle cx="620" cy="240" r="7" />
+          <circle cx="380" cy="420" r="4" />
+          <circle cx="540" cy="470" r="6" />
+          <circle cx="1020" cy="220" r="4" />
+          <circle cx="1120" cy="380" r="5" />
+          <circle cx="880" cy="480" r="5" />
+          <circle cx="600" cy="650" r="4" />
+          <circle cx="220" cy="680" r="4" />
+        </g>
+      </svg>
       <div className="absolute -top-[120px] -right-[160px] h-[520px] w-[520px] rounded-full bg-[#FF6B4A] opacity-[0.16] blur-[60px]" />
       <div className="absolute -bottom-[140px] -left-[140px] h-[460px] w-[460px] rounded-full bg-[#1E3A8A] opacity-[0.14] blur-[70px]" />
-      {diamonds && (
-        <>
-          {/* Hidden below sm: at narrow widths page headers wrap taller and
-              these fixed-position accents start colliding with nav text. */}
-          <Diamond top={120} left="38%" size={26} opacity={0.5} className="hidden sm:block" />
-          <Diamond top={340} left="46%" size={14} opacity={0.3} className="hidden sm:block" />
-        </>
-      )}
     </div>
-  )
-}
-
-function Diamond({
-  top,
-  left,
-  size,
-  opacity,
-  className,
-}: {
-  top: number
-  left: string
-  size: number
-  opacity: number
-  className?: string
-}) {
-  return (
-    <div
-      className={`absolute rotate-45 border-2 border-[#FF6B4A] ${className ?? ''}`}
-      style={{ top, left, width: size, height: size, opacity }}
-    />
   )
 }
