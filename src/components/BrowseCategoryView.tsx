@@ -45,7 +45,7 @@ export default function BrowseCategoryView({ category, shops }: { category: stri
             {shops.map((shop, i) => (
               <div
                 key={shop.businessId}
-                className="flex items-center justify-between rounded-xl border border-[#e5e5e5] p-4"
+                className="flex items-center justify-between rounded-xl border border-[#e5e5e5] bg-white p-4"
               >
                 <div className="flex items-center gap-3">
                   <span className="w-4 text-xs font-medium text-neutral-400">{i + 1}</span>
