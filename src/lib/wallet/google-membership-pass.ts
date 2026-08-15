@@ -14,6 +14,15 @@ import { signMemberToken } from './member-token'
 const CLASS_SUFFIX = 'jeeran_offers_membership'
 const BASE_URL = 'https://walletobjects.googleapis.com/walletobjects/v1'
 
+// Brand assets — set once at object creation (see createMembershipObject).
+// No existing helper loads brand asset URLs from env/constants elsewhere in
+// the wallet code (the legacy one-off flow in google.ts hardcodes its own,
+// different hexBackgroundColor inline), so these live here rather than in a
+// shared module that doesn't otherwise exist yet.
+const BRAND_NAVY = '#1E3A8A'
+const LOGO_URL = 'https://jeeran.vercel.app/wallet-logo-square.png'
+const HERO_IMAGE_URL = 'https://jeeran.vercel.app/wallet-hero-banner.png'
+
 function classId(): string {
   const { issuerId } = loadGoogleWalletCredentials()
   return `${issuerId}.${CLASS_SUFFIX}`
@@ -128,7 +137,9 @@ export async function createMembershipObject(memberId: string, initialOffers: Ne
       cardTitle: { defaultValue: { language: 'en', value: 'Jeeran Offers' } },
       header: { defaultValue: { language: 'en', value: 'Nearby deals for you' } },
       textModulesData: offersToTextModules(initialOffers),
-      hexBackgroundColor: '#0B2A4A',
+      hexBackgroundColor: BRAND_NAVY,
+      logo: { sourceUri: { uri: LOGO_URL } },
+      heroImage: { sourceUri: { uri: HERO_IMAGE_URL } },
       // Persistent identity barcode — shop staff scan THIS to redeem
       // whichever of their own offers this member currently qualifies for.
       // Not tied to any single offer, since the pass rotates many over time.
