@@ -1,8 +1,12 @@
 import { notFound } from 'next/navigation'
 import { getHostBusiness, getTopAdsForBusiness } from '@/lib/matchmaking'
-import SaveToWalletButton from '@/components/SaveToWalletButton'
 import AddToWalletMembershipButton from '@/components/AddToWalletMembershipButton'
 import SiteLogo from '@/components/SiteLogo'
+
+// Apple Wallet (SaveToWalletButton) is intentionally not rendered here — its
+// add-confirmation signal isn't wired up yet (see the component's own
+// comment), so it's not ready for the live scan page. Re-add the import and
+// the <SaveToWalletButton /> render below once that's confirmed working.
 
 export const dynamic = 'force-dynamic'
 
@@ -64,7 +68,6 @@ export default async function ScanPage({
                 {ad.description && (
                   <p className="text-sm text-neutral-500 mb-3">{ad.description}</p>
                 )}
-                <SaveToWalletButton campaignId={ad.campaignId} hostBusinessId={host.id} />
               </div>
             ))}
           </div>

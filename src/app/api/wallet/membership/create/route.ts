@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
   // Returning member: don't issue a second pass.
   const { data: existing, error: lookupErr } = await supabaseAdmin
     .from('wallet_members')
-    .select('id, google_object_id, origin_business_id')
+    .select('id, google_object_id, origin_business_id, home_lat, home_lng')
     .eq('device_id', deviceId)
     .maybeSingle()
 
@@ -89,9 +89,26 @@ export async function POST(req: NextRequest) {
 
     await logTouchpoint(existing.id, businessId)
 
+    // A row can have google_object_id = null when a PREVIOUS visit created
+    // the member but never got as far as creating the Google Wallet object
+    // (e.g. the GOOGLE_WALLET_SERVICE_ACCOUNT_KEY_B64 outage on 2026-08-15).
+    // That's a fixable, one-time gap — retry object creation now rather than
+    // permanently handing back saveUrl: null for a row nothing will ever
+    // repair on its own. Caught separately from the rest of the handler so a
+    // still-broken credential degrades to the pre-existing null-saveUrl
+    // response instead of a 500, and doesn't block re-attribution above.
+    let objectId = existing.google_object_id
+    if (!objectId && existing.home_lat != null && existing.home_lng != null) {
+      try {
+        objectId = await createAndStoreMembershipObject(existing.id, existing.home_lat, existing.home_lng)
+      } catch (err) {
+        console.error('retry: createMembershipObject failed for existing member', { memberId: existing.id, err })
+      }
+    }
+
     const res = NextResponse.json({
       alreadyMember: true,
-      saveUrl: existing.google_object_id ? await buildSaveUrl(existing.google_object_id) : null,
+      saveUrl: objectId ? await buildSaveUrl(objectId) : null,
     })
     setCookieIfNew(res, deviceId, isNewDevice)
     return res
@@ -115,6 +132,14 @@ export async function POST(req: NextRequest) {
     }
     homeLat = business.latitude
     homeLng = business.longitude
+  }
+
+  // Unreachable in practice — every path above either keeps the caller's
+  // lat/lng or fills both from the business, else returns early. Narrows
+  // homeLat/homeLng from `number | undefined` to `number` for TypeScript so
+  // createAndStoreMembershipObject below doesn't need a second null check.
+  if (homeLat == null || homeLng == null) {
+    return NextResponse.json({ error: 'could not resolve a home location' }, { status: 500 })
   }
 
   const { data: member, error: insertErr } = await supabaseAdmin
@@ -175,6 +200,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const objectId = await createAndStoreMembershipObject(member.id, homeLat, homeLng)
+
+  const saveUrl = await buildSaveUrl(objectId)
+
+  const res = NextResponse.json({ alreadyMember: false, saveUrl })
+  setCookieIfNew(res, deviceId, isNewDevice)
+  return res
+}
+
+// Shared by the first-time-member path and the returning-member retry path
+// (see the null google_object_id branch above) so the two can't drift.
+// Throws on failure — callers decide whether that should surface as a 500
+// (first-time signup) or degrade to saveUrl: null (retry on an existing row).
+async function createAndStoreMembershipObject(memberId: string, homeLat: number, homeLng: number): Promise<string> {
   const { data: initialOffers } = await supabaseAdmin.rpc('nearby_active_offers', {
     p_lat: homeLat,
     p_lng: homeLng,
@@ -182,23 +221,19 @@ export async function POST(req: NextRequest) {
     p_limit: 5,
   })
 
-  // Idempotent (GET-then-create) — cheap to call on every first-time
-  // registration rather than requiring a separate one-time deploy step that
-  // was never actually wired up anywhere.
+  // Idempotent (GET-then-create) — cheap to call on every attempt rather
+  // than requiring a separate one-time deploy step that was never actually
+  // wired up anywhere.
   await ensureMembershipClass()
 
-  const objectId = await createMembershipObject(member.id, (initialOffers ?? []) as NearbyOffer[])
+  const objectId = await createMembershipObject(memberId, (initialOffers ?? []) as NearbyOffer[])
 
   // Set immediately — object creation via the REST API already succeeded,
   // we don't need to wait for the save-event callback to know it exists.
   // The callback route remains the source of truth for DELETE events.
-  await supabaseAdmin.from('wallet_members').update({ google_object_id: objectId }).eq('id', member.id)
+  await supabaseAdmin.from('wallet_members').update({ google_object_id: objectId }).eq('id', memberId)
 
-  const saveUrl = await buildSaveUrl(objectId)
-
-  const res = NextResponse.json({ alreadyMember: false, saveUrl })
-  setCookieIfNew(res, deviceId, isNewDevice)
-  return res
+  return objectId
 }
 
 // Every scan event, regardless of whether it changes attribution — first
