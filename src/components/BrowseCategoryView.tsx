@@ -51,7 +51,7 @@ export default function BrowseCategoryView({ category, shops }: { category: stri
                   <span className="w-4 text-xs font-medium text-neutral-400">{i + 1}</span>
                   <span className="text-sm font-medium">{shop.businessName}</span>
                 </div>
-                <LevelBadge level={shop.level} />
+                <LevelBadge level={shop.level} locale={locale} />
               </div>
             ))}
           </div>

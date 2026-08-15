@@ -94,7 +94,7 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       signOut: 'تسجيل الخروج',
     },
     owner: {
-      adCredits: 'رصيد النقاط الحالي',
+      adCredits: 'نقاط الإعلان',
       scansHosted: 'عمليات المسح المستضافة',
       customersAcquired: 'العملاء المكتسبون',
       promotionCaption:
