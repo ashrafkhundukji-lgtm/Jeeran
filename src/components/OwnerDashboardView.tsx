@@ -53,7 +53,7 @@ export default function OwnerDashboardView({
       <div className="mb-6">
         <h1 className="text-xl font-semibold">{businessName}</h1>
         <p className="text-sm text-neutral-500 mb-2">{businessCategory}</p>
-        <LevelBadge level={promotionLevel} variant="medal" />
+        <LevelBadge level={promotionLevel} variant="medal" locale={locale} />
         <p className="text-xs text-neutral-400 mt-1">{copy.promotionCaption.replace('{n}', String(promotionScore))}</p>
       </div>
 
