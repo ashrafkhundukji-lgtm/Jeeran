@@ -167,6 +167,11 @@ export async function patchMembershipObject(objectId: string, offers: NearbyOffe
     url: `${BASE_URL}/genericObject/${objectId}`,
     method: 'PATCH',
     data: {
+      // Self-heals cardTitle on any object that was created before this field
+      // was correct (e.g. the pre-launch "[TEST ONLY] Jeeran Offers" objects —
+      // see scripts/migrate-wallet-card-title.mjs for the one-time bulk fix;
+      // this keeps any object patched going forward from drifting back).
+      cardTitle: { defaultValue: { language: 'en', value: 'Jeeran Offers' } },
       textModulesData: offersToTextModules(offers),
       messages: offers.length
         ? [

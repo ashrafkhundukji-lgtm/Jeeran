@@ -52,18 +52,23 @@ async function handleToggle(
 
   // Geo-push trigger — business-only for MVP (technician campaigns aren't
   // geo-targeted yet; nearby_active_offers() excludes them on purpose).
-  // Best-effort: never let a push failure fail the toggle response.
+  // Fires on BOTH activation and deactivation: nearby_active_offers() only
+  // returns is_active=true campaigns, so a deactivation needs the same
+  // refresh to drop the now-inactive offer from members' cards promptly —
+  // otherwise it just sits there until an unrelated nearby activation
+  // happens to overwrite it. Best-effort: never let a push failure fail the
+  // toggle response.
   const updated = data[0]
-  if (isActive && updated.creator_type === 'business') {
-    const { data: activatedBusiness } = await supabase
+  if (updated.creator_type === 'business') {
+    const { data: toggledBusiness } = await supabase
       .from('businesses')
       .select('latitude, longitude')
       .eq('id', updated.creator_id)
       .maybeSingle()
 
-    if (activatedBusiness?.latitude != null && activatedBusiness?.longitude != null) {
-      notifyMembersNearBusiness(activatedBusiness.latitude, activatedBusiness.longitude).catch((err) => {
-        console.error('notifyMembersNearBusiness failed after campaign activation', { campaignId: id, err })
+    if (toggledBusiness?.latitude != null && toggledBusiness?.longitude != null) {
+      notifyMembersNearBusiness(toggledBusiness.latitude, toggledBusiness.longitude).catch((err) => {
+        console.error('notifyMembersNearBusiness failed after campaign toggle', { campaignId: id, isActive, err })
       })
     }
   }
