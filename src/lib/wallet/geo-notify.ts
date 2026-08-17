@@ -18,7 +18,7 @@
  */
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { patchMembershipObject, type NearbyOffer } from './google-membership-pass'
+import { patchMembershipObject, notifyNewOffer, type NearbyOffer } from './google-membership-pass'
 
 interface WalletMember {
   id: string
@@ -85,6 +85,22 @@ async function refreshMember(member: WalletMember) {
   if (unchanged) return // nothing new -> skip the API call and the notification
 
   await patchMembershipObject(member.google_object_id, nearbyOffers)
+
+  // Notify about whichever offer is actually new to this member (not
+  // previously in last_notified_offer_ids) — nearbyOffers is already
+  // ranked bid-desc/distance-asc, so the first match is the highest-bid
+  // newly-appeared offer. If nothing is genuinely new (e.g. an offer just
+  // dropped off, or the set only reordered), there's nothing to announce —
+  // the card refresh above still applies. Best-effort: Google caps this at
+  // 3 notifies/24h per object, and a throttled/failed notify shouldn't
+  // undo the card refresh that already succeeded.
+  const previouslySeenIds = new Set(member.last_notified_offer_ids ?? [])
+  const newlyAppeared = nearbyOffers.find((o) => !previouslySeenIds.has(o.offer_id))
+  if (newlyAppeared) {
+    await notifyNewOffer(member.google_object_id, newlyAppeared).catch((err) => {
+      console.error('notifyNewOffer failed', { memberId: member.id, offerId: newlyAppeared.offer_id, err })
+    })
+  }
 
   // Log reach: one row per unique (member, offer) ever notified, powering
   // the notified -> redeemed conversion-rate metric on the dashboards.
