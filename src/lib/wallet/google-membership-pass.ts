@@ -3,8 +3,9 @@
  *
  * Replaces the one-pass-per-offer model with a single persistent Generic
  * pass per customer. We PATCH this object whenever nearby offers change,
- * which refreshes the card and can push a lock-screen notification via the
- * `messages` field.
+ * which refreshes the card (patchMembershipObject) and, separately, can
+ * push a lock-screen notification for whichever offer is actually new
+ * (notifyNewOffer, via Google's dedicated addMessage endpoint).
  */
 
 import { GoogleAuth } from 'google-auth-library'
@@ -193,10 +194,16 @@ export async function createMembershipObject(memberId: string, initialOffers: Ne
 }
 
 /**
- * PATCHes an existing pass with a fresh offer list. This is what makes
- * offers "just appear" without the customer reopening anything — Google
- * pushes the card refresh, and the accompanying message can surface as a
- * notification.
+ * PATCHes an existing pass with a fresh offer list — card content only
+ * (title/rows/geofence points). This is what makes the card itself update
+ * without the customer reopening anything. Does NOT trigger a lock-screen
+ * notification on its own; see notifyNewOffer() below for that — they used
+ * to be combined here (a `messages` array on this same PATCH, no
+ * `messageType`), which a real-device test showed updates the card with no
+ * notification ever appearing. Confirmed against Google's docs: a message
+ * only becomes an Android notification with `messageType: TEXT_AND_NOTIFY`,
+ * set on a Message sent through the dedicated addMessage endpoint — not by
+ * embedding an untyped `messages` array in a general object PATCH like this.
  */
 export async function patchMembershipObject(objectId: string, offers: NearbyOffer[]) {
   const authClient = await client()
@@ -211,20 +218,45 @@ export async function patchMembershipObject(objectId: string, offers: NearbyOffe
       // this keeps any object patched going forward from drifting back).
       cardTitle: { defaultValue: { language: 'en', value: 'Jeeran Offers' } },
       textModulesData: offersToTextModules(offers),
-      // Rides the same trigger as textModulesData/messages below (campaign
+      // Rides the same trigger as textModulesData above (campaign
       // activate/deactivate, periodic sweep) — no separate update path.
       // See offersToMerchantLocations() for why this is what actually makes
       // offers "follow" the customer, not home_lat/home_lng.
       merchantLocations: offersToMerchantLocations(offers),
-      messages: offers.length
-        ? [
-            {
-              header: 'New offer nearby',
-              body: `${offers[0].business_name}: ${offers[0].offer_title}`,
-              id: `offer-${offers[0].offer_id}-${Date.now()}`,
-            },
-          ]
-        : [],
+    },
+  })
+}
+
+/**
+ * Fires an actual lock-screen push notification for one genuinely NEW offer,
+ * via Google's dedicated addMessage endpoint (POST .../genericObject/{id}/
+ * addMessage — a separate call from patchMembershipObject's PATCH above).
+ * `messageType: 'TEXT_AND_NOTIFY'` is what makes this show as an Android
+ * notification rather than just card text; see Google's Message reference.
+ *
+ * Caller (refreshMember() in geo-notify.ts) is responsible for picking the
+ * actual newly-appeared offer — this function doesn't infer "new" itself,
+ * so don't just pass offers[0] (the current top-bid offer, which is often
+ * NOT the one that just appeared — that was the previous, wrong behavior).
+ *
+ * Google caps this at 3 notification-triggering messages per object per 24h
+ * (QuotaExceededException past that) — treat failures as best-effort, same
+ * as the rest of the push pipeline; a throttled notify shouldn't undo the
+ * card refresh that already succeeded via patchMembershipObject.
+ */
+export async function notifyNewOffer(objectId: string, offer: NearbyOffer) {
+  const authClient = await client()
+
+  await authClient.request({
+    url: `${BASE_URL}/genericObject/${objectId}/addMessage`,
+    method: 'POST',
+    data: {
+      message: {
+        header: 'New offer nearby',
+        body: `${offer.business_name}: ${offer.offer_title}`,
+        id: `offer-${offer.offer_id}-${Date.now()}`,
+        messageType: 'TEXT_AND_NOTIFY',
+      },
     },
   })
 }
