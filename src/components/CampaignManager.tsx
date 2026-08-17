@@ -22,6 +22,38 @@ function formatDate(date: string) {
   })
 }
 
+// Maps /api/campaigns and /api/campaigns/[id]'s own known error strings to
+// localized copy — those routes return raw English text, so showing
+// `body.error` directly (the previous behavior) meant every specific error
+// stayed English regardless of the dashboard's selected language, even
+// though the fallback generic message was already translated. Anything not
+// in this list (an unexpected 500, a raw Postgres error) falls back to the
+// given translated generic message instead of leaking raw English text.
+function campaignErrorCopyFor(rawError: string, copy: DashboardCopy['campaigns'], fallback: string): string {
+  switch (rawError) {
+    case 'Not authenticated':
+      return copy.errorNotAuthenticated
+    case 'This account is frozen':
+      return copy.errorFrozen
+    case 'No business found for this account':
+      return copy.errorNoBusiness
+    case 'Title is required':
+      return copy.errorTitleRequired
+    case 'bid_per_view must be between 2 and 10':
+      return copy.errorBidRange
+    case 'End date must be on or after the start date':
+      return copy.endDateError
+    case 'You already have an active campaign — deactivate it before creating another.':
+      return copy.errorAlreadyActiveCreate
+    case 'You already have another active campaign — deactivate it first.':
+      return copy.errorAlreadyActiveToggle
+    case 'Campaign not found':
+      return copy.errorCampaignNotFound
+    default:
+      return fallback
+  }
+}
+
 function CampaignFields({
   copy,
   title,
@@ -178,7 +210,7 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
-      setError(body.error || copy.createError)
+      setError(campaignErrorCopyFor(body.error ?? '', copy, copy.createError))
       setSaving(false)
       return
     }
@@ -206,7 +238,7 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
     })
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
-      setToggleError(body.error || copy.toggleError)
+      setToggleError(campaignErrorCopyFor(body.error ?? '', copy, copy.toggleError))
       return
     }
     setCampaigns((prev) => prev.map((c) => (c.id === id ? { ...c, is_active: !current } : c)))
@@ -248,7 +280,7 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
-      setEditError(body.error || copy.toggleError)
+      setEditError(campaignErrorCopyFor(body.error ?? '', copy, copy.toggleError))
       setEditSaving(false)
       return
     }
