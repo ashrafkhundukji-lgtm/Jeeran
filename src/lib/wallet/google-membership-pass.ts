@@ -116,6 +116,43 @@ export interface NearbyOffer {
   offer_title: string
   offer_description: string | null
   distance_km: number
+  business_lat: number
+  business_lng: number
+}
+
+// OS-level geofencing: Google Wallet compares the phone's live GPS against
+// these points itself and surfaces the pass on the lock screen when nearby —
+// no server-side location tracking, no app. This is what actually delivers
+// "offers follow the customer"; home_lat/home_lng (wallet_members) only ever
+// seeds the initial nearby-offers list and the server-side push radius — see
+// the column comments added in
+// supabase/migrations/20260817_nearby_offers_locations.sql.
+//
+// Capped at 10 — Google's documented limit for genericObject.merchantLocations
+// (the field is `merchantLocations`, NOT `locations` — that name belongs to
+// the older, deprecated LatLongPoint mechanism this replaces; verified
+// against a live PATCH, which 400s if you send `locations` here — Google
+// silently drops the unrecognized field rather than erroring on the field
+// name itself, so the failure just shows up as "Patch request was empty").
+// In practice this list is already whatever nearby_active_offers() returned
+// (callers pass p_limit: 5), so the slice is defensive, not the binding
+// constraint; fewer than 10 offers just means fewer location points, which
+// is fine.
+//
+// Apple's .pkpass has the equivalent concept, and there the field genuinely
+// is called `locations` (pass.json, same 10-point cap, resolved by iOS the
+// same on-device way) — see the already-shipped one-off flow's
+// pass.setLocations() call in src/lib/wallet/buildPass.ts for the
+// passkit-generator API shape. No Apple membership-pass builder exists yet
+// (only apple_pass_serial's column, no per-member .pkpass generation code) —
+// when one's built, populate its `locations` from this same NearbyOffer[]
+// the way this file does for Google, rather than re-deriving it from
+// scratch. Don't copy the field name across platforms.
+function offersToMerchantLocations(offers: NearbyOffer[]) {
+  return offers.slice(0, 10).map((o) => ({
+    latitude: o.business_lat,
+    longitude: o.business_lng,
+  }))
 }
 
 /**
@@ -137,6 +174,7 @@ export async function createMembershipObject(memberId: string, initialOffers: Ne
       cardTitle: { defaultValue: { language: 'en', value: 'Jeeran Offers' } },
       header: { defaultValue: { language: 'en', value: 'Nearby deals for you' } },
       textModulesData: offersToTextModules(initialOffers),
+      merchantLocations: offersToMerchantLocations(initialOffers),
       hexBackgroundColor: BRAND_NAVY,
       logo: { sourceUri: { uri: LOGO_URL } },
       heroImage: { sourceUri: { uri: HERO_IMAGE_URL } },
@@ -173,6 +211,11 @@ export async function patchMembershipObject(objectId: string, offers: NearbyOffe
       // this keeps any object patched going forward from drifting back).
       cardTitle: { defaultValue: { language: 'en', value: 'Jeeran Offers' } },
       textModulesData: offersToTextModules(offers),
+      // Rides the same trigger as textModulesData/messages below (campaign
+      // activate/deactivate, periodic sweep) — no separate update path.
+      // See offersToMerchantLocations() for why this is what actually makes
+      // offers "follow" the customer, not home_lat/home_lng.
+      merchantLocations: offersToMerchantLocations(offers),
       messages: offers.length
         ? [
             {
