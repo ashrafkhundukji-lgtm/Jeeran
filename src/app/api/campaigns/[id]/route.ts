@@ -99,11 +99,32 @@ async function handleEdit(
     .from('campaigns')
     .update({ title, description, bid_per_view: bidPerView, start_date: startDate, end_date: endDate })
     .eq('id', id)
-    .select('id')
+    .select('id, is_active, creator_type, creator_id')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data || data.length === 0) {
     return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+  }
+
+  // Same geo-push trigger as handleToggle, same reason: a title/bid/date
+  // edit can change what nearby_active_offers() ranks (bid affects order,
+  // dates affect whether it's in-window) just as much as an activate does.
+  // Only fires for an already-active campaign — an edit to an inactive one
+  // isn't visible to anyone via nearby_active_offers() regardless, so
+  // there's nothing to push. Best-effort, same as handleToggle.
+  const updated = data[0]
+  if (updated.is_active && updated.creator_type === 'business') {
+    const { data: editedBusiness } = await supabase
+      .from('businesses')
+      .select('latitude, longitude')
+      .eq('id', updated.creator_id)
+      .maybeSingle()
+
+    if (editedBusiness?.latitude != null && editedBusiness?.longitude != null) {
+      notifyMembersNearBusiness(editedBusiness.latitude, editedBusiness.longitude).catch((err) => {
+        console.error('notifyMembersNearBusiness failed after campaign edit', { campaignId: id, err })
+      })
+    }
   }
 
   return NextResponse.json({ success: true })
