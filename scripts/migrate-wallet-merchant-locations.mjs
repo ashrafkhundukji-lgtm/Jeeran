@@ -13,9 +13,9 @@
 //   node scripts/migrate-wallet-merchant-locations.mjs
 //
 // Unlike those two, this recomputes nearby_active_offers() and PATCHes
-// unconditionally (not diffed against last_notified_offer_ids) since the
-// point is specifically to backfill a field the diff-based trigger won't
-// touch on its own.
+// unconditionally (not diffed against wallet_members.last_notified_offers)
+// since the point is specifically to backfill a field the diff-based
+// trigger won't touch on its own.
 
 import { readFileSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
