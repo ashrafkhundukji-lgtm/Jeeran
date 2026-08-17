@@ -5,6 +5,7 @@ export interface DashboardCopy {
     dashboard: string
     billing: string
     profile: string
+    redeem: string
     signOut: string
   }
   owner: {
@@ -83,6 +84,26 @@ export interface DashboardCopy {
     error: string
     language: string
   }
+  redeem: {
+    heading: string
+    subtitle: string
+    startScan: string
+    stopScan: string
+    scanning: string
+    cameraUnsupported: string
+    cameraStartFailed: string
+    manualHeading: string
+    manualPlaceholder: string
+    manualSubmit: string
+    checking: string
+    scanAnother: string
+    resultSuccess: string
+    errorNoActiveOffer: string
+    errorAlreadyRedeemed: string
+    errorPassInactive: string
+    errorInvalidBarcode: string
+    errorGeneric: string
+  }
 }
 
 export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
@@ -91,6 +112,7 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       dashboard: 'لوحة التحكم',
       billing: 'الفواتير',
       profile: 'الملف الشخصي',
+      redeem: 'استبدال',
       signOut: 'تسجيل الخروج',
     },
     owner: {
@@ -170,12 +192,33 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       error: 'حدث خطأ ما',
       language: 'اللغة',
     },
+    redeem: {
+      heading: 'استبدال العروض',
+      subtitle: 'امسح رمز QR الخاص بالعميل من محفظته، أو أدخل الرمز يدويًا.',
+      startScan: 'بدء المسح',
+      stopScan: 'إيقاف المسح',
+      scanning: 'جارٍ المسح…',
+      cameraUnsupported: 'متصفحك لا يدعم المسح بالكاميرا. استخدم الإدخال اليدوي أدناه.',
+      cameraStartFailed: 'تعذر تشغيل الكاميرا — تحقق من إذن الوصول للكاميرا، أو استخدم الإدخال اليدوي أدناه.',
+      manualHeading: 'إدخال يدوي',
+      manualPlaceholder: 'الصق أو اكتب رمز الباركود',
+      manualSubmit: 'تحقق',
+      checking: 'جارٍ التحقق…',
+      scanAnother: 'مسح عميل آخر',
+      resultSuccess: 'تم الاستبدال: {title}',
+      errorNoActiveOffer: 'لا يوجد عرض نشط لهذا المحل حاليًا',
+      errorAlreadyRedeemed: 'استبدل هذا العميل هذا العرض من قبل',
+      errorPassInactive: 'لم تعد البطاقة نشطة — ربما أزالها العميل من محفظته',
+      errorInvalidBarcode: 'رمز غير صالح أو تم التلاعب به',
+      errorGeneric: 'تعذر التحقق من الرمز',
+    },
   },
   en: {
     nav: {
       dashboard: 'Dashboard',
       billing: 'Billing',
       profile: 'Profile',
+      redeem: 'Redeem',
       signOut: 'Sign out',
     },
     owner: {
@@ -255,12 +298,33 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       error: 'Something went wrong',
       language: 'Language',
     },
+    redeem: {
+      heading: 'Redeem Offers',
+      subtitle: "Scan the customer's Wallet barcode, or enter the code manually.",
+      startScan: 'Start scanning',
+      stopScan: 'Stop scanning',
+      scanning: 'Scanning…',
+      cameraUnsupported: "Your browser doesn't support camera scanning. Use manual entry below.",
+      cameraStartFailed: 'Could not start the camera — check camera permission, or use manual entry below.',
+      manualHeading: 'Manual entry',
+      manualPlaceholder: 'Paste or type the barcode value',
+      manualSubmit: 'Check',
+      checking: 'Checking…',
+      scanAnother: 'Scan another customer',
+      resultSuccess: 'Redeemed: {title}',
+      errorNoActiveOffer: 'No active offer for this shop right now',
+      errorAlreadyRedeemed: 'This customer already redeemed this offer',
+      errorPassInactive: 'This pass is no longer active — the customer may have removed it from their wallet',
+      errorInvalidBarcode: 'Invalid or tampered barcode',
+      errorGeneric: 'Could not check this code',
+    },
   },
   ur: {
     nav: {
       dashboard: 'ڈیش بورڈ',
       billing: 'بلنگ',
       profile: 'پروفائل',
+      redeem: 'ریڈیم',
       signOut: 'سائن آؤٹ',
     },
     owner: {
@@ -339,6 +403,26 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       saved: 'محفوظ ہو گیا۔',
       error: 'کچھ غلط ہو گیا',
       language: 'زبان',
+    },
+    redeem: {
+      heading: 'آفرز ریڈیم کریں',
+      subtitle: 'کسٹمر کے والٹ بارکوڈ کو اسکین کریں، یا کوڈ خود ٹائپ کریں۔',
+      startScan: 'اسکین شروع کریں',
+      stopScan: 'اسکین روکیں',
+      scanning: 'اسکین ہو رہا ہے…',
+      cameraUnsupported: 'آپ کا براؤزر کیمرہ اسکیننگ سپورٹ نہیں کرتا۔ نیچے دیا گیا مینوئل انٹری استعمال کریں۔',
+      cameraStartFailed: 'کیمرہ شروع نہیں ہو سکا — کیمرہ کی اجازت چیک کریں، یا نیچے مینوئل انٹری استعمال کریں۔',
+      manualHeading: 'مینوئل انٹری',
+      manualPlaceholder: 'بارکوڈ ویلیو پیسٹ یا ٹائپ کریں',
+      manualSubmit: 'چیک کریں',
+      checking: 'چیک ہو رہا ہے…',
+      scanAnother: 'دوسرا کسٹمر اسکین کریں',
+      resultSuccess: 'ریڈیم ہو گیا: {title}',
+      errorNoActiveOffer: 'اس دکان کے لیے فی الحال کوئی فعال آفر نہیں',
+      errorAlreadyRedeemed: 'اس کسٹمر نے یہ آفر پہلے ہی ریڈیم کر لیا ہے',
+      errorPassInactive: 'یہ پاس اب فعال نہیں ہے — ہو سکتا ہے کسٹمر نے اسے والٹ سے ہٹا دیا ہو',
+      errorInvalidBarcode: 'غلط یا چھیڑ چھاڑ شدہ بارکوڈ',
+      errorGeneric: 'اس کوڈ کو چیک نہیں کیا جا سکا',
     },
   },
 }

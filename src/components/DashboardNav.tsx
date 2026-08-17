@@ -15,6 +15,7 @@ export default function DashboardNav() {
 
   const navLinks = [
     { href: '/dashboard/owner', label: copy.nav.dashboard },
+    { href: '/dashboard/redeem', label: copy.nav.redeem },
     { href: '/dashboard/billing', label: copy.nav.billing },
     { href: '/dashboard/profile', label: copy.nav.profile },
   ]
