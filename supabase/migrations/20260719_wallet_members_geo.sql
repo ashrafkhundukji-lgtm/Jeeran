@@ -40,7 +40,16 @@ create table if not exists wallet_members (
   origin_business_id uuid references businesses(id),
 
   -- "home" location captured at save-time (browser geolocation or host-shop
-  -- fallback). This is what proximity pushes are computed against.
+  -- fallback). Originally this was what ongoing proximity relevance was
+  -- computed against — no longer true. As of
+  -- supabase/migrations/20260817_nearby_offers_locations.sql, it's just the
+  -- seed for the initial nearby-offers list plus the radius used by
+  -- server-side pushes (event-driven + periodic sweep); actual "follows the
+  -- customer" relevance is delivered by the Wallet object's own `locations`
+  -- field (OS-level geofencing), not by re-checking this column against
+  -- where the customer currently is. See that migration's column comment
+  -- (`comment on column wallet_members.home_lat`) for the authoritative
+  -- version of this note.
   home_lat double precision not null,
   home_lng double precision not null,
   home_geog geography(Point, 4326) generated always as (

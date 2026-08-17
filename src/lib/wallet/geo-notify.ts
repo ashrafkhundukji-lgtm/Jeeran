@@ -23,6 +23,11 @@ import { patchMembershipObject, type NearbyOffer } from './google-membership-pas
 interface WalletMember {
   id: string
   google_object_id: string | null
+  // Signup-time seed + server-side push radius only — NOT the customer's
+  // live position. The Wallet object's own `locations` field (set in
+  // patchMembershipObject, see google-membership-pass.ts) is what delivers
+  // ongoing "follows the customer" relevance now, via on-device OS
+  // geofencing. See the column comment on wallet_members.home_lat.
   home_lat: number
   home_lng: number
   push_radius_km: number

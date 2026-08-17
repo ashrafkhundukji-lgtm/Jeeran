@@ -116,7 +116,11 @@ export async function POST(req: NextRequest) {
 
   // First-time member: resolve a home location. Prefer the browser-supplied
   // lat/lng (geolocation permission granted); fall back to the scanned
-  // shop's own coordinates if the customer declined the prompt.
+  // shop's own coordinates if the customer declined the prompt. This is a
+  // one-time seed, not a live-tracked position — see the wallet_members.
+  // home_lat column comment (supabase/migrations/20260817_nearby_offers_locations.sql)
+  // for what it does and doesn't drive now that the Wallet object's own
+  // `locations` field handles ongoing "follows the customer" relevance.
   let homeLat = lat
   let homeLng = lng
   if (homeLat == null || homeLng == null) {
