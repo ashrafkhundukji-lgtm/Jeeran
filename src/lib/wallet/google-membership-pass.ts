@@ -119,6 +119,12 @@ export interface NearbyOffer {
   distance_km: number
   business_lat: number
   business_lng: number
+  // Campaign row's updated_at (auto-maintained by a Postgres trigger — see
+  // supabase/migrations/20260817b_offer_content_versioning.sql). Lets
+  // refreshMember() (geo-notify.ts) detect a same-offer content edit
+  // (title/description/bid too small to reorder) as "changed," which a
+  // plain offer_id-set diff can't see.
+  offer_updated_at: string
 }
 
 // OS-level geofencing: Google Wallet compares the phone's live GPS against
