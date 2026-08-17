@@ -45,6 +45,14 @@ export interface DashboardCopy {
     noStartDate: string
     noEndDate: string
     toggleError: string
+    errorNotAuthenticated: string
+    errorFrozen: string
+    errorNoBusiness: string
+    errorTitleRequired: string
+    errorBidRange: string
+    errorAlreadyActiveCreate: string
+    errorAlreadyActiveToggle: string
+    errorCampaignNotFound: string
   }
   billing: {
     heading: string
@@ -65,6 +73,8 @@ export interface DashboardCopy {
     subscriptionRenewed: string
     adClaimed: string
     campaignFallback: string
+    errorNotAuthenticated: string
+    errorNoBusiness: string
   }
   profile: {
     heading: string
@@ -83,6 +93,10 @@ export interface DashboardCopy {
     saved: string
     error: string
     language: string
+    errorNotAuthenticated: string
+    errorNoBusiness: string
+    errorNameRequired: string
+    errorBusinessRequired: string
   }
   redeem: {
     heading: string
@@ -153,6 +167,14 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       noStartDate: 'بدون تاريخ بدء',
       noEndDate: 'بدون تاريخ انتهاء',
       toggleError: 'تعذر تحديث الحملة',
+      errorNotAuthenticated: 'يجب تسجيل الدخول',
+      errorFrozen: 'هذا الحساب مجمّد',
+      errorNoBusiness: 'لم يتم العثور على محل مرتبط بهذا الحساب',
+      errorTitleRequired: 'العنوان مطلوب',
+      errorBidRange: 'يجب أن يكون السعر لكل مشاهدة بين 2 و10',
+      errorAlreadyActiveCreate: 'لديك حملة نشطة بالفعل — أوقفها قبل إنشاء حملة جديدة.',
+      errorAlreadyActiveToggle: 'لديك حملة نشطة أخرى بالفعل — أوقفها أولًا.',
+      errorCampaignNotFound: 'الحملة غير موجودة',
     },
     billing: {
       heading: 'الفواتير',
@@ -173,6 +195,8 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       subscriptionRenewed: 'تم تجديد الاشتراك',
       adClaimed: 'تم استبدال إعلان: {title}',
       campaignFallback: 'حملة',
+      errorNotAuthenticated: 'يجب تسجيل الدخول',
+      errorNoBusiness: 'لم يتم العثور على حساب محل مرتبط بهذا المستخدم',
     },
     profile: {
       heading: 'الملف الشخصي',
@@ -191,6 +215,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       saved: 'تم الحفظ.',
       error: 'حدث خطأ ما',
       language: 'اللغة',
+      errorNotAuthenticated: 'يجب تسجيل الدخول',
+      errorNoBusiness: 'لم يتم العثور على محل مرتبط بهذا الحساب',
+      errorNameRequired: 'الاسم مطلوب',
+      errorBusinessRequired: 'اسم المحل والفئة مطلوبان',
     },
     redeem: {
       heading: 'استبدال العروض',
@@ -259,6 +287,14 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       noStartDate: 'No start date',
       noEndDate: 'No end date',
       toggleError: 'Could not update campaign',
+      errorNotAuthenticated: 'You must be signed in',
+      errorFrozen: 'This account is frozen',
+      errorNoBusiness: 'No business found for this account',
+      errorTitleRequired: 'Title is required',
+      errorBidRange: 'Bid per view must be between 2 and 10',
+      errorAlreadyActiveCreate: 'You already have an active campaign — deactivate it before creating another.',
+      errorAlreadyActiveToggle: 'You already have another active campaign — deactivate it first.',
+      errorCampaignNotFound: 'Campaign not found',
     },
     billing: {
       heading: 'Billing',
@@ -279,6 +315,8 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       subscriptionRenewed: 'Subscription renewed',
       adClaimed: 'Ad claimed: {title}',
       campaignFallback: 'campaign',
+      errorNotAuthenticated: 'You must be signed in',
+      errorNoBusiness: 'No business account found for this user',
     },
     profile: {
       heading: 'Profile',
@@ -297,6 +335,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       saved: 'Saved.',
       error: 'Something went wrong',
       language: 'Language',
+      errorNotAuthenticated: 'You must be signed in',
+      errorNoBusiness: 'No business found for this account',
+      errorNameRequired: 'Name is required',
+      errorBusinessRequired: 'Business name and category are required',
     },
     redeem: {
       heading: 'Redeem Offers',
@@ -365,6 +407,14 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       noStartDate: 'شروع کی تاریخ نہیں',
       noEndDate: 'اختتامی تاریخ نہیں',
       toggleError: 'کیمپین اپ ڈیٹ نہیں ہو سکا',
+      errorNotAuthenticated: 'آپ کو سائن ان ہونا ضروری ہے',
+      errorFrozen: 'یہ اکاؤنٹ منجمد ہے',
+      errorNoBusiness: 'اس اکاؤنٹ کے لیے کوئی دکان نہیں ملی',
+      errorTitleRequired: 'عنوان ضروری ہے',
+      errorBidRange: 'فی ویو بولی 2 اور 10 کے درمیان ہونی چاہیے',
+      errorAlreadyActiveCreate: 'آپ کے پاس پہلے سے ایک فعال کیمپین ہے — نیا بنانے سے پہلے اسے غیر فعال کریں۔',
+      errorAlreadyActiveToggle: 'آپ کے پاس پہلے سے ایک اور فعال کیمپین ہے — پہلے اسے غیر فعال کریں۔',
+      errorCampaignNotFound: 'کیمپین نہیں ملا',
     },
     billing: {
       heading: 'بلنگ',
@@ -385,6 +435,8 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       subscriptionRenewed: 'سبسکرپشن تجدید ہوئی',
       adClaimed: 'اشتہار کلیم ہوا: {title}',
       campaignFallback: 'کیمپین',
+      errorNotAuthenticated: 'آپ کو سائن ان ہونا ضروری ہے',
+      errorNoBusiness: 'اس صارف کے لیے کوئی دکان اکاؤنٹ نہیں ملا',
     },
     profile: {
       heading: 'پروفائل',
@@ -403,6 +455,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       saved: 'محفوظ ہو گیا۔',
       error: 'کچھ غلط ہو گیا',
       language: 'زبان',
+      errorNotAuthenticated: 'آپ کو سائن ان ہونا ضروری ہے',
+      errorNoBusiness: 'اس اکاؤنٹ کے لیے کوئی دکان نہیں ملی',
+      errorNameRequired: 'نام ضروری ہے',
+      errorBusinessRequired: 'دکان کا نام اور کیٹگری ضروری ہیں',
     },
     redeem: {
       heading: 'آفرز ریڈیم کریں',

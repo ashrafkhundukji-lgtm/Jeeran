@@ -5,8 +5,26 @@ import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { CATEGORIES, CATEGORY_LABELS } from '@/lib/categories'
 import { useLocale } from '@/lib/i18n/useLocale'
-import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
+import { DASHBOARD_COPY, type DashboardCopy } from '@/lib/i18n/dashboard'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+
+// Maps /api/profile's own known error strings to localized copy — same
+// reasoning as CampaignManager's campaignErrorCopyFor. Anything not listed
+// here (an unexpected 500, a raw Postgres error) falls back to copy.error.
+function profileErrorCopyFor(rawError: string, copy: DashboardCopy['profile']): string {
+  switch (rawError) {
+    case 'Not authenticated':
+      return copy.errorNotAuthenticated
+    case 'No business found for this account':
+      return copy.errorNoBusiness
+    case 'Name is required':
+      return copy.errorNameRequired
+    case 'Business name and category are required':
+      return copy.errorBusinessRequired
+    default:
+      return copy.error
+  }
+}
 
 // Leaflet touches window/document at import time — must never run during SSR.
 const LocationPicker = dynamic(() => import('@/components/LocationPicker'), {
@@ -74,7 +92,7 @@ export default function ProfileForm({
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
-      setError(body.error || copy.error)
+      setError(profileErrorCopyFor(body.error ?? '', copy))
       setLoading(false)
       return
     }

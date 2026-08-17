@@ -3,7 +3,25 @@
 import { useState } from 'react'
 import type { CatalogEntry } from '@/lib/billing/catalog'
 import { useLocale } from '@/lib/i18n/useLocale'
-import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
+import { DASHBOARD_COPY, type DashboardCopy } from '@/lib/i18n/dashboard'
+
+// Maps /api/billing/checkout's own known error strings to localized copy —
+// same reasoning as CampaignManager's campaignErrorCopyFor: the route
+// returns raw English text, so showing body.error directly stayed English
+// regardless of the dashboard's selected language. Anything not listed here
+// (an unexpected 500, a raw Stripe error) falls back to copy.checkoutError.
+function billingErrorCopyFor(rawError: string, copy: DashboardCopy['billing']): string {
+  switch (rawError) {
+    case 'Not authenticated':
+      return copy.errorNotAuthenticated
+    case 'No business account found for this user':
+      return copy.errorNoBusiness
+    case 'Billing is not configured':
+      return copy.notConfigured
+    default:
+      return copy.checkoutError
+  }
+}
 
 export default function BillingActions({
   catalog,
@@ -30,7 +48,7 @@ export default function BillingActions({
     const body = await res.json().catch(() => ({}))
 
     if (!res.ok) {
-      setError(body.error || copy.checkoutError)
+      setError(billingErrorCopyFor(body.error ?? '', copy))
       setLoadingKey(null)
       return
     }
