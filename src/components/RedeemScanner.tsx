@@ -1,14 +1,20 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import jsQR from 'jsqr'
 import DashboardNav from '@/components/DashboardNav'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir } from '@/lib/i18n/locale'
 import { DASHBOARD_COPY, type DashboardCopy } from '@/lib/i18n/dashboard'
 
 // BarcodeDetector isn't in TS's default DOM lib (still an experimental Web
-// API, unsupported in Safari/iOS — see the manual-entry fallback below,
-// which exists specifically because of that gap, not as a lesser backup).
+// API). Used when present (cheaper — decodes off the video element
+// directly), but it's an optimization now, not a hard requirement: when
+// it's missing (Safari/iOS has no BarcodeDetector at all) the scan loop
+// below falls back to grabbing video frames onto a canvas and decoding them
+// with jsQR instead. getUserMedia — which Safari DOES support — is the only
+// real gate on whether camera scanning is offered at all; manual entry
+// remains available unconditionally either way.
 interface DetectedBarcode {
   rawValue: string
 }
@@ -60,9 +66,10 @@ export default function RedeemScanner() {
   const [cameraError, setCameraError] = useState('')
 
   const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null) // off-screen — only used to grab frames for the jsQR fallback path, never rendered
 
   useEffect(() => {
-    setCameraSupported(typeof window !== 'undefined' && 'BarcodeDetector' in window)
+    setCameraSupported(typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia)
   }, [])
 
   // Camera scan loop — only runs while `scanning` is true, torn down on
@@ -70,7 +77,7 @@ export default function RedeemScanner() {
   // camera stream and detection loop never outlive the page.
   useEffect(() => {
     if (!scanning) return
-    if (typeof window === 'undefined' || !window.BarcodeDetector) return
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return
 
     let stream: MediaStream | null = null
     let rafId = 0
@@ -84,19 +91,36 @@ export default function RedeemScanner() {
         video.srcObject = stream
         await video.play()
 
-        const detector = new window.BarcodeDetector!({ formats: ['qr_code'] })
+        const detector = window.BarcodeDetector ? new window.BarcodeDetector({ formats: ['qr_code'] }) : null
+        const canvas = canvasRef.current
+        const ctx = canvas?.getContext('2d', { willReadFrequently: true }) ?? null
 
         const tick = async () => {
           if (stopped || !videoRef.current) return
           try {
-            const codes = await detector.detect(videoRef.current)
-            if (codes.length > 0 && !stopped) {
+            let rawValue: string | null = null
+
+            if (detector) {
+              const codes = await detector.detect(videoRef.current)
+              rawValue = codes[0]?.rawValue ?? null
+            } else if (canvas && ctx && video.videoWidth > 0) {
+              // Safari/iOS path: no BarcodeDetector, so decode a captured
+              // frame ourselves. Sized to the video's actual resolution each
+              // tick since it can change after the stream starts.
+              canvas.width = video.videoWidth
+              canvas.height = video.videoHeight
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+              const frame = ctx.getImageData(0, 0, canvas.width, canvas.height)
+              rawValue = jsQR(frame.data, frame.width, frame.height, { inversionAttempts: 'dontInvert' })?.data ?? null
+            }
+
+            if (rawValue && !stopped) {
               stopped = true
-              handleDecoded(codes[0].rawValue)
+              handleDecoded(rawValue)
               return
             }
           } catch {
-            // Transient per-frame detect failures (e.g. a frame mid-decode) —
+            // Transient per-frame decode failures (e.g. a frame mid-decode) —
             // just keep looping rather than surfacing every one.
           }
           rafId = requestAnimationFrame(tick)
@@ -185,15 +209,18 @@ export default function RedeemScanner() {
         </div>
       ) : (
         <>
-          {/* Camera scan — primary method, only rendered where BarcodeDetector
-              actually exists. cameraSupported starts null (checked post-mount,
-              same reason useLocale reads localStorage post-mount) so we don't
-              flash the unsupported message before the check runs. */}
+          {/* Camera scan — primary method. Rendered whenever getUserMedia
+              exists (Safari included); BarcodeDetector vs. jsQR is chosen
+              internally in the scan loop above. cameraSupported starts null
+              (checked post-mount, same reason useLocale reads localStorage
+              post-mount) so we don't flash the unsupported message before
+              the check runs. */}
           {cameraSupported && (
             <div className="mb-6">
               {scanning ? (
                 <div className="relative rounded-xl overflow-hidden bg-black aspect-square">
                   <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+                  <canvas ref={canvasRef} className="hidden" />
                   <div className="absolute inset-0 border-4 border-white/40 m-8 rounded-lg pointer-events-none" />
                   {checking && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-sm">
@@ -228,9 +255,9 @@ export default function RedeemScanner() {
           )}
 
           {/* Manual entry — always available, not just when the camera is
-              unsupported. Required so Safari/iOS shops (no BarcodeDetector)
-              aren't locked out, and as a fallback for bad lighting/damaged
-              cameras even where the camera path works. */}
+              unsupported. Needed for the rare browser with no camera API at
+              all, and as a fallback for bad lighting/damaged cameras even
+              where camera scanning works. */}
           <form onSubmit={handleManualSubmit} className="border border-neutral-200 rounded-xl p-4">
             <p className="text-sm font-medium mb-2">{copy.manualHeading}</p>
             <div className="flex gap-2">
