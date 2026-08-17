@@ -24,6 +24,27 @@ const BRAND_NAVY = '#1E3A8A'
 const LOGO_URL = 'https://jeeran.vercel.app/wallet-logo-square.png'
 const HERO_IMAGE_URL = 'https://jeeran.vercel.app/wallet-hero-banner.png'
 
+// Google Wallet's LocalizedString type (used by cardTitle, header, and
+// Message.localizedHeader/localizedBody) carries a defaultValue PLUS a
+// translatedValues[] array — the Wallet app auto-picks whichever entry
+// matches the viewer's own device/Google account language and falls back to
+// defaultValue otherwise. This is resolved entirely client-side by Google;
+// we don't need to know (and don't store) each customer's language — see
+// https://developers.google.com/wallet/reference/rest/v1/LocalizedString.
+// Only covers the fixed chrome text below (card title, section header,
+// notification header) — offer titles/descriptions/business names are
+// whatever a shop owner typed into the dashboard in whatever language they
+// used, which this app has no mechanism to translate.
+function localizedString(en: string, ar: string, ur: string) {
+  return {
+    defaultValue: { language: 'en', value: en },
+    translatedValues: [
+      { language: 'ar', value: ar },
+      { language: 'ur', value: ur },
+    ],
+  }
+}
+
 function classId(): string {
   const { issuerId } = loadGoogleWalletCredentials()
   return `${issuerId}.${CLASS_SUFFIX}`
@@ -178,8 +199,8 @@ export async function createMembershipObject(memberId: string, initialOffers: Ne
       id: objectId,
       classId: classId(),
       state: 'ACTIVE',
-      cardTitle: { defaultValue: { language: 'en', value: 'Jeeran Offers' } },
-      header: { defaultValue: { language: 'en', value: 'Nearby deals for you' } },
+      cardTitle: localizedString('Jeeran Offers', 'عروض جيران', 'جیران آفرز'),
+      header: localizedString('Nearby deals for you', 'عروض قريبة منك', 'آپ کے قریب آفرز'),
       textModulesData: offersToTextModules(initialOffers),
       merchantLocations: offersToMerchantLocations(initialOffers),
       hexBackgroundColor: BRAND_NAVY,
@@ -222,7 +243,12 @@ export async function patchMembershipObject(objectId: string, offers: NearbyOffe
       // was correct (e.g. the pre-launch "[TEST ONLY] Jeeran Offers" objects —
       // see scripts/migrate-wallet-card-title.mjs for the one-time bulk fix;
       // this keeps any object patched going forward from drifting back).
-      cardTitle: { defaultValue: { language: 'en', value: 'Jeeran Offers' } },
+      // Also re-sends header for the same reason: objects created before
+      // localizedString() existed only ever got the English-only
+      // defaultValue, with no translatedValues — resending it here backfills
+      // ar/ur for those on their next refresh instead of leaving them stuck.
+      cardTitle: localizedString('Jeeran Offers', 'عروض جيران', 'جیران آفرز'),
+      header: localizedString('Nearby deals for you', 'عروض قريبة منك', 'آپ کے قریب آفرز'),
       textModulesData: offersToTextModules(offers),
       // Rides the same trigger as textModulesData above (campaign
       // activate/deactivate, periodic sweep) — no separate update path.
@@ -249,6 +275,13 @@ export async function patchMembershipObject(objectId: string, offers: NearbyOffe
  * (QuotaExceededException past that) — treat failures as best-effort, same
  * as the rest of the push pipeline; a throttled notify shouldn't undo the
  * card refresh that already succeeded via patchMembershipObject.
+ *
+ * header is localized (see localizedString()) since "New offer nearby" is
+ * fixed chrome text; body isn't — it's the shop's own business_name/
+ * offer_title, in whatever language they typed, which we have no
+ * translation for. Keeping the plain `header` alongside `localizedHeader`
+ * since Google's docs don't say whether localizedHeader alone is sufficient
+ * or the plain field is still read as a fallback by some clients.
  */
 export async function notifyNewOffer(objectId: string, offer: NearbyOffer) {
   const authClient = await client()
@@ -259,6 +292,7 @@ export async function notifyNewOffer(objectId: string, offer: NearbyOffer) {
     data: {
       message: {
         header: 'New offer nearby',
+        localizedHeader: localizedString('New offer nearby', 'عرض جديد بالقرب منك', 'قریب نیا آفر'),
         body: `${offer.business_name}: ${offer.offer_title}`,
         id: `offer-${offer.offer_id}-${Date.now()}`,
         messageType: 'TEXT_AND_NOTIFY',
