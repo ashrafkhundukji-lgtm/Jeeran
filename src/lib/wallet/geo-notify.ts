@@ -6,12 +6,15 @@
  *  1. Event-driven — call notifyMembersNearBusiness() right when a campaign
  *     goes live (wired into src/app/api/campaigns/route.ts and
  *     src/app/api/campaigns/[id]/route.ts).
- *  2. Periodic sweep — call refreshAllMembers() on a schedule (Supabase
- *     Edge Function cron, or a Vercel cron hitting an API route) e.g. every
- *     6 hours, to catch offers that changed bid/expired since last push.
+ *  2. Periodic sweep — call refreshAllMembers() on a schedule, to catch
+ *     offers that changed bid/expired since last push. Wired up as
+ *     src/app/api/cron/wallet-refresh/route.ts, daily (see vercel.json) —
+ *     Vercel Hobby plan caps Cron Jobs at once/day, otherwise this would run
+ *     more often (every few hours) since (1) alone won't catch everything
+ *     (e.g. an offer's end_date lapsing with no activate/deactivate event).
  *
  * Both call the same per-member patch, so start with (1) — it's cheaper —
- * and add (2) once you see how often (1) alone leaves members stale.
+ * and (2) is the safety net for what (1) can't see.
  */
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
