@@ -128,6 +128,10 @@ export interface DashboardCopy {
     loading: string
     you: string
   }
+  milestone: {
+    reached: string
+    dismiss: string
+  }
 }
 
 export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
@@ -260,6 +264,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       loading: 'جارٍ التحميل…',
       you: 'أنت',
     },
+    milestone: {
+      reached: 'وصلت إلى مستوى {tier}! تم منحك {n} نقاط إعلانية.',
+      dismiss: 'حسنًا',
+    },
   },
   en: {
     nav: {
@@ -390,6 +398,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       loading: 'Loading…',
       you: 'You',
     },
+    milestone: {
+      reached: "You've reached {tier}! +{n} ad credits awarded.",
+      dismiss: 'Got it',
+    },
   },
   ur: {
     nav: {
@@ -519,6 +531,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       empty: 'اس مدت میں ابھی تک کوئی نیا کسٹمر نہیں۔',
       loading: 'لوڈ ہو رہا ہے…',
       you: 'آپ',
+    },
+    milestone: {
+      reached: 'آپ {tier} سطح پر پہنچ گئے! آپ کو {n} اشتہاری کریڈٹس ملے۔',
+      dismiss: 'ٹھیک ہے',
     },
   },
 }

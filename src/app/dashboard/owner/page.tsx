@@ -51,6 +51,8 @@ export default async function OwnerDashboardPage() {
       campaigns={campaigns ?? []}
       promotionScore={promotionLevel.score}
       promotionLevel={promotionLevel.level}
+      unseenMilestoneTier={business.unseen_milestone_tier}
+      unseenMilestoneBonus={business.unseen_milestone_bonus}
     />
   )
 }

@@ -12,6 +12,14 @@ export interface PromotionThresholds {
   goldThreshold: number
   platinumThreshold: number
   bidTiebreakRange: number
+  // One-time milestone bonus paid the moment a business first crosses into
+  // each tier (Phase 4, item 9) — same table Phase 3 already made
+  // admin-editable, reusing /api/admin/settings rather than a second
+  // config surface. See check_and_award_milestone_bonus()
+  // (20260818e_milestone_bonus.sql).
+  silverMilestoneBonus: number
+  goldMilestoneBonus: number
+  platinumMilestoneBonus: number
 }
 
 interface PromotionSettingsRow {
@@ -19,6 +27,9 @@ interface PromotionSettingsRow {
   gold_threshold: number
   platinum_threshold: number
   bid_tiebreak_range: number
+  silver_milestone_bonus: number
+  gold_milestone_bonus: number
+  platinum_milestone_bonus: number
 }
 
 // Single shared config source — read by promotion_level_for_score() in
@@ -36,6 +47,9 @@ export async function getPromotionThresholds(): Promise<PromotionThresholds> {
     goldThreshold: row.gold_threshold,
     platinumThreshold: row.platinum_threshold,
     bidTiebreakRange: row.bid_tiebreak_range,
+    silverMilestoneBonus: row.silver_milestone_bonus,
+    goldMilestoneBonus: row.gold_milestone_bonus,
+    platinumMilestoneBonus: row.platinum_milestone_bonus,
   }
 }
 
@@ -47,6 +61,9 @@ export async function updatePromotionThresholds(thresholds: PromotionThresholds)
       gold_threshold: thresholds.goldThreshold,
       platinum_threshold: thresholds.platinumThreshold,
       bid_tiebreak_range: thresholds.bidTiebreakRange,
+      silver_milestone_bonus: thresholds.silverMilestoneBonus,
+      gold_milestone_bonus: thresholds.goldMilestoneBonus,
+      platinum_milestone_bonus: thresholds.platinumMilestoneBonus,
       updated_at: new Date().toISOString(),
     })
     .eq('id', true)
