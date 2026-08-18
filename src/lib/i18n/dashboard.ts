@@ -118,6 +118,16 @@ export interface DashboardCopy {
     errorInvalidBarcode: string
     errorGeneric: string
   }
+  leaderboard: {
+    heading: string
+    subtitle: string
+    weekTab: string
+    monthTab: string
+    newCustomers: string
+    empty: string
+    loading: string
+    you: string
+  }
 }
 
 export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
@@ -240,6 +250,16 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       errorInvalidBarcode: 'رمز غير صالح أو تم التلاعب به',
       errorGeneric: 'تعذر التحقق من الرمز',
     },
+    leaderboard: {
+      heading: 'المحلات الأكثر نشاطًا',
+      subtitle: 'مرتبة حسب عملاء جدد حقيقيين فقط — لا يُحتسب عملاء العودة.',
+      weekTab: 'هذا الأسبوع',
+      monthTab: 'هذا الشهر',
+      newCustomers: '{n} عميل جديد',
+      empty: 'لا يوجد عملاء جدد بعد في هذه الفترة.',
+      loading: 'جارٍ التحميل…',
+      you: 'أنت',
+    },
   },
   en: {
     nav: {
@@ -360,6 +380,16 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       errorInvalidBarcode: 'Invalid or tampered barcode',
       errorGeneric: 'Could not check this code',
     },
+    leaderboard: {
+      heading: 'Most Active Shops',
+      subtitle: 'Ranked by genuine new customers only — repeat visits don’t count.',
+      weekTab: 'This week',
+      monthTab: 'This month',
+      newCustomers: '{n} new customers',
+      empty: 'No new customers yet this period.',
+      loading: 'Loading…',
+      you: 'You',
+    },
   },
   ur: {
     nav: {
@@ -479,6 +509,16 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       errorPassInactive: 'یہ پاس اب فعال نہیں ہے — ہو سکتا ہے کسٹمر نے اسے والٹ سے ہٹا دیا ہو',
       errorInvalidBarcode: 'غلط یا چھیڑ چھاڑ شدہ بارکوڈ',
       errorGeneric: 'اس کوڈ کو چیک نہیں کیا جا سکا',
+    },
+    leaderboard: {
+      heading: 'سب سے زیادہ فعال دکانیں',
+      subtitle: 'صرف حقیقی نئے کسٹمرز کی بنیاد پر ترتیب دی گئی — دوبارہ آنے والے شمار نہیں ہوتے۔',
+      weekTab: 'اس ہفتے',
+      monthTab: 'اس مہینے',
+      newCustomers: '{n} نئے کسٹمرز',
+      empty: 'اس مدت میں ابھی تک کوئی نیا کسٹمر نہیں۔',
+      loading: 'لوڈ ہو رہا ہے…',
+      you: 'آپ',
     },
   },
 }
