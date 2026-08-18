@@ -8,6 +8,9 @@ export default function PromotionSettingsForm({ initialThresholds }: { initialTh
   const [goldThreshold, setGoldThreshold] = useState(initialThresholds.goldThreshold)
   const [platinumThreshold, setPlatinumThreshold] = useState(initialThresholds.platinumThreshold)
   const [bidTiebreakRange, setBidTiebreakRange] = useState(initialThresholds.bidTiebreakRange)
+  const [silverMilestoneBonus, setSilverMilestoneBonus] = useState(initialThresholds.silverMilestoneBonus)
+  const [goldMilestoneBonus, setGoldMilestoneBonus] = useState(initialThresholds.goldMilestoneBonus)
+  const [platinumMilestoneBonus, setPlatinumMilestoneBonus] = useState(initialThresholds.platinumMilestoneBonus)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -21,7 +24,15 @@ export default function PromotionSettingsForm({ initialThresholds }: { initialTh
     const res = await fetch('/api/admin/settings', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ silverThreshold, goldThreshold, platinumThreshold, bidTiebreakRange }),
+      body: JSON.stringify({
+        silverThreshold,
+        goldThreshold,
+        platinumThreshold,
+        bidTiebreakRange,
+        silverMilestoneBonus,
+        goldMilestoneBonus,
+        platinumMilestoneBonus,
+      }),
     })
     const body = await res.json().catch(() => ({}))
 
@@ -87,6 +98,45 @@ export default function PromotionSettingsForm({ initialThresholds }: { initialTh
           Bids within this many credits of each other are treated as a contested slot — tier
           decides who ranks first among them, instead of bid alone.
         </p>
+      </div>
+
+      <div className="pt-2 border-t border-neutral-200">
+        <p className="text-xs font-semibold text-[#5a5a5a] mb-3">One-time milestone bonus, paid on first crossing into each tier</p>
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className={labelClass}>Silver milestone bonus (credits)</label>
+            <input
+              type="number"
+              min={1}
+              required
+              className={inputClass}
+              value={silverMilestoneBonus}
+              onChange={(e) => setSilverMilestoneBonus(Number(e.target.value))}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Gold milestone bonus (credits)</label>
+            <input
+              type="number"
+              min={1}
+              required
+              className={inputClass}
+              value={goldMilestoneBonus}
+              onChange={(e) => setGoldMilestoneBonus(Number(e.target.value))}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Platinum milestone bonus (credits)</label>
+            <input
+              type="number"
+              min={1}
+              required
+              className={inputClass}
+              value={platinumMilestoneBonus}
+              onChange={(e) => setPlatinumMilestoneBonus(Number(e.target.value))}
+            />
+          </div>
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

@@ -5,6 +5,7 @@ import CampaignManager from '@/components/CampaignManager'
 import SubscriptionBanner from '@/components/SubscriptionBanner'
 import LevelBadge from '@/components/LevelBadge'
 import NewCustomerLeaderboard from '@/components/NewCustomerLeaderboard'
+import MilestoneAnnouncement from '@/components/MilestoneAnnouncement'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir } from '@/lib/i18n/locale'
 import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
@@ -31,6 +32,8 @@ export default function OwnerDashboardView({
   campaigns,
   promotionScore,
   promotionLevel,
+  unseenMilestoneTier,
+  unseenMilestoneBonus,
 }: {
   businessId: string
   businessName: string
@@ -42,6 +45,8 @@ export default function OwnerDashboardView({
   campaigns: Campaign[]
   promotionScore: number
   promotionLevel: PromotionLevel
+  unseenMilestoneTier: string | null
+  unseenMilestoneBonus: number | null
 }) {
   const [locale] = useLocale()
   const dir = getDir(locale)
@@ -50,6 +55,10 @@ export default function OwnerDashboardView({
   return (
     <main dir={dir} className="max-w-3xl mx-auto px-4 py-10">
       <DashboardNav />
+
+      {unseenMilestoneTier && unseenMilestoneBonus != null && (
+        <MilestoneAnnouncement tier={unseenMilestoneTier as PromotionLevel} bonus={unseenMilestoneBonus} />
+      )}
 
       <div className="mb-6">
         <h1 className="text-xl font-semibold">{businessName}</h1>

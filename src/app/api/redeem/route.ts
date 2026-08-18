@@ -139,6 +139,23 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // Promotion-tier milestone bonus (Phase 4, item 9): this business's score
+  // is total redemptions earned as an advertiser — the redemptions row just
+  // inserted above is exactly a score-driving event, so this is where a
+  // tier crossing would happen. check_and_award_milestone_bonus() is
+  // idempotent (guarded by businesses.last_milestone_tier, same role
+  // wallet_members.signup_bonus_paid plays for the signup bonus) and
+  // race-safe (FOR UPDATE-locks the business row), so calling it here on
+  // every redemption is cheap and safe even though most calls find nothing
+  // to award. Best-effort, same as the ad-credit transfer above — a failed
+  // check shouldn't fail the customer's redemption.
+  const { error: milestoneErr } = await supabaseAdmin.rpc('check_and_award_milestone_bonus', {
+    p_business_id: businessId,
+  })
+  if (milestoneErr) {
+    console.error('milestone bonus check failed', { businessId, milestoneErr })
+  }
+
   return NextResponse.json({
     ok: true,
     offer: { id: offer.id, title: offer.title, description: offer.description },
