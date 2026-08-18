@@ -4,6 +4,7 @@ import DashboardNav from '@/components/DashboardNav'
 import CampaignManager from '@/components/CampaignManager'
 import SubscriptionBanner from '@/components/SubscriptionBanner'
 import LevelBadge from '@/components/LevelBadge'
+import NewCustomerLeaderboard from '@/components/NewCustomerLeaderboard'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir } from '@/lib/i18n/locale'
 import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
@@ -56,6 +57,8 @@ export default function OwnerDashboardView({
         <LevelBadge level={promotionLevel} variant="medal" locale={locale} />
         <p className="text-xs text-neutral-400 mt-1">{copy.promotionCaption.replace('{n}', String(promotionScore))}</p>
       </div>
+
+      <NewCustomerLeaderboard businessId={businessId} />
 
       <SubscriptionBanner isSubscriptionActive={isSubscriptionActive} adCredits={adCredits} />
 
