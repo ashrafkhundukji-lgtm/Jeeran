@@ -7,10 +7,13 @@
  *     matching wallet_members row): create the member + Wallet object,
  *     return a save URL, and pay the recruiting shop a one-time signup bonus.
  *   - Returning member (device_id matches an existing row): DON'T create a
- *     duplicate pass — just hand back the existing save URL. If they scanned
- *     a DIFFERENT shop than their current origin_business_id, attribution
- *     moves to that shop (last-touch) — see the attribution comment below.
- *     No bonus is paid on this path (see anti-gaming note below).
+ *     duplicate pass — just hand back the existing save URL. origin_business_id
+ *     is PERMANENT (first-touch-forever, reversed back from the last-touch
+ *     model — see 20260818b_rescan_credit_dual_award.sql) — scanning a
+ *     different shop's stand never moves it. Instead, every scan by an
+ *     existing member fires the rescan-credit mechanic (see
+ *     recordRescanTouchpoint) — a third, distinct credit event from the
+ *     signup bonus below and redemption credit.
  *
  * The device_id cookie is set here on first response if missing, so the
  * frontend never has to manage it directly. This is the anonymous-device
@@ -22,6 +25,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createMembershipObject, buildSaveUrl, ensureMembershipClass, type NearbyOffer } from '@/lib/wallet/google-membership-pass'
+import { recordRescanTouchpoint } from '@/lib/wallet/rescan-credit'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,9 +60,9 @@ export async function POST(req: NextRequest) {
   const isNewDevice = !deviceId
   if (!deviceId) deviceId = randomUUID()
 
-  // Fraud-review data only (see DAILY_SIGNUP_BONUS_CAP) — not used to block
-  // anything automatically in this pass.
-  const signupIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
+  // Fraud-review data only (see DAILY_SIGNUP_BONUS_CAP / rescan-credit's own
+  // cap) — not used to block anything automatically in this pass.
+  const requestIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
 
   // Returning member: don't issue a second pass.
   const { data: existing, error: lookupErr } = await supabaseAdmin
@@ -72,22 +76,19 @@ export async function POST(req: NextRequest) {
   }
 
   if (existing) {
-    // Last-touch attribution: scanning a DIFFERENT shop's stand moves future
-    // redemption credit to that shop. A rescan of the same shop is a no-op
-    // write. This never pays a signup bonus (see SIGNUP_BONUS_CREDITS above)
-    // and never touches home_lat/home_lng — attribution and geo-push
-    // targeting are separate concerns.
-    if (existing.origin_business_id !== businessId) {
-      const { error: reattributeErr } = await supabaseAdmin
-        .from('wallet_members')
-        .update({ origin_business_id: businessId, last_touch_at: new Date().toISOString() })
-        .eq('id', existing.id)
-      if (reattributeErr) {
-        return NextResponse.json({ error: reattributeErr.message }, { status: 500 })
-      }
-    }
-
-    await logTouchpoint(existing.id, businessId)
+    // origin_business_id is permanent — never updated here. Every scan by
+    // an existing member (same shop or a different one) logs a touchpoint
+    // and, subject to its own 24h-per-pair cooldown and daily per-business
+    // cap, fires the rescan-credit mechanic: RESCAN_CREDIT to the scanned
+    // business, ORIGIN_RESCAN_CREDIT to the permanent origin business (both,
+    // independently, when they're the same business). This never pays the
+    // signup bonus below — that's brand-new-member-only.
+    await recordRescanTouchpoint({
+      memberId: existing.id,
+      originBusinessId: existing.origin_business_id,
+      scannedBusinessId: businessId,
+      ip: requestIp,
+    })
 
     // A row can have google_object_id = null when a PREVIOUS visit created
     // the member but never got as far as creating the Google Wallet object
@@ -153,7 +154,7 @@ export async function POST(req: NextRequest) {
       origin_business_id: businessId,
       home_lat: homeLat,
       home_lng: homeLng,
-      signup_ip: signupIp,
+      signup_ip: requestIp,
     })
     .select('id')
     .single()
@@ -162,7 +163,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: insertErr?.message ?? 'failed to create member' }, { status: 500 })
   }
 
-  await logTouchpoint(member.id, businessId)
+  await logTouchpoint(member.id, businessId, requestIp)
 
   // Signup bonus: paid ONLY on brand-new member creation, never on the
   // re-attribution path above — otherwise a shop could farm repeat bonuses
@@ -240,14 +241,15 @@ async function createAndStoreMembershipObject(memberId: string, homeLat: number,
   return objectId
 }
 
-// Every scan event, regardless of whether it changes attribution — first
-// touch, re-attribution, or a repeat scan of the same shop. Not read by any
-// code yet; raw material for future customer-migration analytics. Non-fatal:
-// don't block the customer's pass save/reuse over a logging failure.
-async function logTouchpoint(memberId: string, businessId: string) {
+// First-touch-only logging — the very first touchpoint row for a brand-new
+// member. (Existing members' every-scan logging, including credit-award
+// logic, lives in recordRescanTouchpoint instead — see rescan-credit.ts.)
+// Non-fatal: don't block the customer's pass save/reuse over a logging
+// failure.
+async function logTouchpoint(memberId: string, businessId: string, ip: string | null) {
   const { error } = await supabaseAdmin
     .from('wallet_member_touchpoints')
-    .insert({ member_id: memberId, business_id: businessId })
+    .insert({ member_id: memberId, business_id: businessId, scan_ip: ip })
   if (error) {
     console.error('touchpoint log failed', { memberId, businessId, error })
   }

@@ -1,5 +1,5 @@
 import { supabaseAdmin } from './supabase-admin'
-import { levelForScore, type PromotionLevel } from './promotion'
+import { levelForScore, getPromotionThresholds, type PromotionLevel } from './promotion'
 
 export type BillingStatus = 'paid' | 'trial' | 'lapsed'
 
@@ -50,6 +50,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     { data: campaigns, error: campError },
     { data: scans, error: scanError },
     { data: redemptions, error: redemptionError },
+    thresholds,
   ] = await Promise.all([
     supabaseAdmin
       .from('businesses')
@@ -64,6 +65,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       .eq('is_active', true),
     supabaseAdmin.from('scans_and_claims').select('host_business_id'),
     supabaseAdmin.from('redemptions').select('business_id'),
+    getPromotionThresholds(),
   ])
 
   if (bizError) throw new Error(bizError.message)
@@ -113,7 +115,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       activeCampaign: activeCampaignByBusinessId.get(b.id) ?? null,
       scansHosted: scansHostedByBusinessId.get(b.id) ?? 0,
       promotionScore,
-      promotionLevel: levelForScore(promotionScore),
+      promotionLevel: levelForScore(promotionScore, thresholds),
       createdAt: b.created_at,
     }
   })
