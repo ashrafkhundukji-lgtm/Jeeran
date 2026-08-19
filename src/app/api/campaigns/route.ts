@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { hasActiveCampaign } from '@/lib/campaigns'
 import { notifyMembersNearBusiness } from '@/lib/wallet/geo-notify'
@@ -69,11 +69,20 @@ export async function POST(req: NextRequest) {
 
   // Best-effort geo-push — a campaign is created active by default, so this
   // is also the activation trigger. Never let a push failure fail the
-  // campaign creation response.
+  // campaign creation response. Wrapped in after(): on Vercel, an unawaited
+  // promise here isn't guaranteed to run to completion — the runtime can
+  // freeze the invocation right after the response is sent. after() extends
+  // the invocation's lifetime (via waitUntil under the hood) so this actually
+  // finishes instead of silently being cut off. Confirmed live: without
+  // after(), an edit's geo-push never landed even minutes later.
   if (business.latitude != null && business.longitude != null) {
-    notifyMembersNearBusiness(business.latitude, business.longitude).catch((err) => {
-      console.error('notifyMembersNearBusiness failed after campaign create', { campaignId: campaign.id, err })
-    })
+    const lat = business.latitude
+    const lng = business.longitude
+    after(() =>
+      notifyMembersNearBusiness(lat, lng).catch((err) => {
+        console.error('notifyMembersNearBusiness failed after campaign create', { campaignId: campaign.id, err })
+      }),
+    )
   }
 
   return NextResponse.json({ campaign })

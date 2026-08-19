@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { hasActiveCampaign } from '@/lib/campaigns'
 import { notifyMembersNearBusiness } from '@/lib/wallet/geo-notify'
@@ -57,7 +57,8 @@ async function handleToggle(
   // refresh to drop the now-inactive offer from members' cards promptly —
   // otherwise it just sits there until an unrelated nearby activation
   // happens to overwrite it. Best-effort: never let a push failure fail the
-  // toggle response.
+  // toggle response. Wrapped in after() — see the campaign-create route for
+  // why an unawaited promise alone isn't safe on Vercel.
   const updated = data[0]
   if (updated.creator_type === 'business') {
     const { data: toggledBusiness } = await supabase
@@ -67,9 +68,13 @@ async function handleToggle(
       .maybeSingle()
 
     if (toggledBusiness?.latitude != null && toggledBusiness?.longitude != null) {
-      notifyMembersNearBusiness(toggledBusiness.latitude, toggledBusiness.longitude).catch((err) => {
-        console.error('notifyMembersNearBusiness failed after campaign toggle', { campaignId: id, isActive, err })
-      })
+      const lat = toggledBusiness.latitude
+      const lng = toggledBusiness.longitude
+      after(() =>
+        notifyMembersNearBusiness(lat, lng).catch((err) => {
+          console.error('notifyMembersNearBusiness failed after campaign toggle', { campaignId: id, isActive, err })
+        }),
+      )
     }
   }
 
@@ -119,7 +124,9 @@ async function handleEdit(
   // dates affect whether it's in-window) just as much as an activate does.
   // Only fires for an already-active campaign — an edit to an inactive one
   // isn't visible to anyone via nearby_active_offers() regardless, so
-  // there's nothing to push. Best-effort, same as handleToggle.
+  // there's nothing to push. Best-effort, same as handleToggle. Wrapped in
+  // after() — see the campaign-create route for why an unawaited promise
+  // alone isn't safe on Vercel.
   const updated = data[0]
   if (updated.is_active && updated.creator_type === 'business') {
     const { data: editedBusiness } = await supabase
@@ -129,9 +136,13 @@ async function handleEdit(
       .maybeSingle()
 
     if (editedBusiness?.latitude != null && editedBusiness?.longitude != null) {
-      notifyMembersNearBusiness(editedBusiness.latitude, editedBusiness.longitude).catch((err) => {
-        console.error('notifyMembersNearBusiness failed after campaign edit', { campaignId: id, err })
-      })
+      const lat = editedBusiness.latitude
+      const lng = editedBusiness.longitude
+      after(() =>
+        notifyMembersNearBusiness(lat, lng).catch((err) => {
+          console.error('notifyMembersNearBusiness failed after campaign edit', { campaignId: id, err })
+        }),
+      )
     }
   }
 
