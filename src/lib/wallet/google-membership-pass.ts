@@ -146,6 +146,11 @@ export interface NearbyOffer {
   // (title/description/bid too small to reorder) as "changed," which a
   // plain offer_id-set diff can't see.
   offer_updated_at: string
+  // Optional photo a shop attaches to their own campaign — see
+  // supabase/migrations/20260819_campaign_images.sql. Null for most offers;
+  // offersToImageModules() below skips the field entirely rather than
+  // sending an empty/placeholder image when unset.
+  offer_image_url: string | null
 }
 
 // OS-level geofencing: Google Wallet compares the phone's live GPS against
@@ -183,6 +188,73 @@ function offersToMerchantLocations(offers: NearbyOffer[]) {
   }))
 }
 
+// Enriches the card beyond plain text using Google Wallet's real
+// imageModulesData/linksModuleData fields (verified against a live PATCH
+// before shipping — see google-membership-pass.test note below) — plus a
+// per-offer landing page (src/app/offers/[campaignId]/page.tsx) for the
+// fuller experience the card's fixed template can't provide on its own.
+// Both helpers below are scoped to the single TOP-ranked offer only
+// (offers[0], same ranking nearby_active_offers() already produced) —
+// deliberately not one image/link set per offer, to keep the card
+// respectful rather than turning it into a cluttered ad unit.
+
+// Image is the shop's own optional upload (campaigns.image_url) — most
+// offers won't have one, and this skips the field entirely (not an empty
+// array) rather than sending a placeholder. contentDescription uses the
+// offer's own title as-is, not run through localizedString() — that helper
+// is for FIXED chrome text we actually have ar/ur translations for; offer
+// content is whatever language the shop typed, same reasoning already
+// documented for textModulesData.
+function offersToImageModules(offers: NearbyOffer[]) {
+  const top = offers[0]
+  if (!top?.offer_image_url) return undefined
+  return [
+    {
+      id: 'offer_image',
+      mainImage: {
+        sourceUri: { uri: top.offer_image_url },
+        contentDescription: { defaultValue: { language: 'en', value: top.offer_title } },
+      },
+    },
+  ]
+}
+
+// "View offer" always links to the new landing page (skipped only if
+// NEXT_PUBLIC_APP_URL isn't configured — same guard buildSaveUrl already
+// uses). "Call" is NOT included: investigated first, businesses has no
+// phone column at all today (confirmed against every migration touching
+// that table) — this only ships once that's genuinely true, not before.
+// "Directions" is safe to always include for any offer nearby_active_offers()
+// returns: its own WHERE clause requires businesses.geog (generated from
+// lat/lng) to be non-null, so business_lat/business_lng can't be null here.
+// Link type is inferred by Google from the URI scheme (https:// / tel: /
+// geo:), not a separate field — confirmed against the Uri reference.
+function offersToLinksModule(offers: NearbyOffer[]) {
+  const top = offers[0]
+  if (!top) return undefined
+
+  const uris: Array<{ id: string; uri: string; description: string; localizedDescription: ReturnType<typeof localizedString> }> = []
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  if (appUrl) {
+    uris.push({
+      id: 'view_offer',
+      uri: `${appUrl}/offers/${top.offer_id}`,
+      description: 'View offer',
+      localizedDescription: localizedString('View offer', 'عرض التفاصيل', 'آفر دیکھیں'),
+    })
+  }
+
+  uris.push({
+    id: 'directions',
+    uri: `https://www.google.com/maps/dir/?api=1&destination=${top.business_lat},${top.business_lng}`,
+    description: 'Directions',
+    localizedDescription: localizedString('Directions', 'الاتجاهات', 'راستہ دیکھیں'),
+  })
+
+  return uris.length ? { uris } : undefined
+}
+
 /**
  * Creates the per-customer OBJECT (the actual pass instance) at save-time.
  * Returns the objectId to store in wallet_members.google_object_id.
@@ -203,6 +275,8 @@ export async function createMembershipObject(memberId: string, initialOffers: Ne
       header: localizedString('Nearby deals for you', 'عروض قريبة منك', 'آپ کے قریب آفرز'),
       textModulesData: offersToTextModules(initialOffers),
       merchantLocations: offersToMerchantLocations(initialOffers),
+      imageModulesData: offersToImageModules(initialOffers),
+      linksModuleData: offersToLinksModule(initialOffers),
       hexBackgroundColor: BRAND_NAVY,
       logo: { sourceUri: { uri: LOGO_URL } },
       heroImage: { sourceUri: { uri: HERO_IMAGE_URL } },
@@ -255,6 +329,8 @@ export async function patchMembershipObject(objectId: string, offers: NearbyOffe
       // See offersToMerchantLocations() for why this is what actually makes
       // offers "follow" the customer, not home_lat/home_lng.
       merchantLocations: offersToMerchantLocations(offers),
+      imageModulesData: offersToImageModules(offers),
+      linksModuleData: offersToLinksModule(offers),
     },
   })
 }

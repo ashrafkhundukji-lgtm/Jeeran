@@ -12,6 +12,20 @@ interface Campaign {
   is_active: boolean
   start_date: string | null
   end_date: string | null
+  image_url: string | null
+}
+
+// Shared by the create and edit forms — uploads immediately on file select
+// (rather than deferring to form submit) so the preview and any upload
+// error show up right away, and the create/edit payload just carries
+// whatever URL this already resolved to.
+async function uploadCampaignImage(file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await fetch('/api/campaigns/upload-image', { method: 'POST', body: formData })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(body.error || 'Could not upload image')
+  return body.url as string
 }
 
 function formatDate(date: string) {
@@ -66,6 +80,12 @@ function CampaignFields({
   onStartDateChange,
   endDate,
   onEndDateChange,
+  imageUrl,
+  onImageChange,
+  imageUploading,
+  onImageUploadingChange,
+  imageError,
+  onImageErrorChange,
 }: {
   copy: DashboardCopy['campaigns']
   title: string
@@ -78,7 +98,29 @@ function CampaignFields({
   onStartDateChange: (v: string) => void
   endDate: string
   onEndDateChange: (v: string) => void
+  imageUrl: string | null
+  onImageChange: (url: string | null) => void
+  imageUploading: boolean
+  onImageUploadingChange: (v: boolean) => void
+  imageError: string
+  onImageErrorChange: (v: string) => void
 }) {
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-selecting the same file after a removal
+    if (!file) return
+    onImageErrorChange('')
+    onImageUploadingChange(true)
+    try {
+      const url = await uploadCampaignImage(file)
+      onImageChange(url)
+    } catch (err) {
+      onImageErrorChange(err instanceof Error ? err.message : copy.imageError)
+    } finally {
+      onImageUploadingChange(false)
+    }
+  }
+
   return (
     <>
       <input
@@ -95,6 +137,32 @@ function CampaignFields({
         className="border border-neutral-300 rounded-lg px-3 py-2 text-sm"
         rows={2}
       />
+      <div>
+        <label className="text-xs text-neutral-500 font-medium block mb-1">{copy.imageLabel}</label>
+        {imageUrl ? (
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imageUrl} alt="" className="w-16 h-16 rounded-lg object-cover border border-neutral-200" />
+            <button
+              type="button"
+              onClick={() => onImageChange(null)}
+              className="text-xs font-medium text-neutral-500 hover:text-red-600 transition-colors"
+            >
+              {copy.imageRemove}
+            </button>
+          </div>
+        ) : (
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleFileSelect}
+            disabled={imageUploading}
+            className="text-sm"
+          />
+        )}
+        {imageUploading && <p className="text-xs text-neutral-400 mt-1">{copy.imageUploading}</p>}
+        {imageError && <p className="text-xs text-red-600 mt-1">{imageError}</p>}
+      </div>
       <div>
         <label className="text-xs text-neutral-500 font-medium block mb-1">
           {copy.bidPerView.replace('{n}', String(bid))}
@@ -172,6 +240,9 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
   const [bid, setBid] = useState(5)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [imageUploading, setImageUploading] = useState(false)
+  const [imageError, setImageError] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [toggleError, setToggleError] = useState('')
@@ -182,6 +253,9 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
   const [editBid, setEditBid] = useState(5)
   const [editStartDate, setEditStartDate] = useState('')
   const [editEndDate, setEditEndDate] = useState('')
+  const [editImageUrl, setEditImageUrl] = useState<string | null>(null)
+  const [editImageUploading, setEditImageUploading] = useState(false)
+  const [editImageError, setEditImageError] = useState('')
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState('')
 
@@ -205,6 +279,7 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
         bid_per_view: bid,
         start_date: startDate || null,
         end_date: endDate || null,
+        image_url: imageUrl,
       }),
     })
 
@@ -222,6 +297,8 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
     setBid(5)
     setStartDate('')
     setEndDate('')
+    setImageUrl(null)
+    setImageError('')
     setShowForm(false)
     setSaving(false)
   }
@@ -251,6 +328,8 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
     setEditBid(c.bid_per_view)
     setEditStartDate(c.start_date ?? '')
     setEditEndDate(c.end_date ?? '')
+    setEditImageUrl(c.image_url)
+    setEditImageError('')
     setEditError('')
   }
 
@@ -275,6 +354,7 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
         bid_per_view: editBid,
         start_date: editStartDate || null,
         end_date: editEndDate || null,
+        image_url: editImageUrl,
       }),
     })
 
@@ -295,6 +375,7 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
               bid_per_view: editBid,
               start_date: editStartDate || null,
               end_date: editEndDate || null,
+              image_url: editImageUrl,
             }
           : c,
       ),
@@ -329,11 +410,17 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
             onStartDateChange={setStartDate}
             endDate={endDate}
             onEndDateChange={setEndDate}
+            imageUrl={imageUrl}
+            onImageChange={setImageUrl}
+            imageUploading={imageUploading}
+            onImageUploadingChange={setImageUploading}
+            imageError={imageError}
+            onImageErrorChange={setImageError}
           />
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || imageUploading}
             className="bg-[#FF6B4A] text-white rounded-lg py-2 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
           >
             {saving ? copy.creatingButton : copy.createButton}
@@ -364,12 +451,18 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
                 onStartDateChange={setEditStartDate}
                 endDate={editEndDate}
                 onEndDateChange={setEditEndDate}
+                imageUrl={editImageUrl}
+                onImageChange={setEditImageUrl}
+                imageUploading={editImageUploading}
+                onImageUploadingChange={setEditImageUploading}
+                imageError={editImageError}
+                onImageErrorChange={setEditImageError}
               />
               {editError && <p className="text-sm text-red-600">{editError}</p>}
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  disabled={editSaving}
+                  disabled={editSaving || editImageUploading}
                   className="flex-1 bg-[#FF6B4A] text-white rounded-lg py-2 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
                 >
                   {editSaving ? copy.savingChanges : copy.saveChanges}
@@ -385,18 +478,24 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
             </form>
           ) : (
             <div key={c.id} className="border border-neutral-200 rounded-lg p-3 flex items-center justify-between">
-              <div>
-                <div className="font-medium text-sm">{c.title}</div>
-                <div className="text-xs text-neutral-500">
-                  {copy.creditsPerView.replace('{n}', String(c.bid_per_view))}
-                  {(c.start_date || c.end_date) && (
-                    <>
-                      {' · '}
-                      {c.start_date ? formatDate(c.start_date) : copy.noStartDate}
-                      {' – '}
-                      {c.end_date ? formatDate(c.end_date) : copy.noEndDate}
-                    </>
-                  )}
+              <div className="flex items-center gap-3 min-w-0">
+                {c.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={c.image_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-neutral-200 shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">{c.title}</div>
+                  <div className="text-xs text-neutral-500">
+                    {copy.creditsPerView.replace('{n}', String(c.bid_per_view))}
+                    {(c.start_date || c.end_date) && (
+                      <>
+                        {' · '}
+                        {c.start_date ? formatDate(c.start_date) : copy.noStartDate}
+                        {' – '}
+                        {c.end_date ? formatDate(c.end_date) : copy.noEndDate}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-4">

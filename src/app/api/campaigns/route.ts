@@ -27,6 +27,9 @@ export async function POST(req: NextRequest) {
   const bidPerView = Number(body?.bid_per_view)
   const startDate: string | null = body?.start_date?.trim() || null
   const endDate: string | null = body?.end_date?.trim() || null
+  // Set via /api/campaigns/upload-image beforehand, not uploaded inline here
+  // — the form uploads on file selection and just passes the resulting URL.
+  const imageUrl: string | null = body?.image_url?.trim() || null
 
   if (!title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
   if (!Number.isFinite(bidPerView) || bidPerView < 2 || bidPerView > 10) {
@@ -56,6 +59,7 @@ export async function POST(req: NextRequest) {
       bid_per_view: bidPerView,
       start_date: startDate,
       end_date: endDate,
+      image_url: imageUrl,
       is_active: true,
     })
     .select()
