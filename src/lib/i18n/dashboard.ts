@@ -53,6 +53,10 @@ export interface DashboardCopy {
     errorAlreadyActiveCreate: string
     errorAlreadyActiveToggle: string
     errorCampaignNotFound: string
+    imageLabel: string
+    imageUploading: string
+    imageRemove: string
+    imageError: string
   }
   billing: {
     heading: string
@@ -189,6 +193,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       errorAlreadyActiveCreate: 'لديك حملة نشطة بالفعل — أوقفها قبل إنشاء حملة جديدة.',
       errorAlreadyActiveToggle: 'لديك حملة نشطة أخرى بالفعل — أوقفها أولًا.',
       errorCampaignNotFound: 'الحملة غير موجودة',
+      imageLabel: 'صورة العرض (اختياري)',
+      imageUploading: 'جارٍ الرفع…',
+      imageRemove: 'إزالة',
+      imageError: 'تعذر رفع الصورة',
     },
     billing: {
       heading: 'الفواتير',
@@ -323,6 +331,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       errorAlreadyActiveCreate: 'You already have an active campaign — deactivate it before creating another.',
       errorAlreadyActiveToggle: 'You already have another active campaign — deactivate it first.',
       errorCampaignNotFound: 'Campaign not found',
+      imageLabel: 'Offer photo (optional)',
+      imageUploading: 'Uploading…',
+      imageRemove: 'Remove',
+      imageError: 'Could not upload image',
     },
     billing: {
       heading: 'Billing',
@@ -457,6 +469,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       errorAlreadyActiveCreate: 'آپ کے پاس پہلے سے ایک فعال کیمپین ہے — نیا بنانے سے پہلے اسے غیر فعال کریں۔',
       errorAlreadyActiveToggle: 'آپ کے پاس پہلے سے ایک اور فعال کیمپین ہے — پہلے اسے غیر فعال کریں۔',
       errorCampaignNotFound: 'کیمپین نہیں ملا',
+      imageLabel: 'آفر کی تصویر (اختیاری)',
+      imageUploading: 'اپ لوڈ ہو رہا ہے…',
+      imageRemove: 'ہٹائیں',
+      imageError: 'تصویر اپ لوڈ نہیں ہو سکی',
     },
     billing: {
       heading: 'بلنگ',

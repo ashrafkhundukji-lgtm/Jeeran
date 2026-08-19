@@ -19,6 +19,7 @@ interface Campaign {
   is_active: boolean
   start_date: string | null
   end_date: string | null
+  image_url: string | null
 }
 
 export default function OwnerDashboardView({

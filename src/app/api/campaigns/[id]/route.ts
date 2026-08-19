@@ -79,13 +79,21 @@ async function handleToggle(
 async function handleEdit(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   id: string,
-  body: { title?: string; description?: string | null; bid_per_view?: number; start_date?: string | null; end_date?: string | null },
+  body: {
+    title?: string
+    description?: string | null
+    bid_per_view?: number
+    start_date?: string | null
+    end_date?: string | null
+    image_url?: string | null
+  },
 ) {
   const title = body.title?.trim() || ''
   const description = body.description?.trim() || null
   const bidPerView = Number(body.bid_per_view)
   const startDate = body.start_date?.trim() || null
   const endDate = body.end_date?.trim() || null
+  const imageUrl = body.image_url?.trim() || null
 
   if (!title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
   if (!Number.isFinite(bidPerView) || bidPerView < 2 || bidPerView > 10) {
@@ -97,7 +105,7 @@ async function handleEdit(
 
   const { data, error } = await supabase
     .from('campaigns')
-    .update({ title, description, bid_per_view: bidPerView, start_date: startDate, end_date: endDate })
+    .update({ title, description, bid_per_view: bidPerView, start_date: startDate, end_date: endDate, image_url: imageUrl })
     .eq('id', id)
     .select('id, is_active, creator_type, creator_id')
 
