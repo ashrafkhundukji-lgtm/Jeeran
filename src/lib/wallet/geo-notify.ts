@@ -2,19 +2,33 @@
  * Geo-notify: refreshes each wallet_members' saved pass with whatever
  * offers are currently active near their home_lat/home_lng.
  *
- * Two ways to trigger this:
- *  1. Event-driven — call notifyMembersNearBusiness() right when a campaign
- *     goes live, is toggled, or is edited (wired into
- *     src/app/api/campaigns/route.ts and src/app/api/campaigns/[id]/route.ts).
- *  2. Periodic sweep — call refreshAllMembers() on a schedule, to catch
- *     offers that changed bid/expired since last push. Wired up as
- *     src/app/api/cron/wallet-refresh/route.ts, daily (see vercel.json) —
- *     Vercel Hobby plan caps Cron Jobs at once/day, otherwise this would run
- *     more often (every few hours) since (1) alone won't catch everything
- *     (e.g. an offer's end_date lapsing with no activate/deactivate event).
+ * Card content and lock-screen notifications are deliberately DECOUPLED —
+ * see supabase/migrations/20260820_notification_batching.sql for the full
+ * rationale. At real scale (many shops, many daily offer changes), pinging
+ * a customer's lock screen on every single qualifying change is an
+ * uninstall risk; refreshing the card silently in the background is not.
  *
- * Both call the same per-member patch, so start with (1) — it's cheaper —
- * and (2) is the safety net for what (1) can't see.
+ *  - Card content (textModulesData/imageModulesData/linksModuleData/
+ *    merchantLocations) still updates immediately and silently, via
+ *    refreshMember() below, triggered either:
+ *     1. Event-driven — notifyMembersNearBusiness(), called right when a
+ *        campaign goes live, is toggled, or is edited (wired into
+ *        src/app/api/campaigns/route.ts and
+ *        src/app/api/campaigns/[id]/route.ts).
+ *     2. Periodic sweep — refreshAllMembers(), catching anything (1) can't
+ *        see (an offer's end_date lapsing with no activate/deactivate
+ *        event, etc.). Wired into src/app/api/cron/wallet-refresh/route.ts.
+ *  - The actual notification (Google's addMessage, messageType:
+ *    TEXT_AND_NOTIFY — what makes it an Android lock-screen push, not just
+ *    card text) is NOT sent by either of the above anymore. It's sent
+ *    exclusively by sendDailyNotificationBatch(), a separate once-daily
+ *    batch also wired into the wallet-refresh cron (reusing that cron's
+ *    existing daily schedule rather than adding a second cron job — Vercel
+ *    Hobby caps cron jobs, and there's no reason this needs its own
+ *    schedule when "once a day, same fixed time" is exactly what's wanted).
+ *    Capped at promotion_settings.max_daily_wallet_notifications (default
+ *    3 — Google's own hard per-object/24h limit, not an arbitrary choice;
+ *    see that column's comment for why it's configurable down to 1 later).
  */
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
@@ -31,13 +45,27 @@ interface WalletMember {
   home_lat: number
   home_lng: number
   push_radius_km: number
-  // {offer_id: offer's campaigns.updated_at at last push} — an offer_id-only
-  // set (the original design) can't detect a same-offer content edit
-  // (title/description wording, or a bid change too small to reorder
-  // anyone's top-5); confirmed live that it silently left a customer's card
-  // showing stale text after such an edit. See
+  // {offer_id: offer's campaigns.updated_at at last CARD sync} — no longer
+  // has anything to do with notifications (see the file-level comment
+  // above); an offer_id-only set (the original design) can't detect a
+  // same-offer content edit (title/description wording, or a bid change too
+  // small to reorder anyone's top-5); confirmed live that it silently left a
+  // customer's card showing stale text after such an edit. See
   // supabase/migrations/20260817b_offer_content_versioning.sql.
   last_notified_offers: Record<string, string>
+}
+
+interface NotifiableMember {
+  id: string
+  google_object_id: string | null
+  home_lat: number
+  home_lng: number
+  push_radius_km: number
+  // Same {offer_id: offer_updated_at} version-comparison technique as
+  // WalletMember.last_notified_offers above, but a separate, independent
+  // instance of it scoped to notification slots — see
+  // supabase/migrations/20260820_notification_batching.sql.
+  notified_offer_versions: Record<string, string>
 }
 
 /**
@@ -99,29 +127,20 @@ async function refreshMember(member: WalletMember) {
   const newVersions: Record<string, string> = {}
   for (const o of nearbyOffers) newVersions[o.offer_id] = o.offer_updated_at
 
-  if (offerVersionsEqual(newVersions, oldVersions)) return // nothing changed -> skip the API call and the notification
+  if (offerVersionsEqual(newVersions, oldVersions)) return // nothing changed -> skip the API call
 
+  // Card only — silent, immediate. No notifyNewOffer() call here anymore;
+  // that's exclusively sendDailyNotificationBatch()'s job now (see the
+  // file-level comment above). This is precisely the fix: an offer changing
+  // used to fire an actual lock-screen push right here, every time.
   await patchMembershipObject(member.google_object_id, nearbyOffers)
 
-  // Notify about whichever offer is actually new to this member (offer_id
-  // wasn't in the previous version map at all — a content edit to an
-  // already-seen offer still updates the card above, but isn't "new" enough
-  // to re-notify about; that'd fire a notification on every wording tweak).
-  // nearbyOffers is already ranked bid-desc/distance-asc, so the first match
-  // is the highest-bid newly-appeared offer. Best-effort: Google caps this
-  // at 3 notifies/24h per object, and a throttled/failed notify shouldn't
-  // undo the card refresh that already succeeded.
-  const newlyAppeared = nearbyOffers.find((o) => !(o.offer_id in oldVersions))
-  if (newlyAppeared) {
-    await notifyNewOffer(member.google_object_id, newlyAppeared).catch((err) => {
-      console.error('notifyNewOffer failed', { memberId: member.id, offerId: newlyAppeared.offer_id, err })
-    })
-  }
-
-  // Log reach: one row per unique (member, offer) ever notified, powering
-  // the notified -> redeemed conversion-rate metric on the dashboards.
-  // ignoreDuplicates makes this a no-op on repeat appearances in the top-5
-  // list so it doesn't inflate reach counts or overwrite the original
+  // Log reach: one row per unique (member, offer) ever shown on the card,
+  // powering the reach -> redeemed conversion-rate metric on the
+  // dashboards. Despite the table name, this is card-appearance reach, not
+  // the lock-screen push batch below — pre-dates that distinction existing
+  // at all. ignoreDuplicates makes this a no-op on repeat appearances in the
+  // top-5 list so it doesn't inflate reach counts or overwrite the original
   // notified_at.
   if (nearbyOffers.length) {
     await supabaseAdmin.from('offer_notifications').upsert(
@@ -139,6 +158,98 @@ async function refreshMember(member: WalletMember) {
     .update({
       last_notified_offers: newVersions,
       last_notified_at: new Date().toISOString(),
+    })
+    .eq('id', member.id)
+}
+
+/**
+ * The once-daily batched lock-screen notification job — the ONLY caller of
+ * notifyNewOffer() anywhere in the app now. Wired into the same
+ * wallet-refresh cron as refreshAllMembers() (src/app/api/cron/wallet-refresh/route.ts),
+ * so it runs once a day at that cron's fixed schedule rather than needing a
+ * second Vercel Cron job.
+ *
+ * Reads the cap from promotion_settings.max_daily_wallet_notifications
+ * (default 3, Google's own hard per-object/24h limit — see that column's
+ * migration comment) once per run, not once per member.
+ */
+export async function sendDailyNotificationBatch() {
+  const { data: settings, error: settingsError } = await supabaseAdmin
+    .from('promotion_settings')
+    .select('max_daily_wallet_notifications')
+    .limit(1)
+    .maybeSingle()
+  if (settingsError) throw settingsError
+  const cap = settings?.max_daily_wallet_notifications ?? 3
+  if (cap <= 0) return // admin has paused pushes entirely
+
+  const { data: members, error } = await supabaseAdmin
+    .from('wallet_members')
+    .select('id, google_object_id, home_lat, home_lng, push_radius_km, notified_offer_versions')
+    .not('google_object_id', 'is', null)
+  if (error) throw error
+
+  await Promise.all((members as NotifiableMember[]).map((m) => notifyMemberBatch(m, cap)))
+}
+
+async function notifyMemberBatch(member: NotifiableMember, cap: number) {
+  if (!member.google_object_id) return
+
+  // Deliberately platform-wide, same as refreshMember() — ranks ANY
+  // registered business's active campaigns within radius, not just wherever
+  // this member originally scanned.
+  const { data: offers, error } = await supabaseAdmin.rpc('nearby_active_offers', {
+    p_lat: member.home_lat,
+    p_lng: member.home_lng,
+    p_radius_km: member.push_radius_km,
+    p_limit: 5,
+  })
+  if (error) throw error
+
+  const nearbyOffers = (offers ?? []) as NearbyOffer[]
+  const alreadyNotified = member.notified_offer_versions ?? {}
+
+  // "New since last notification" — same {offer_id: offer_updated_at}
+  // version-comparison technique offer-content-diffing already established
+  // for the card (offerVersionsEqual/last_notified_offers above), just
+  // checked against the separate notified_offer_versions tracker: an offer
+  // only earns a slot if we've never sent a push for this exact version of
+  // it before, so a re-edited offer can earn a fresh ping but an unchanged
+  // one won't re-consume a slot on a later day.
+  const candidates = nearbyOffers.filter((o) => alreadyNotified[o.offer_id] !== o.offer_updated_at)
+  if (!candidates.length) return
+
+  // nearby_active_offers() already returns its rows in ranked order
+  // (bid-bucket -> tier tiebreak -> exact bid -> distance — see
+  // supabase/migrations/20260818c_promotion_tier_tiebreaker.sql) — slicing
+  // preserves that ordering rather than picking arbitrarily, so the 3 slots
+  // go to the highest-ranked new offers, same priority the card itself uses.
+  const toNotify = candidates.slice(0, cap)
+
+  // Sequential, not Promise.all: these all hit the same object's addMessage
+  // endpoint, and Google's 3/24h cap is per-object — no reason to race
+  // several PATCHes against the same object concurrently.
+  const sentVersions: Record<string, string> = {}
+  for (const offer of toNotify) {
+    try {
+      await notifyNewOffer(member.google_object_id, offer)
+      sentVersions[offer.offer_id] = offer.offer_updated_at
+    } catch (err) {
+      // Best-effort per offer: a failed send (e.g. transient error, or
+      // Google's quota if something else somehow already sent to this
+      // object today) doesn't mark that offer as notified, so it's
+      // eligible to retry tomorrow — and doesn't stop the rest of this
+      // member's batch from attempting.
+      console.error('notifyNewOffer failed in daily batch', { memberId: member.id, offerId: offer.offer_id, err })
+    }
+  }
+  if (!Object.keys(sentVersions).length) return
+
+  await supabaseAdmin
+    .from('wallet_members')
+    .update({
+      notified_offer_versions: { ...alreadyNotified, ...sentVersions },
+      last_notification_batch_at: new Date().toISOString(),
     })
     .eq('id', member.id)
 }
