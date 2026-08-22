@@ -20,6 +20,12 @@ interface Campaign {
   start_date: string | null
   end_date: string | null
   image_url: string | null
+  title_ar: string | null
+  title_en: string | null
+  title_ur: string | null
+  description_ar: string | null
+  description_en: string | null
+  description_ur: string | null
 }
 
 export default function OwnerDashboardView({

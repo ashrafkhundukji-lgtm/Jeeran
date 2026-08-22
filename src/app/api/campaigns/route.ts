@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { hasActiveCampaign } from '@/lib/campaigns'
 import { notifyMembersNearBusiness } from '@/lib/wallet/geo-notify'
+import { regenerateAutoTranslations } from '@/lib/translate'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,6 +31,16 @@ export async function POST(req: NextRequest) {
   // Set via /api/campaigns/upload-image beforehand, not uploaded inline here
   // — the form uploads on file selection and just passes the resulting URL.
   const imageUrl: string | null = body?.image_url?.trim() || null
+  // Optional shop-provided translations — see
+  // supabase/migrations/20260822b_campaign_translations.sql. Always takes
+  // priority over the auto-translation cache at read time (offer page);
+  // left blank, that locale falls back to the auto-translated version.
+  const titleAr: string | null = body?.title_ar?.trim() || null
+  const titleEn: string | null = body?.title_en?.trim() || null
+  const titleUr: string | null = body?.title_ur?.trim() || null
+  const descriptionAr: string | null = body?.description_ar?.trim() || null
+  const descriptionEn: string | null = body?.description_en?.trim() || null
+  const descriptionUr: string | null = body?.description_ur?.trim() || null
 
   if (!title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
   if (!Number.isFinite(bidPerView) || bidPerView < 2 || bidPerView > 10) {
@@ -60,12 +71,27 @@ export async function POST(req: NextRequest) {
       start_date: startDate,
       end_date: endDate,
       image_url: imageUrl,
+      title_ar: titleAr,
+      title_en: titleEn,
+      title_ur: titleUr,
+      description_ar: descriptionAr,
+      description_en: descriptionEn,
+      description_ur: descriptionUr,
       is_active: true,
     })
     .select()
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Best-effort background translation — populates the auto-translation
+  // cache (supabase/migrations/20260822b_campaign_translations.sql) for
+  // whichever locales the shop didn't provide their own text for. Separate
+  // after() call from the geo-push one below: unrelated concerns, and a
+  // translation failure must never affect (or be affected by) the push.
+  after(() =>
+    regenerateAutoTranslations(campaign.id, campaign.title, campaign.description, campaign.updated_at),
+  )
 
   // Best-effort geo-push — a campaign is created active by default, so this
   // is also the activation trigger. Never let a push failure fail the

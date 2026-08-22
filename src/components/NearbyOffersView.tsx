@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir } from '@/lib/i18n/locale'
 import { NEARBY_OFFERS_COPY } from '@/lib/i18n/offers'
+import { CATEGORY_EMOJI, CATEGORY_LABELS } from '@/lib/categories'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import SiteLogo from '@/components/SiteLogo'
 import type { NearbyOffer } from '@/lib/wallet/google-membership-pass'
@@ -17,6 +19,28 @@ export default function NearbyOffersView({ otherOffers }: { otherOffers: NearbyO
   const [locale, setLocale] = useLocale()
   const copy = NEARBY_OFFERS_COPY[locale]
   const dir = getDir(locale)
+  const [search, setSearch] = useState('')
+
+  // Client-side filter, not a server round-trip — the list is already
+  // small (nearby_active_offers() is capped at NEARBY_PAGE_LIMIT, 20, in
+  // the server page.tsx), so there's nothing to gain from re-querying on
+  // every keystroke. Matches offer title, business name, or the CURRENT
+  // locale's category label (so typing "cafe" in English finds cafes, and
+  // typing "مقهى" does too once the customer has switched to Arabic) —
+  // shop-typed fields matched as-is (never translated, same rule as their
+  // display), the category label matched through CATEGORY_LABELS since
+  // that field genuinely does have a translation for every locale.
+  const query = search.trim().toLowerCase()
+  const filteredOffers = query
+    ? otherOffers.filter((o) => {
+        const categoryLabel = CATEGORY_LABELS[locale][o.business_category] ?? o.business_category
+        return (
+          o.offer_title.toLowerCase().includes(query) ||
+          o.business_name.toLowerCase().includes(query) ||
+          categoryLabel.toLowerCase().includes(query)
+        )
+      })
+    : otherOffers
 
   return (
     <main dir={dir} className="min-h-screen bg-[#FBFCFD] text-[#1a1a1a]">
@@ -29,16 +53,41 @@ export default function NearbyOffersView({ otherOffers }: { otherOffers: NearbyO
         <h1 className={`${ARCHIVO} mb-2 text-[28px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[34px]`}>
           {copy.heading}
         </h1>
-        <p className="mb-8 text-[15px] text-[#5a5a5a]">{copy.subheading}</p>
+        <p className="mb-6 text-[15px] text-[#5a5a5a]">{copy.subheading}</p>
+
+        {otherOffers.length > 0 && (
+          <div className="relative mb-6">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true"
+              className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-neutral-400 ${dir === 'rtl' ? 'right-3.5' : 'left-3.5'}`}
+            >
+              <circle cx="7" cy="7" r="5.25" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={copy.searchPlaceholder}
+              className={`w-full rounded-xl border border-neutral-200 bg-white py-3 text-[15px] text-[#1a1a1a] placeholder:text-neutral-400 focus:border-[#FF6B4A]/50 focus:outline-none ${dir === 'rtl' ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
+            />
+          </div>
+        )}
 
         {otherOffers.length === 0 ? (
           <p className="text-sm text-neutral-500">{copy.empty}</p>
+        ) : filteredOffers.length === 0 ? (
+          <p className="text-sm text-neutral-500">{copy.emptySearch}</p>
         ) : (
           <div className="flex flex-col gap-3">
-            {otherOffers.map((o) => (
+            {filteredOffers.map((o) => (
               // Each row is a real link to /offers/[campaignId] — the same
               // page top-ranked offers use, Directions/WhatsApp/Call
-              // included. The chevron + explicit label + active: (press)
+              // included. The chevron + explicit label + an active: (press)
               // state are what actually signal "tap me" on a touchscreen,
               // which is how this page is normally opened (from the Wallet
               // card's "Other offers nearby" link) — a hover-only
@@ -46,9 +95,15 @@ export default function NearbyOffersView({ otherOffers }: { otherOffers: NearbyO
               <a
                 key={o.offer_id}
                 href={`/offers/${o.offer_id}`}
-                className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition-colors active:border-[#FF6B4A]/50 active:bg-[#FFF7F3]"
+                className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition-colors active:border-[#FF6B4A]/50 active:bg-[#FFF7F3]"
               >
-                <div className="min-w-0">
+                <div
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#FFF7F3] text-xl"
+                  aria-hidden="true"
+                >
+                  {CATEGORY_EMOJI[o.business_category] ?? CATEGORY_EMOJI.other}
+                </div>
+                <div className="min-w-0 flex-1">
                   <p className="mb-1 text-xs text-neutral-400">{o.business_name}</p>
                   <h2 className="mb-1 font-medium text-[#1a1a1a]">{o.offer_title}</h2>
                   <p className="text-sm text-neutral-500">{copy.kmAway(o.distance_km.toFixed(1))}</p>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { hasActiveCampaign } from '@/lib/campaigns'
 import { notifyMembersNearBusiness } from '@/lib/wallet/geo-notify'
+import { regenerateAutoTranslations } from '@/lib/translate'
 
 async function handleToggle(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
@@ -91,6 +92,12 @@ async function handleEdit(
     start_date?: string | null
     end_date?: string | null
     image_url?: string | null
+    title_ar?: string | null
+    title_en?: string | null
+    title_ur?: string | null
+    description_ar?: string | null
+    description_en?: string | null
+    description_ur?: string | null
   },
 ) {
   const title = body.title?.trim() || ''
@@ -99,6 +106,14 @@ async function handleEdit(
   const startDate = body.start_date?.trim() || null
   const endDate = body.end_date?.trim() || null
   const imageUrl = body.image_url?.trim() || null
+  // Optional shop-provided translations — see
+  // supabase/migrations/20260822b_campaign_translations.sql.
+  const titleAr = body.title_ar?.trim() || null
+  const titleEn = body.title_en?.trim() || null
+  const titleUr = body.title_ur?.trim() || null
+  const descriptionAr = body.description_ar?.trim() || null
+  const descriptionEn = body.description_en?.trim() || null
+  const descriptionUr = body.description_ur?.trim() || null
 
   if (!title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
   if (!Number.isFinite(bidPerView) || bidPerView < 2 || bidPerView > 10) {
@@ -110,14 +125,36 @@ async function handleEdit(
 
   const { data, error } = await supabase
     .from('campaigns')
-    .update({ title, description, bid_per_view: bidPerView, start_date: startDate, end_date: endDate, image_url: imageUrl })
+    .update({
+      title,
+      description,
+      bid_per_view: bidPerView,
+      start_date: startDate,
+      end_date: endDate,
+      image_url: imageUrl,
+      title_ar: titleAr,
+      title_en: titleEn,
+      title_ur: titleUr,
+      description_ar: descriptionAr,
+      description_en: descriptionEn,
+      description_ur: descriptionUr,
+    })
     .eq('id', id)
-    .select('id, is_active, creator_type, creator_id')
+    .select('id, is_active, creator_type, creator_id, title, description, updated_at')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data || data.length === 0) {
     return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
   }
+
+  // Best-effort background translation — regenerates the auto-translation
+  // cache for whatever locales the shop didn't provide their own text for.
+  // Unconditional on every edit (same posture as the geo-push trigger below:
+  // doesn't try to detect whether title/description specifically changed),
+  // cheap enough (one haiku call) not to bother optimizing that away.
+  after(() =>
+    regenerateAutoTranslations(data[0].id, data[0].title, data[0].description, data[0].updated_at),
+  )
 
   // Same geo-push trigger as handleToggle, same reason: a title/bid/date
   // edit can change what nearby_active_offers() ranks (bid affects order,

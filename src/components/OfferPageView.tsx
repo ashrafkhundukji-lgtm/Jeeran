@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale } from '@/lib/i18n/useLocale'
-import { getDir } from '@/lib/i18n/locale'
+import { getDir, type Locale } from '@/lib/i18n/locale'
 import { OFFER_PAGE_COPY } from '@/lib/i18n/offers'
 import { CATEGORY_LABELS } from '@/lib/categories'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
@@ -25,8 +25,7 @@ export default function OfferPageView({
   imageUrl,
   businessName,
   category,
-  title,
-  description,
+  content,
   directionsUrl,
   whatsappUrl,
   callUrl,
@@ -35,8 +34,11 @@ export default function OfferPageView({
   imageUrl: string | null
   businessName: string
   category: string
-  title: string
-  description: string | null
+  // Pre-resolved per-locale title/description — see the fallback chain
+  // (shop translation > fresh auto-translation cache > original text)
+  // documented in the server page.tsx. Resolved server-side because locale
+  // itself is only known client-side (useLocale is localStorage-backed).
+  content: Record<Locale, { title: string; description: string | null }>
   directionsUrl: string | null
   whatsappUrl: string | null
   callUrl: string | null
@@ -45,6 +47,7 @@ export default function OfferPageView({
   const copy = OFFER_PAGE_COPY[locale]
   const dir = getDir(locale)
   const categoryLabel = CATEGORY_LABELS[locale][category] ?? category
+  const { title, description } = content[locale]
 
   return (
     <main dir={dir} className="min-h-screen bg-[#FBFCFD] text-[#1a1a1a]">

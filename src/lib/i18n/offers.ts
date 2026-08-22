@@ -58,6 +58,8 @@ export interface NearbyOffersCopy {
   heading: string
   subheading: string
   empty: string
+  emptySearch: string
+  searchPlaceholder: string
   viewOffer: string
   kmAway: (km: string) => string
 }
@@ -67,6 +69,8 @@ export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
     heading: 'عروض أخرى قريبة منك',
     subheading: 'المزيد من العروض من محلات قريبة منك، الآن.',
     empty: 'لا توجد عروض أخرى قريبة الآن — تحقق لاحقاً.',
+    emptySearch: 'لا توجد نتائج مطابقة لبحثك.',
+    searchPlaceholder: 'ابحث عن عرض أو محل أو فئة…',
     viewOffer: 'عرض التفاصيل',
     kmAway: (km) => `${km} كم`,
   },
@@ -74,6 +78,8 @@ export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
     heading: 'Other offers nearby',
     subheading: 'More deals from shops near you, right now.',
     empty: 'No other offers nearby right now — check back later.',
+    emptySearch: 'No offers match your search.',
+    searchPlaceholder: 'Search offers, shops, or categories…',
     viewOffer: 'View offer',
     kmAway: (km) => `${km} km away`,
   },
@@ -81,6 +87,8 @@ export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
     heading: 'قریب دیگر آفرز',
     subheading: 'آپ کے قریب دکانوں کی مزید پیشکشیں، ابھی۔',
     empty: 'اس وقت کوئی اور آفر قریب نہیں ہے — بعد میں دوبارہ چیک کریں۔',
+    emptySearch: 'آپ کی تلاش سے کوئی آفر میل نہیں کھاتا۔',
+    searchPlaceholder: 'آفرز، دکانیں، یا کیٹگری تلاش کریں…',
     viewOffer: 'آفر دیکھیں',
     kmAway: (km) => `${km} کلومیٹر دور`,
   },

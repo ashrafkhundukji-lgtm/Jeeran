@@ -179,6 +179,14 @@ export interface NearbyOffer {
   // offersToImageModules() below skips the field entirely rather than
   // sending an empty/placeholder image when unset.
   offer_image_url: string | null
+  // See supabase/migrations/20260822c_nearby_offers_category.sql — one of
+  // the plain-English CATEGORIES keys (src/lib/categories.ts), not a
+  // display label. Unused by the Wallet card itself; added for
+  // src/app/offers/nearby (NearbyOffersView.tsx)'s per-offer category
+  // icon, and surfaced here rather than via a second query since this is
+  // already the single source of truth for "everything about a nearby
+  // offer" — see the other business-derived fields above.
+  business_category: string
 }
 
 // OS-level geofencing: Google Wallet compares the phone's live GPS against
