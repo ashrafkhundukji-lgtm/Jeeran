@@ -71,14 +71,45 @@ export default async function NearbyOffersPage({
         ) : (
           <div className="flex flex-col gap-3">
             {otherOffers.map((o) => (
+              // Each row IS already a real link to the same
+              // /offers/[campaignId] page the top-ranked offers use (tapping
+              // takes a customer to the exact same Directions/WhatsApp/Call
+              // page) — the previous version just had no visible affordance
+              // that these were tappable: a hover-only border color does
+              // nothing on a touchscreen, which is how this list is actually
+              // viewed (opened from the Wallet card's "Other offers nearby"
+              // link). The chevron + explicit "View offer" label + an
+              // active: press state (not hover) are what actually signal
+              // "tap me" on mobile.
               <a
                 key={o.offer_id}
                 href={`/offers/${o.offer_id}`}
-                className="block rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition-colors hover:border-[#FF6B4A]/40"
+                className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition-colors active:border-[#FF6B4A]/50 active:bg-[#FFF7F3]"
               >
-                <p className="mb-1 text-xs text-neutral-400">{o.business_name}</p>
-                <h2 className="mb-1 font-medium text-[#1a1a1a]">{o.offer_title}</h2>
-                <p className="text-sm text-neutral-500">{o.distance_km.toFixed(1)} km away</p>
+                <div className="min-w-0">
+                  <p className="mb-1 text-xs text-neutral-400">{o.business_name}</p>
+                  <h2 className="mb-1 font-medium text-[#1a1a1a]">{o.offer_title}</h2>
+                  <p className="text-sm text-neutral-500">{o.distance_km.toFixed(1)} km away</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5 text-[#FF6B4A]">
+                  <span className="text-sm font-semibold whitespace-nowrap">View offer</span>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    aria-hidden="true"
+                    className="shrink-0"
+                  >
+                    <path
+                      d="M6 3.5L10.5 8L6 12.5"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
               </a>
             ))}
           </div>
