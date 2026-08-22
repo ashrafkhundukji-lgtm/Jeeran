@@ -21,11 +21,12 @@
  * creates a duplicate pass, an accepted tradeoff for now.
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createMembershipObject, buildSaveUrl, ensureMembershipClass, type NearbyOffer } from '@/lib/wallet/google-membership-pass'
 import { recordRescanTouchpoint } from '@/lib/wallet/rescan-credit'
+import { refreshMember } from '@/lib/wallet/geo-notify'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
   // Returning member: don't issue a second pass.
   const { data: existing, error: lookupErr } = await supabaseAdmin
     .from('wallet_members')
-    .select('id, google_object_id, origin_business_id, home_lat, home_lng')
+    .select('id, google_object_id, origin_business_id, home_lat, home_lng, push_radius_km, last_notified_offers')
     .eq('device_id', deviceId)
     .maybeSingle()
 
@@ -90,6 +91,33 @@ export async function POST(req: NextRequest) {
       ip: requestIp,
     })
 
+    // Re-engagement location refresh: home_lat/home_lng is frozen at signup
+    // by design (see the column comment in
+    // supabase/migrations/20260817_nearby_offers_locations.sql) — that's
+    // fine for the OS-level geofencing merchantLocations drives, but it
+    // means the "X km" distance text baked into the card (offersToTextModules)
+    // never updates either, which a real customer flagged as confusing after
+    // moving 10km. The scan page already re-requests geolocation on every
+    // visit via getBrowserLocation() (AddToWalletMembershipButton.tsx) and
+    // sends it in this same request body — previously it was read only for
+    // first-time signup and silently discarded here for returning members.
+    // Only overwrite on an actual grant: a declined/timed-out prompt
+    // resolves to undefined client-side, and must never clobber a location
+    // already on file.
+    let homeLat = existing.home_lat
+    let homeLng = existing.home_lng
+    let locationRefreshed = false
+    if (lat != null && lng != null) {
+      homeLat = lat
+      homeLng = lng
+      locationRefreshed = true
+      const { error: locErr } = await supabaseAdmin
+        .from('wallet_members')
+        .update({ home_lat: lat, home_lng: lng })
+        .eq('id', existing.id)
+      if (locErr) console.error('home location refresh failed', { memberId: existing.id, locErr })
+    }
+
     // A row can have google_object_id = null when a PREVIOUS visit created
     // the member but never got as far as creating the Google Wallet object
     // (e.g. the GOOGLE_WALLET_SERVICE_ACCOUNT_KEY_B64 outage on 2026-08-15).
@@ -98,13 +126,44 @@ export async function POST(req: NextRequest) {
     // repair on its own. Caught separately from the rest of the handler so a
     // still-broken credential degrades to the pre-existing null-saveUrl
     // response instead of a 500, and doesn't block re-attribution above.
+    // Uses homeLat/homeLng (not existing.home_lat/lng) so a just-granted
+    // fresh location seeds the object instead of the stale signup-time one.
     let objectId = existing.google_object_id
-    if (!objectId && existing.home_lat != null && existing.home_lng != null) {
+    if (!objectId && homeLat != null && homeLng != null) {
       try {
-        objectId = await createAndStoreMembershipObject(existing.id, existing.home_lat, existing.home_lng)
+        objectId = await createAndStoreMembershipObject(existing.id, homeLat, homeLng)
       } catch (err) {
         console.error('retry: createMembershipObject failed for existing member', { memberId: existing.id, err })
       }
+    } else if (objectId && locationRefreshed) {
+      // Object already exists — push the corrected distances to it right
+      // now rather than waiting for the next business-triggered event or the
+      // periodic cron sweep (up to 24h away), which is exactly the gap that
+      // left a real customer looking at a stale "X km" for days. Reuses
+      // geo-notify's own refreshMember() (card patch + last_notified_offers/
+      // offer_notifications bookkeeping) instead of re-deriving that here —
+      // force: true because the offer SET may be unchanged while only
+      // distance has moved (see refreshMember()'s own comment on that flag).
+      // Best-effort, wrapped in after(): an unawaited promise alone isn't
+      // guaranteed to run to completion on Vercel — same reasoning as the
+      // campaign routes' geo-push calls.
+      const refreshHomeLat = homeLat
+      const refreshHomeLng = homeLng
+      after(() =>
+        refreshMember(
+          {
+            id: existing.id,
+            google_object_id: objectId!,
+            home_lat: refreshHomeLat,
+            home_lng: refreshHomeLng,
+            push_radius_km: existing.push_radius_km,
+            last_notified_offers: existing.last_notified_offers ?? {},
+          },
+          { force: true },
+        ).catch((err) => {
+          console.error('post-scan location refresh failed', { memberId: existing.id, err })
+        }),
+      )
     }
 
     const res = NextResponse.json({

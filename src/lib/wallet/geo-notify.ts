@@ -18,6 +18,12 @@
  *     2. Periodic sweep — refreshAllMembers(), catching anything (1) can't
  *        see (an offer's end_date lapsing with no activate/deactivate
  *        event, etc.). Wired into src/app/api/cron/wallet-refresh/route.ts.
+ *     3. Re-engagement — a returning member's home_lat/home_lng being
+ *        corrected on a fresh geolocation grant (src/app/api/wallet/
+ *        membership/create/route.ts, the scan page's natural re-engagement
+ *        point). Calls refreshMember() directly with { force: true } — see
+ *        that option below for why this path can't use the same
+ *        unchanged-offers early-out as (1)/(2).
  *  - The actual notification (Google's addMessage, messageType:
  *    TEXT_AND_NOTIFY — what makes it an Android lock-screen push, not just
  *    card text) is NOT sent by either of the above anymore. It's sent
@@ -84,7 +90,7 @@ export async function notifyMembersNearBusiness(businessLat: number, businessLng
   })
 
   if (error) throw error
-  await Promise.all((members as WalletMember[]).map(refreshMember))
+  await Promise.all((members as WalletMember[]).map((m) => refreshMember(m)))
 }
 
 /** Periodic sweep across every registered member. */
@@ -95,7 +101,7 @@ export async function refreshAllMembers() {
     .not('google_object_id', 'is', null)
 
   if (error) throw error
-  await Promise.all((members as WalletMember[]).map(refreshMember))
+  await Promise.all((members as WalletMember[]).map((m) => refreshMember(m)))
 }
 
 // Order-independent: don't rely on JSON.stringify key order (Postgres jsonb
@@ -108,7 +114,7 @@ function offerVersionsEqual(a: Record<string, string>, b: Record<string, string>
   return aKeys.every((id) => a[id] === b[id])
 }
 
-async function refreshMember(member: WalletMember) {
+export async function refreshMember(member: WalletMember, opts: { force?: boolean } = {}) {
   if (!member.google_object_id) return
 
   // Deliberately platform-wide: nearby_active_offers() ranks ANY registered
@@ -127,7 +133,18 @@ async function refreshMember(member: WalletMember) {
   const newVersions: Record<string, string> = {}
   for (const o of nearbyOffers) newVersions[o.offer_id] = o.offer_updated_at
 
-  if (offerVersionsEqual(newVersions, oldVersions)) return // nothing changed -> skip the API call
+  // opts.force skips this early-out. It exists for the re-engagement caller
+  // (see the file-level comment's item 3): a fresh geolocation grant can
+  // leave the offer SET unchanged (same shops, offer_id/offer_updated_at
+  // identical) while distance_km — baked into offersToTextModules()'s "X km"
+  // text — has moved, since that's the entire point of the refresh:
+  // correcting a stale displayed distance after home_lat/home_lng just
+  // updated. offerVersionsEqual only compares offer_id/offer_updated_at, so
+  // it can't see a distance-only change; force bypasses the check rather
+  // than teaching the version map about distance too (which would also
+  // defeat its purpose of avoiding no-op API calls for the event-driven and
+  // periodic-sweep callers, where content — not distance — is what matters).
+  if (!opts.force && offerVersionsEqual(newVersions, oldVersions)) return // nothing changed -> skip the API call
 
   // Card only — silent, immediate. No notifyNewOffer() call here anymore;
   // that's exclusively sendDailyNotificationBatch()'s job now (see the
