@@ -59,6 +59,18 @@ async function client() {
   return auth.getClient()
 }
 
+// Tried moving Directions/View offer to the top of the pass Details view via
+// classTemplateInfo.detailsTemplateOverride (referencing linksModuleData.uris
+// by fieldPath) — verified live that Google's API accepts it, and it does
+// move the links up. But Google's own docs (offers-template reference) say
+// plainly: "The fields are displayed with no label" for links pulled in this
+// way — confirmed on a real device, both links rendered as unlabeled icons
+// indistinguishable until tapped. Reverted: a customer risks opening Maps
+// when they meant the offer page (or vice versa). Left at Google's default
+// position (bottom of the Details view) instead, where Directions/View offer
+// keep their actual text captions from offersToLinksModule()'s
+// localizedDescription — buried is better than ambiguous.
+//
 /**
  * Idempotent: creates the shared Generic pass CLASS if it doesn't exist yet.
  * Safe to call before every registration — the GET-then-create check below
@@ -199,15 +211,26 @@ function offersToMerchantLocations(offers: NearbyOffer[]) {
 // respectful rather than turning it into a cluttered ad unit.
 
 // Image is the shop's own optional upload (campaigns.image_url) — most
-// offers won't have one, and this skips the field entirely (not an empty
-// array) rather than sending a placeholder. contentDescription uses the
+// offers won't have one. Returns [] (not undefined) when there's no image to
+// show: confirmed live via a direct genericObject GET that a PATCH omitting
+// a repeated-field key entirely (what `undefined` produces once
+// patchMembershipObject's request body is JSON-serialized) leaves Google's
+// STORED value untouched, not cleared — unlike textModulesData/
+// merchantLocations, which are always sent as a real array (possibly empty)
+// and do clear correctly. Concretely: the top offer's image was going stale
+// and staying pinned to the card indefinitely once that offer stopped being
+// #1 (a later PATCH for a new #1 offer with no image of its own silently
+// left the old image in place) — this looked exactly like "the offer with an
+// image always shows in the top slot," when the actual bug was staleness,
+// not the ranking itself (nearby_active_offers() never sorts on image
+// presence — see that function's ORDER BY). contentDescription uses the
 // offer's own title as-is, not run through localizedString() — that helper
 // is for FIXED chrome text we actually have ar/ur translations for; offer
 // content is whatever language the shop typed, same reasoning already
 // documented for textModulesData.
 function offersToImageModules(offers: NearbyOffer[]) {
   const top = offers[0]
-  if (!top?.offer_image_url) return undefined
+  if (!top?.offer_image_url) return []
   return [
     {
       id: 'offer_image',
@@ -229,9 +252,15 @@ function offersToImageModules(offers: NearbyOffer[]) {
 // lat/lng) to be non-null, so business_lat/business_lng can't be null here.
 // Link type is inferred by Google from the URI scheme (https:// / tel: /
 // geo:), not a separate field — confirmed against the Uri reference.
+// Returns { uris: [] } (not undefined) when there's no top offer at all —
+// same staleness reasoning as offersToImageModules() just above: an
+// omitted key leaves Google's stored linksModuleData untouched on PATCH, so
+// a member whose nearby-offers list ever goes empty (moved out of every
+// offer's range, say) would otherwise keep "Directions"/"View offer" links
+// pointing at whatever offer was last shown, forever.
 function offersToLinksModule(offers: NearbyOffer[]) {
   const top = offers[0]
-  if (!top) return undefined
+  if (!top) return { uris: [] }
 
   const uris: Array<{ id: string; uri: string; description: string; localizedDescription: ReturnType<typeof localizedString> }> = []
 
