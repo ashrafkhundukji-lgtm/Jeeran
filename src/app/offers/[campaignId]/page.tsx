@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import SiteLogo from '@/components/SiteLogo'
+import OfferPageView from '@/components/OfferPageView'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,12 +8,9 @@ export const dynamic = 'force-dynamic'
 // the "View offer" link (see offersToLinksModule in
 // src/lib/wallet/google-membership-pass.ts) sends the customer for the
 // fuller experience the card's fixed template can't provide (a real image,
-// real layout, a proper redemption reminder). Reuses the landing-page
-// redesign's brand tokens (src/components/LandingPage.tsx): #FBFCFD
-// canvas, #1a1a1a ink, Archivo for display type, #FF6B4A accent — not the
-// plainer /scan page's styling, which predates that redesign.
-const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
-
+// real layout, a proper redemption reminder, and now a language switcher —
+// see OfferPageView.tsx for why the actual rendering lives in a client
+// component split off from this one).
 export default async function OfferPage({
   params,
 }: {
@@ -54,82 +51,16 @@ export default async function OfferPage({
   const whatsappUrl = whatsappDigits ? `https://wa.me/${whatsappDigits}` : null
 
   return (
-    <main className="min-h-screen bg-[#FBFCFD] text-[#1a1a1a]">
-      <header className="mx-auto flex max-w-[720px] items-center px-6 pt-8 sm:px-8">
-        <SiteLogo className="h-12" />
-      </header>
-
-      <div className="mx-auto max-w-[720px] px-6 pt-10 pb-20 sm:px-8">
-        {!campaign.is_active && (
-          <div className="mb-8 rounded-xl border border-neutral-200 bg-white px-5 py-4 text-sm text-[#5a5a5a]">
-            This offer isn&apos;t currently active — check back soon, or see what else{' '}
-            <span className="font-medium text-[#1a1a1a]">{business.name}</span> has running.
-          </div>
-        )}
-
-        {campaign.image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={campaign.image_url}
-            alt={campaign.title}
-            className="mb-8 aspect-[16/10] w-full rounded-2xl object-cover"
-          />
-        ) : (
-          <div className="mb-8 flex aspect-[16/10] w-full items-center justify-center rounded-2xl bg-gradient-to-br from-[#1E3A8A] to-[#3B5BC4]">
-            <span className={`${ARCHIVO} text-3xl font-black text-white/90`}>{business.name}</span>
-          </div>
-        )}
-
-        <p className="mb-2 text-xs font-medium tracking-wide text-[#6b6b6b] uppercase">{business.category}</p>
-        <h1 className={`${ARCHIVO} mb-2 text-[32px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[40px]`}>
-          {campaign.title}
-        </h1>
-        <p className="mb-6 text-[15px] font-medium text-[#1E3A8A]">at {business.name}</p>
-
-        {campaign.description && (
-          <p className="mb-8 max-w-[560px] text-[17px] leading-[1.6] text-[#5a5a5a]">{campaign.description}</p>
-        )}
-
-        <div className="mb-6 rounded-2xl border border-[#FF6B4A]/25 bg-[#FFF7F3] px-6 py-5">
-          <div className="mb-1 h-1.5 w-10 rounded-full bg-[#FF6B4A]" />
-          <p className="text-[15px] font-semibold text-[#1a1a1a]">How to redeem</p>
-          <p className="text-sm leading-relaxed text-[#5a5a5a]">
-            Show your Jeeran pass to staff at {business.name} — no coupon, no code, just the pass already saved to
-            your wallet.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          {directionsUrl && (
-            <a
-              href={directionsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block rounded-[10px] bg-[#1E3A8A] px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#16306e]"
-            >
-              Get directions
-            </a>
-          )}
-          {whatsappUrl && (
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block rounded-[10px] border border-[#25D366]/40 bg-[#25D366]/10 px-7 py-3.5 text-[15px] font-semibold text-[#128C4A] transition-colors hover:bg-[#25D366]/20"
-            >
-              WhatsApp
-            </a>
-          )}
-          {callUrl && (
-            <a
-              href={callUrl}
-              className="inline-block rounded-[10px] border border-neutral-200 bg-white px-7 py-3.5 text-[15px] font-semibold text-[#1a1a1a] transition-colors hover:bg-neutral-50"
-            >
-              Call
-            </a>
-          )}
-        </div>
-      </div>
-    </main>
+    <OfferPageView
+      isActive={campaign.is_active}
+      imageUrl={campaign.image_url}
+      businessName={business.name}
+      category={business.category}
+      title={campaign.title}
+      description={campaign.description}
+      directionsUrl={directionsUrl}
+      whatsappUrl={whatsappUrl}
+      callUrl={callUrl}
+    />
   )
 }
