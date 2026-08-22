@@ -231,8 +231,11 @@ function offersToMerchantLocations(offers: NearbyOffer[]) {
 //
 // Both draw from the same MAX_OFFERS_SHOWN cap as textModulesData
 // (offersToTextModules below) so a link can never reference an offer the
-// card's text never mentions, and vice versa.
-const MAX_OFFERS_SHOWN = 2
+// card's text never mentions, and vice versa. Exported so
+// src/app/offers/nearby/page.tsx (the "Other offers nearby" link's target —
+// see offersToLinksModule below) can skip exactly the offers already shown
+// on the card instead of hardcoding a second copy of this number.
+export const MAX_OFFERS_SHOWN = 2
 
 // Image is the shop's own optional upload (campaigns.image_url) — most
 // offers won't have one. Returns [] (not undefined) when there's no image to
@@ -302,7 +305,21 @@ function offersToImageModules(offers: NearbyOffer[]) {
 // a member whose nearby-offers list ever goes empty (moved out of every
 // offer's range, say) would otherwise keep stale links pointing at whatever
 // offer(s) were last shown, forever.
-function offersToLinksModule(offers: NearbyOffer[]) {
+//
+// A trailing "Other offers nearby" link is appended when the offers list
+// nearby_active_offers() returned actually has more than what's shown on the
+// card (MAX_OFFERS_SHOWN) — omitted otherwise so it's never a dead-end
+// button. It opens src/app/offers/nearby/page.tsx, which does its OWN fresh,
+// higher-limit nearby_active_offers() query rather than being bounded by
+// however many rows got embedded on the card at last patch time — this
+// `offers` array only ever has up to 5 (every caller passes p_limit: 5), so
+// treating it as authoritative for "is there more" would undercount once a
+// dense area has >5 active campaigns. Identifies the member via
+// signMemberToken() (same signing already used for the barcode) rather than
+// a raw memberId or raw lat/lng in the URL — keeps both out of a link that
+// can end up in browser history/referrers, and the target page verifies it
+// server-side the same way /api/redeem already does for the barcode.
+function offersToLinksModule(memberId: string, offers: NearbyOffer[]) {
   const shown = offers.slice(0, MAX_OFFERS_SHOWN)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
@@ -326,6 +343,15 @@ function offersToLinksModule(offers: NearbyOffer[]) {
       localizedDescription: localizedStringWithSuffix('Directions', 'الاتجاهات', 'راستہ دیکھیں', suffix),
     }
   })
+
+  if (appUrl && offers.length > MAX_OFFERS_SHOWN) {
+    uris.push({
+      id: 'other_offers',
+      uri: `${appUrl}/offers/nearby?token=${signMemberToken(memberId)}`,
+      description: 'Other offers nearby',
+      localizedDescription: localizedString('Other offers nearby', 'عروض أخرى قريبة منك', 'قریب دیگر آفرز'),
+    })
+  }
 
   return { uris }
 }
@@ -351,7 +377,7 @@ export async function createMembershipObject(memberId: string, initialOffers: Ne
       textModulesData: offersToTextModules(initialOffers),
       merchantLocations: offersToMerchantLocations(initialOffers),
       imageModulesData: offersToImageModules(initialOffers),
-      linksModuleData: offersToLinksModule(initialOffers),
+      linksModuleData: offersToLinksModule(memberId, initialOffers),
       hexBackgroundColor: BRAND_NAVY,
       logo: { sourceUri: { uri: LOGO_URL } },
       heroImage: { sourceUri: { uri: HERO_IMAGE_URL } },
@@ -381,7 +407,7 @@ export async function createMembershipObject(memberId: string, initialOffers: Ne
  * set on a Message sent through the dedicated addMessage endpoint — not by
  * embedding an untyped `messages` array in a general object PATCH like this.
  */
-export async function patchMembershipObject(objectId: string, offers: NearbyOffer[]) {
+export async function patchMembershipObject(objectId: string, memberId: string, offers: NearbyOffer[]) {
   const authClient = await client()
 
   await authClient.request({
@@ -405,7 +431,7 @@ export async function patchMembershipObject(objectId: string, offers: NearbyOffe
       // offers "follow" the customer, not home_lat/home_lng.
       merchantLocations: offersToMerchantLocations(offers),
       imageModulesData: offersToImageModules(offers),
-      linksModuleData: offersToLinksModule(offers),
+      linksModuleData: offersToLinksModule(memberId, offers),
     },
   })
 }

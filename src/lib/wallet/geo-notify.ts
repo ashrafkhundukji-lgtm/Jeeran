@@ -150,7 +150,7 @@ export async function refreshMember(member: WalletMember, opts: { force?: boolea
   // that's exclusively sendDailyNotificationBatch()'s job now (see the
   // file-level comment above). This is precisely the fix: an offer changing
   // used to fire an actual lock-screen push right here, every time.
-  await patchMembershipObject(member.google_object_id, nearbyOffers)
+  await patchMembershipObject(member.google_object_id, member.id, nearbyOffers)
 
   // Log reach: one row per unique (member, offer) ever shown on the card,
   // powering the reach -> redeemed conversion-rate metric on the
