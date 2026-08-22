@@ -39,6 +39,8 @@ export default function ProfileForm({
   category: initialCategory,
   latitude: initialLatitude,
   longitude: initialLongitude,
+  phone: initialPhone,
+  whatsapp: initialWhatsapp,
 }: {
   email: string
   fullName: string
@@ -46,6 +48,8 @@ export default function ProfileForm({
   category: string
   latitude: number | null
   longitude: number | null
+  phone: string | null
+  whatsapp: string | null
 }) {
   const router = useRouter()
   const [locale, setLocale] = useLocale()
@@ -56,6 +60,8 @@ export default function ProfileForm({
   const [category, setCategory] = useState(initialCategory)
   const [latitude, setLatitude] = useState<number | null>(initialLatitude)
   const [longitude, setLongitude] = useState<number | null>(initialLongitude)
+  const [phone, setPhone] = useState(initialPhone ?? '')
+  const [whatsapp, setWhatsapp] = useState(initialWhatsapp ?? '')
   const [locating, setLocating] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -87,7 +93,7 @@ export default function ProfileForm({
     const res = await fetch('/api/profile', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fullName, businessName, category, latitude, longitude }),
+      body: JSON.stringify({ fullName, businessName, category, latitude, longitude, phone, whatsapp }),
     })
 
     if (!res.ok) {
@@ -157,6 +163,29 @@ export default function ProfileForm({
         <p className="text-xs text-neutral-400 mb-2">{copy.locationHint}</p>
         <LocationPicker latitude={latitude} longitude={longitude} onChange={setLocation} />
         {latitude != null && longitude != null && <p className="text-xs text-emerald-600 mt-1.5">{copy.locationSet}</p>}
+      </div>
+
+      <div>
+        <label className={labelClass}>{copy.phone}</label>
+        <input
+          type="tel"
+          className={inputClass}
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder={copy.phonePlaceholder}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>{copy.whatsapp}</label>
+        <input
+          type="tel"
+          className={inputClass}
+          value={whatsapp}
+          onChange={(e) => setWhatsapp(e.target.value)}
+          placeholder={copy.whatsappPlaceholder}
+        />
+        <p className="text-xs text-neutral-400 mt-1">{copy.contactHint}</p>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

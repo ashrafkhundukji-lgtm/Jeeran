@@ -45,6 +45,22 @@ function localizedString(en: string, ar: string, ur: string) {
   }
 }
 
+// Same fixed-chrome-text-only translation as localizedString() above, plus
+// an untranslated suffix appended identically across every language — for
+// captions like offersToLinksModule()'s "View offer – {business_name}",
+// where the prefix has real ar/ur translations but the suffix is dynamic
+// shop content we have no translation for (same reasoning as offer_title
+// elsewhere in this file).
+function localizedStringWithSuffix(en: string, ar: string, ur: string, suffix: string) {
+  return {
+    defaultValue: { language: 'en', value: `${en}${suffix}` },
+    translatedValues: [
+      { language: 'ar', value: `${ar}${suffix}` },
+      { language: 'ur', value: `${ur}${suffix}` },
+    ],
+  }
+}
+
 function classId(): string {
   const { issuerId } = loadGoogleWalletCredentials()
   return `${issuerId}.${CLASS_SUFFIX}`
@@ -205,10 +221,18 @@ function offersToMerchantLocations(offers: NearbyOffer[]) {
 // before shipping — see google-membership-pass.test note below) — plus a
 // per-offer landing page (src/app/offers/[campaignId]/page.tsx) for the
 // fuller experience the card's fixed template can't provide on its own.
-// Both helpers below are scoped to the single TOP-ranked offer only
-// (offers[0], same ranking nearby_active_offers() already produced) —
-// deliberately not one image/link set per offer, to keep the card
-// respectful rather than turning it into a cluttered ad unit.
+//
+// imageModulesData stays scoped to the single TOP-ranked offer only
+// (offers[0]) — deliberately not one image per offer, to keep the card
+// respectful rather than turning it into a cluttered ad unit (a shop photo
+// per row would dominate the card). linksModuleData is NOT similarly capped
+// to one offer — see offersToLinksModule()'s own comment for why that one
+// covers every offer actually shown in textModulesData instead.
+//
+// Both draw from the same MAX_OFFERS_SHOWN cap as textModulesData
+// (offersToTextModules below) so a link can never reference an offer the
+// card's text never mentions, and vice versa.
+const MAX_OFFERS_SHOWN = 2
 
 // Image is the shop's own optional upload (campaigns.image_url) — most
 // offers won't have one. Returns [] (not undefined) when there's no image to
@@ -242,46 +266,68 @@ function offersToImageModules(offers: NearbyOffer[]) {
   ]
 }
 
-// "View offer" always links to the new landing page (skipped only if
-// NEXT_PUBLIC_APP_URL isn't configured — same guard buildSaveUrl already
-// uses). "Call" is NOT included: investigated first, businesses has no
-// phone column at all today (confirmed against every migration touching
-// that table) — this only ships once that's genuinely true, not before.
-// "Directions" is safe to always include for any offer nearby_active_offers()
-// returns: its own WHERE clause requires businesses.geog (generated from
-// lat/lng) to be non-null, so business_lat/business_lng can't be null here.
-// Link type is inferred by Google from the URI scheme (https:// / tel: /
-// geo:), not a separate field — confirmed against the Uri reference.
-// Returns { uris: [] } (not undefined) when there's no top offer at all —
+// ONE tap target per offer actually shown in textModulesData
+// (MAX_OFFERS_SHOWN, currently the top 2) — each opens that offer's landing
+// page (src/app/offers/[campaignId]/page.tsx), which is now the real hub:
+// Directions, Call, and WhatsApp all live there instead of as separate
+// Wallet-card link rows. Deliberately NOT one row per action per offer
+// (View + Directions + Call + WhatsApp × 2 offers = 8 rows) — Wallet's
+// linksModuleData is a flat, uncategorized list with no per-offer grouping
+// UI of its own, so that many rows reads as clutter, not choice, and only
+// gets worse as more actions get added later (delivery, etc.). The browser
+// page has actual layout to work with; the card doesn't. Kept at Google's
+// default bottom-of-Details-view position rather than pulled up via
+// classTemplateInfo.detailsTemplateOverride — see the comment on that
+// attempt near the top of this file: links moved that way lose their text
+// captions on a real device, which would make even a single-row-per-offer
+// list ambiguous. Each caption is suffixed with the offer's own
+// business_name (not run through localizedString() itself — same reasoning
+// as offer content elsewhere in this file: it's whatever the shop typed, not
+// something we have ar/ur translations for) so two offers on one card never
+// present two identically-captioned "View offer" links.
+//
+// Falls back to a plain "Directions" link per offer ONLY when
+// NEXT_PUBLIC_APP_URL isn't configured (so there's still something tappable
+// rather than nothing) — same guard buildSaveUrl already uses. In the normal
+// configured case this is the only fallback the card needs; Directions for
+// the top offer is one tap away via the landing page's own button, which is
+// safe to link to for any offer nearby_active_offers() returns (its own
+// WHERE clause requires businesses.geog non-null, so business_lat/lng can't
+// be null here either, for the fallback path). Link type is inferred by
+// Google from the URI scheme (https:// / geo:), not a separate field —
+// confirmed against the Uri reference.
+// Returns { uris: [] } (not undefined) when there's nothing to show at all —
 // same staleness reasoning as offersToImageModules() just above: an
 // omitted key leaves Google's stored linksModuleData untouched on PATCH, so
 // a member whose nearby-offers list ever goes empty (moved out of every
-// offer's range, say) would otherwise keep "Directions"/"View offer" links
-// pointing at whatever offer was last shown, forever.
+// offer's range, say) would otherwise keep stale links pointing at whatever
+// offer(s) were last shown, forever.
 function offersToLinksModule(offers: NearbyOffer[]) {
-  const top = offers[0]
-  if (!top) return { uris: [] }
-
-  const uris: Array<{ id: string; uri: string; description: string; localizedDescription: ReturnType<typeof localizedString> }> = []
-
+  const shown = offers.slice(0, MAX_OFFERS_SHOWN)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
-  if (appUrl) {
-    uris.push({
-      id: 'view_offer',
-      uri: `${appUrl}/offers/${top.offer_id}`,
-      description: 'View offer',
-      localizedDescription: localizedString('View offer', 'عرض التفاصيل', 'آفر دیکھیں'),
-    })
-  }
 
-  uris.push({
-    id: 'directions',
-    uri: `https://www.google.com/maps/dir/?api=1&destination=${top.business_lat},${top.business_lng}`,
-    description: 'Directions',
-    localizedDescription: localizedString('Directions', 'الاتجاهات', 'راستہ دیکھیں'),
+  const uris = shown.map((o, i) => {
+    const n = i + 1
+    const suffix = shown.length > 1 ? ` – ${o.business_name}` : ''
+
+    if (appUrl) {
+      return {
+        id: `view_offer_${n}`,
+        uri: `${appUrl}/offers/${o.offer_id}`,
+        description: `View offer${suffix}`,
+        localizedDescription: localizedStringWithSuffix('View offer', 'عرض التفاصيل', 'آفر دیکھیں', suffix),
+      }
+    }
+
+    return {
+      id: `directions_${n}`,
+      uri: `https://www.google.com/maps/dir/?api=1&destination=${o.business_lat},${o.business_lng}`,
+      description: `Directions${suffix}`,
+      localizedDescription: localizedStringWithSuffix('Directions', 'الاتجاهات', 'راستہ دیکھیں', suffix),
+    }
   })
 
-  return uris.length ? { uris } : undefined
+  return { uris }
 }
 
 /**
@@ -407,7 +453,7 @@ export async function notifyNewOffer(objectId: string, offer: NearbyOffer) {
 }
 
 function offersToTextModules(offers: NearbyOffer[]) {
-  return offers.slice(0, 2).map((o, i) => ({
+  return offers.slice(0, MAX_OFFERS_SHOWN).map((o, i) => ({
     id: `nearby_${i + 1}`,
     header: o.business_name,
     body: `${o.offer_title} · ${o.distance_km.toFixed(1)} km`,
