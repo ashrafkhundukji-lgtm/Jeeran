@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { verifyMemberToken } from '@/lib/wallet/member-token'
 import { MAX_OFFERS_SHOWN, type NearbyOffer } from '@/lib/wallet/google-membership-pass'
-import SiteLogo from '@/components/SiteLogo'
+import NearbyOffersView from '@/components/NearbyOffersView'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,8 +15,6 @@ export const dynamic = 'force-dynamic'
 // would undercount once a dense area has more active campaigns than its
 // own p_limit, and campaigns can go active/inactive between card patches.
 const NEARBY_PAGE_LIMIT = 20
-
-const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
 
 export default async function NearbyOffersPage({
   searchParams,
@@ -54,67 +52,5 @@ export default async function NearbyOffersPage({
   // reprint of what the customer already saw before tapping through.
   const otherOffers = ((offers ?? []) as NearbyOffer[]).slice(MAX_OFFERS_SHOWN)
 
-  return (
-    <main className="min-h-screen bg-[#FBFCFD] text-[#1a1a1a]">
-      <header className="mx-auto flex max-w-[720px] items-center px-6 pt-8 sm:px-8">
-        <SiteLogo className="h-12" />
-      </header>
-
-      <div className="mx-auto max-w-[720px] px-6 pt-10 pb-20 sm:px-8">
-        <h1 className={`${ARCHIVO} mb-2 text-[28px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[34px]`}>
-          Other offers nearby
-        </h1>
-        <p className="mb-8 text-[15px] text-[#5a5a5a]">More deals from shops near you, right now.</p>
-
-        {otherOffers.length === 0 ? (
-          <p className="text-sm text-neutral-500">No other offers nearby right now — check back later.</p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {otherOffers.map((o) => (
-              // Each row IS already a real link to the same
-              // /offers/[campaignId] page the top-ranked offers use (tapping
-              // takes a customer to the exact same Directions/WhatsApp/Call
-              // page) — the previous version just had no visible affordance
-              // that these were tappable: a hover-only border color does
-              // nothing on a touchscreen, which is how this list is actually
-              // viewed (opened from the Wallet card's "Other offers nearby"
-              // link). The chevron + explicit "View offer" label + an
-              // active: press state (not hover) are what actually signal
-              // "tap me" on mobile.
-              <a
-                key={o.offer_id}
-                href={`/offers/${o.offer_id}`}
-                className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition-colors active:border-[#FF6B4A]/50 active:bg-[#FFF7F3]"
-              >
-                <div className="min-w-0">
-                  <p className="mb-1 text-xs text-neutral-400">{o.business_name}</p>
-                  <h2 className="mb-1 font-medium text-[#1a1a1a]">{o.offer_title}</h2>
-                  <p className="text-sm text-neutral-500">{o.distance_km.toFixed(1)} km away</p>
-                </div>
-                <div className="flex shrink-0 items-center gap-1.5 text-[#FF6B4A]">
-                  <span className="text-sm font-semibold whitespace-nowrap">View offer</span>
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    aria-hidden="true"
-                    className="shrink-0"
-                  >
-                    <path
-                      d="M6 3.5L10.5 8L6 12.5"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
-    </main>
-  )
+  return <NearbyOffersView otherOffers={otherOffers} />
 }
