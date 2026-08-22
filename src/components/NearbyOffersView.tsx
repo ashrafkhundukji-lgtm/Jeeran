@@ -7,6 +7,7 @@ import { NEARBY_OFFERS_COPY } from '@/lib/i18n/offers'
 import { CATEGORIES, CATEGORY_EMOJI, CATEGORY_LABELS } from '@/lib/categories'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import SiteLogo from '@/components/SiteLogo'
+import BackButton from '@/components/BackButton'
 import type { NearbyOffer } from '@/lib/wallet/google-membership-pass'
 
 const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
@@ -85,7 +86,10 @@ export default function NearbyOffersView({ otherOffers }: { otherOffers: NearbyO
   return (
     <main dir={dir} className="min-h-screen bg-[#FBFCFD] text-[#1a1a1a]">
       <header className="mx-auto flex max-w-[720px] items-center justify-between px-6 pt-8 sm:px-8">
-        <SiteLogo className="h-12" />
+        <div className="flex items-center gap-3">
+          <BackButton dir={dir} label={copy.back} />
+          <SiteLogo className="h-12" />
+        </div>
         <LanguageSwitcher locale={locale} onChange={setLocale} />
       </header>
 
