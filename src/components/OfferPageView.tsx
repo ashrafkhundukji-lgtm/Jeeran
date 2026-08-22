@@ -6,6 +6,7 @@ import { OFFER_PAGE_COPY } from '@/lib/i18n/offers'
 import { CATEGORY_LABELS } from '@/lib/categories'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import SiteLogo from '@/components/SiteLogo'
+import BackButton from '@/components/BackButton'
 
 // Same brand tokens as LandingPage.tsx: #FBFCFD canvas, #1a1a1a ink,
 // Archivo for display type, #FF6B4A accent.
@@ -52,7 +53,10 @@ export default function OfferPageView({
   return (
     <main dir={dir} className="min-h-screen bg-[#FBFCFD] text-[#1a1a1a]">
       <header className="mx-auto flex max-w-[720px] items-center justify-between px-6 pt-8 sm:px-8">
-        <SiteLogo className="h-12" />
+        <div className="flex items-center gap-3">
+          <BackButton dir={dir} label={copy.back} />
+          <SiteLogo className="h-12" />
+        </div>
         <LanguageSwitcher locale={locale} onChange={setLocale} />
       </header>
 

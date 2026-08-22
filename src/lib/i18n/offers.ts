@@ -16,6 +16,7 @@ export interface OfferPageCopy {
   getDirections: string
   whatsapp: string
   call: string
+  back: string
 }
 
 export const OFFER_PAGE_COPY: Record<Locale, OfferPageCopy> = {
@@ -29,6 +30,7 @@ export const OFFER_PAGE_COPY: Record<Locale, OfferPageCopy> = {
     getDirections: 'الاتجاهات',
     whatsapp: 'واتساب',
     call: 'اتصال',
+    back: 'رجوع',
   },
   en: {
     inactiveNotice: (businessName) =>
@@ -40,6 +42,7 @@ export const OFFER_PAGE_COPY: Record<Locale, OfferPageCopy> = {
     getDirections: 'Get directions',
     whatsapp: 'WhatsApp',
     call: 'Call',
+    back: 'Back',
   },
   ur: {
     inactiveNotice: (businessName) =>
@@ -51,6 +54,7 @@ export const OFFER_PAGE_COPY: Record<Locale, OfferPageCopy> = {
     getDirections: 'راستہ دیکھیں',
     whatsapp: 'واٹس ایپ',
     call: 'کال کریں',
+    back: 'واپس',
   },
 }
 
@@ -64,6 +68,7 @@ export interface NearbyOffersCopy {
   kmAway: (km: string) => string
   backToCategories: string
   offersCount: (n: number) => string
+  back: string
 }
 
 export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
@@ -77,6 +82,7 @@ export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
     kmAway: (km) => `${km} كم`,
     backToCategories: 'الفئات',
     offersCount: (n) => `${n} عرض`,
+    back: 'رجوع',
   },
   en: {
     heading: 'Other offers nearby',
@@ -88,6 +94,7 @@ export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
     kmAway: (km) => `${km} km away`,
     backToCategories: 'Categories',
     offersCount: (n) => `${n} offer${n === 1 ? '' : 's'}`,
+    back: 'Back',
   },
   ur: {
     heading: 'قریب دیگر آفرز',
@@ -99,5 +106,6 @@ export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
     kmAway: (km) => `${km} کلومیٹر دور`,
     backToCategories: 'کیٹگریز',
     offersCount: (n) => `${n} آفرز`,
+    back: 'واپس',
   },
 }
