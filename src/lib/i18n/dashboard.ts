@@ -57,6 +57,9 @@ export interface DashboardCopy {
     imageUploading: string
     imageRemove: string
     imageError: string
+    translationsShow: string
+    translationsHide: string
+    translationsHint: string
   }
   billing: {
     heading: string
@@ -202,6 +205,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       imageUploading: 'جارٍ الرفع…',
       imageRemove: 'إزالة',
       imageError: 'تعذر رفع الصورة',
+      translationsShow: '+ إضافة ترجمات (اختياري)',
+      translationsHide: '- إخفاء الترجمات',
+      translationsHint:
+        'إذا تركتها فارغة، سيُترجم العرض تلقائياً. أدخل ترجمتك الخاصة هنا فقط إذا أردت التحكم الكامل بالنص.',
     },
     billing: {
       heading: 'الفواتير',
@@ -345,6 +352,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       imageUploading: 'Uploading…',
       imageRemove: 'Remove',
       imageError: 'Could not upload image',
+      translationsShow: '+ Add translations (optional)',
+      translationsHide: '- Hide translations',
+      translationsHint:
+        "Left blank, the offer gets auto-translated. Only fill these in if you want full control over the wording.",
     },
     billing: {
       heading: 'Billing',
@@ -488,6 +499,9 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       imageUploading: 'اپ لوڈ ہو رہا ہے…',
       imageRemove: 'ہٹائیں',
       imageError: 'تصویر اپ لوڈ نہیں ہو سکی',
+      translationsShow: '+ ترجمے شامل کریں (اختیاری)',
+      translationsHide: '- ترجمے چھپائیں',
+      translationsHint: 'خالی چھوڑنے پر آفر خودکار طور پر ترجمہ ہو جائے گا۔ الفاظ پر مکمل کنٹرول چاہیں تو ہی یہاں اپنا ترجمہ لکھیں۔',
     },
     billing: {
       heading: 'بلنگ',

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { DASHBOARD_COPY, type DashboardCopy } from '@/lib/i18n/dashboard'
+import { LOCALES } from '@/lib/i18n/locale'
 
 interface Campaign {
   id: string
@@ -13,6 +14,46 @@ interface Campaign {
   start_date: string | null
   end_date: string | null
   image_url: string | null
+  title_ar: string | null
+  title_en: string | null
+  title_ur: string | null
+  description_ar: string | null
+  description_en: string | null
+  description_ur: string | null
+}
+
+// Optional shop-provided per-locale overrides — see
+// supabase/migrations/20260822b_campaign_translations.sql. Bundled into one
+// object (rather than 12 more individual useState/props on top of the
+// already-long list below) since every field in here is always read/written
+// together as a unit.
+interface CampaignTranslationFields {
+  title_ar: string
+  title_en: string
+  title_ur: string
+  description_ar: string
+  description_en: string
+  description_ur: string
+}
+
+const EMPTY_TRANSLATIONS: CampaignTranslationFields = {
+  title_ar: '',
+  title_en: '',
+  title_ur: '',
+  description_ar: '',
+  description_en: '',
+  description_ur: '',
+}
+
+function translationsFromCampaign(c: Campaign): CampaignTranslationFields {
+  return {
+    title_ar: c.title_ar ?? '',
+    title_en: c.title_en ?? '',
+    title_ur: c.title_ur ?? '',
+    description_ar: c.description_ar ?? '',
+    description_en: c.description_en ?? '',
+    description_ur: c.description_ur ?? '',
+  }
 }
 
 // Shared by the create and edit forms — uploads immediately on file select
@@ -86,6 +127,8 @@ function CampaignFields({
   onImageUploadingChange,
   imageError,
   onImageErrorChange,
+  translations,
+  onTranslationsChange,
 }: {
   copy: DashboardCopy['campaigns']
   title: string
@@ -103,6 +146,8 @@ function CampaignFields({
   imageUploading: boolean
   onImageUploadingChange: (v: boolean) => void
   imageError: string
+  translations: CampaignTranslationFields
+  onTranslationsChange: (next: CampaignTranslationFields) => void
   onImageErrorChange: (v: string) => void
 }) {
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -120,6 +165,16 @@ function CampaignFields({
       onImageUploadingChange(false)
     }
   }
+
+  // Collapsed by default — most shops will skip this entirely (the offer
+  // page already falls back to an auto-translated version with zero effort
+  // on their part; see src/lib/translate.ts), so it stays out of the way of
+  // the common create/edit flow rather than adding 6 more always-visible
+  // fields to an already-long form. Local to this component instance (not
+  // lifted to CampaignManager state) since it's pure UI disclosure state,
+  // not data — the create form and each campaign's edit form each get their
+  // own independent open/closed state, which is the expected behavior.
+  const [translationsOpen, setTranslationsOpen] = useState(false)
 
   return (
     <>
@@ -197,6 +252,41 @@ function CampaignFields({
           />
         </div>
       </div>
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setTranslationsOpen((v) => !v)}
+          className="text-xs font-medium text-neutral-500 underline"
+        >
+          {translationsOpen ? copy.translationsHide : copy.translationsShow}
+        </button>
+        {translationsOpen && (
+          <div className="mt-2 flex flex-col gap-3 rounded-lg border border-neutral-200 p-3">
+            <p className="text-xs text-neutral-400">{copy.translationsHint}</p>
+            {LOCALES.map((l) => (
+              <div key={l.code}>
+                <label className="text-xs text-neutral-500 font-medium block mb-1">{l.label}</label>
+                <input
+                  placeholder={copy.titlePlaceholder}
+                  value={translations[`title_${l.code}`]}
+                  onChange={(e) => onTranslationsChange({ ...translations, [`title_${l.code}`]: e.target.value })}
+                  className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm mb-1.5"
+                />
+                <textarea
+                  placeholder={copy.descriptionPlaceholder}
+                  value={translations[`description_${l.code}`]}
+                  onChange={(e) =>
+                    onTranslationsChange({ ...translations, [`description_${l.code}`]: e.target.value })
+                  }
+                  className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm"
+                  rows={2}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </>
   )
 }
@@ -243,6 +333,7 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imageUploading, setImageUploading] = useState(false)
   const [imageError, setImageError] = useState('')
+  const [translations, setTranslations] = useState<CampaignTranslationFields>(EMPTY_TRANSLATIONS)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [toggleError, setToggleError] = useState('')
@@ -256,6 +347,7 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
   const [editImageUrl, setEditImageUrl] = useState<string | null>(null)
   const [editImageUploading, setEditImageUploading] = useState(false)
   const [editImageError, setEditImageError] = useState('')
+  const [editTranslations, setEditTranslations] = useState<CampaignTranslationFields>(EMPTY_TRANSLATIONS)
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState('')
 
@@ -280,6 +372,7 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
         start_date: startDate || null,
         end_date: endDate || null,
         image_url: imageUrl,
+        ...translations,
       }),
     })
 
@@ -299,6 +392,7 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
     setEndDate('')
     setImageUrl(null)
     setImageError('')
+    setTranslations(EMPTY_TRANSLATIONS)
     setShowForm(false)
     setSaving(false)
   }
@@ -330,6 +424,7 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
     setEditEndDate(c.end_date ?? '')
     setEditImageUrl(c.image_url)
     setEditImageError('')
+    setEditTranslations(translationsFromCampaign(c))
     setEditError('')
   }
 
@@ -355,6 +450,7 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
         start_date: editStartDate || null,
         end_date: editEndDate || null,
         image_url: editImageUrl,
+        ...editTranslations,
       }),
     })
 
@@ -376,6 +472,12 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
               start_date: editStartDate || null,
               end_date: editEndDate || null,
               image_url: editImageUrl,
+              title_ar: editTranslations.title_ar || null,
+              title_en: editTranslations.title_en || null,
+              title_ur: editTranslations.title_ur || null,
+              description_ar: editTranslations.description_ar || null,
+              description_en: editTranslations.description_en || null,
+              description_ur: editTranslations.description_ur || null,
             }
           : c,
       ),
@@ -416,6 +518,8 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
             onImageUploadingChange={setImageUploading}
             imageError={imageError}
             onImageErrorChange={setImageError}
+            translations={translations}
+            onTranslationsChange={setTranslations}
           />
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
@@ -457,6 +561,8 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
                 onImageUploadingChange={setEditImageUploading}
                 imageError={editImageError}
                 onImageErrorChange={setEditImageError}
+                translations={editTranslations}
+                onTranslationsChange={setEditTranslations}
               />
               {editError && <p className="text-sm text-red-600">{editError}</p>}
               <div className="flex gap-2">
