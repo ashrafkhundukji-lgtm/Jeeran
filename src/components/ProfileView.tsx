@@ -13,6 +13,8 @@ export default function ProfileView({
   category,
   latitude,
   longitude,
+  phone,
+  whatsapp,
 }: {
   email: string
   fullName: string
@@ -20,6 +22,8 @@ export default function ProfileView({
   category: string
   latitude: number | null
   longitude: number | null
+  phone: string | null
+  whatsapp: string | null
 }) {
   const [locale] = useLocale()
   const dir = getDir(locale)
@@ -39,6 +43,8 @@ export default function ProfileView({
         category={category}
         latitude={latitude}
         longitude={longitude}
+        phone={phone}
+        whatsapp={whatsapp}
       />
     </main>
   )

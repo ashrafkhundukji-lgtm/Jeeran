@@ -22,6 +22,13 @@ export async function PATCH(req: NextRequest) {
   const category: string = body?.category?.trim() || ''
   const latitude = body?.latitude != null && body.latitude !== '' ? Number(body.latitude) : null
   const longitude = body?.longitude != null && body.longitude !== '' ? Number(body.longitude) : null
+  // Optional contact info shown on the public offer landing page (see
+  // supabase/migrations/20260822_business_contact.sql) — both nullable, no
+  // format validation here. Stored exactly as typed; whatsapp is sanitized
+  // to digits-only at render time (wa.me's requirement), not here, so the
+  // form can show back exactly what the shop entered for editing.
+  const phone: string | null = body?.phone?.trim() || null
+  const whatsapp: string | null = body?.whatsapp?.trim() || null
 
   if (!fullName) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   if (!businessName || !category) {
@@ -36,7 +43,7 @@ export async function PATCH(req: NextRequest) {
 
   const { error } = await supabase
     .from('businesses')
-    .update({ name: businessName, category, latitude, longitude })
+    .update({ name: businessName, category, latitude, longitude, phone, whatsapp })
     .eq('id', business.id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

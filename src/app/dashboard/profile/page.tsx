@@ -27,6 +27,8 @@ export default async function ProfilePage() {
       category={business.category}
       latitude={business.latitude}
       longitude={business.longitude}
+      phone={business.phone}
+      whatsapp={business.whatsapp}
     />
   )
 }

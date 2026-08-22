@@ -32,7 +32,7 @@ export default async function OfferPage({
 
   const { data: business } = await supabaseAdmin
     .from('businesses')
-    .select('id, name, category, latitude, longitude')
+    .select('id, name, category, latitude, longitude, phone, whatsapp')
     .eq('id', campaign.creator_id)
     .maybeSingle()
 
@@ -42,6 +42,16 @@ export default async function OfferPage({
     business.latitude != null && business.longitude != null
       ? `https://www.google.com/maps/dir/?api=1&destination=${business.latitude},${business.longitude}`
       : null
+
+  // tel: hrefs tolerate spaces/dashes/parens as typed — no sanitizing needed.
+  const callUrl = business.phone ? `tel:${business.phone}` : null
+
+  // wa.me requires a bare digit string (no spaces/+/leading zeros) — sanitized
+  // here at render time rather than at write time, so /api/profile can store
+  // (and the dashboard form can show back) exactly what the shop typed. See
+  // supabase/migrations/20260822_business_contact.sql.
+  const whatsappDigits = business.whatsapp?.replace(/\D/g, '') || null
+  const whatsappUrl = whatsappDigits ? `https://wa.me/${whatsappDigits}` : null
 
   return (
     <main className="min-h-screen bg-[#FBFCFD] text-[#1a1a1a]">
@@ -89,16 +99,36 @@ export default async function OfferPage({
           </p>
         </div>
 
-        {directionsUrl && (
-          <a
-            href={directionsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block rounded-[10px] bg-[#1E3A8A] px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#16306e]"
-          >
-            Get directions
-          </a>
-        )}
+        <div className="flex flex-wrap gap-3">
+          {directionsUrl && (
+            <a
+              href={directionsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block rounded-[10px] bg-[#1E3A8A] px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#16306e]"
+            >
+              Get directions
+            </a>
+          )}
+          {whatsappUrl && (
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block rounded-[10px] border border-[#25D366]/40 bg-[#25D366]/10 px-7 py-3.5 text-[15px] font-semibold text-[#128C4A] transition-colors hover:bg-[#25D366]/20"
+            >
+              WhatsApp
+            </a>
+          )}
+          {callUrl && (
+            <a
+              href={callUrl}
+              className="inline-block rounded-[10px] border border-neutral-200 bg-white px-7 py-3.5 text-[15px] font-semibold text-[#1a1a1a] transition-colors hover:bg-neutral-50"
+            >
+              Call
+            </a>
+          )}
+        </div>
       </div>
     </main>
   )

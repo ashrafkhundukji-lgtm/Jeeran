@@ -92,6 +92,11 @@ export interface DashboardCopy {
     findingYou: string
     locationHint: string
     locationSet: string
+    phone: string
+    phonePlaceholder: string
+    whatsapp: string
+    whatsappPlaceholder: string
+    contactHint: string
     save: string
     saving: string
     saved: string
@@ -232,6 +237,11 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       findingYou: 'جارٍ تحديد موقعك…',
       locationHint: 'اضغط على الخريطة لتثبيت دبوس على محلك، أو اسحبه لضبطه.',
       locationSet: '📍 تم تحديد الموقع',
+      phone: 'رقم الهاتف',
+      phonePlaceholder: 'اختياري',
+      whatsapp: 'واتساب',
+      whatsappPlaceholder: 'اختياري',
+      contactHint: 'تظهر للعملاء في صفحة العرض، بجانب زر الاتجاهات.',
       save: 'حفظ التغييرات',
       saving: 'جارٍ الحفظ…',
       saved: 'تم الحفظ.',
@@ -370,6 +380,11 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       findingYou: 'Finding you…',
       locationHint: 'Tap the map to drop a pin on your shop, or drag it to adjust.',
       locationSet: '📍 Location set',
+      phone: 'Phone number',
+      phonePlaceholder: 'Optional',
+      whatsapp: 'WhatsApp',
+      whatsappPlaceholder: 'Optional',
+      contactHint: 'Shown to customers on the offer page, next to Get directions.',
       save: 'Save changes',
       saving: 'Saving…',
       saved: 'Saved.',
@@ -508,6 +523,11 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       findingYou: 'آپ کا مقام تلاش کیا جا رہا ہے…',
       locationHint: 'اپنی دکان پر پن لگانے کے لیے نقشے پر ٹیپ کریں، یا اسے ایڈجسٹ کرنے کے لیے گھسیٹیں۔',
       locationSet: '📍 مقام مقرر ہو گیا',
+      phone: 'فون نمبر',
+      phonePlaceholder: 'اختیاری',
+      whatsapp: 'واٹس ایپ',
+      whatsappPlaceholder: 'اختیاری',
+      contactHint: 'یہ آفر پیج پر گاہکوں کو راستے کے بٹن کے ساتھ دکھایا جاتا ہے۔',
       save: 'تبدیلیاں محفوظ کریں',
       saving: 'محفوظ ہو رہا ہے…',
       saved: 'محفوظ ہو گیا۔',
