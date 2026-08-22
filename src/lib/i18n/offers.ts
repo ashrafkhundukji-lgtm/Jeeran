@@ -62,6 +62,8 @@ export interface NearbyOffersCopy {
   searchPlaceholder: string
   viewOffer: string
   kmAway: (km: string) => string
+  backToCategories: string
+  offersCount: (n: number) => string
 }
 
 export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
@@ -73,6 +75,8 @@ export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
     searchPlaceholder: 'ابحث عن عرض أو محل أو فئة…',
     viewOffer: 'عرض التفاصيل',
     kmAway: (km) => `${km} كم`,
+    backToCategories: 'الفئات',
+    offersCount: (n) => `${n} عرض`,
   },
   en: {
     heading: 'Other offers nearby',
@@ -82,6 +86,8 @@ export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
     searchPlaceholder: 'Search offers, shops, or categories…',
     viewOffer: 'View offer',
     kmAway: (km) => `${km} km away`,
+    backToCategories: 'Categories',
+    offersCount: (n) => `${n} offer${n === 1 ? '' : 's'}`,
   },
   ur: {
     heading: 'قریب دیگر آفرز',
@@ -91,5 +97,7 @@ export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
     searchPlaceholder: 'آفرز، دکانیں، یا کیٹگری تلاش کریں…',
     viewOffer: 'آفر دیکھیں',
     kmAway: (km) => `${km} کلومیٹر دور`,
+    backToCategories: 'کیٹگریز',
+    offersCount: (n) => `${n} آفرز`,
   },
 }
