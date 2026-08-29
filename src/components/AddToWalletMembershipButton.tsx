@@ -6,6 +6,21 @@ type Status = 'idle' | 'working' | 'error' | 'confirming'
 
 const GEOLOCATION_TIMEOUT_MS = 5000
 
+// Google Wallet passes work fine without the app (confirmed live: saved a
+// pass through the pure browser flow — sign in, tap Add, never touched a
+// native app — then PATCHed it and watched the new content appear on
+// wallet.google.com immediately). But the app-less path has a real gap:
+// notifyNewOffer()'s lock-screen push (geo-notify.ts) has nowhere to land on
+// a device with no Wallet app installed, so an app-less member's card stays
+// correct in the background while they never hear about it. There's no
+// signal to detect this — /api/wallet/membership/create's response is just
+// {alreadyMember, saveUrl}, and saveUrl is a plain redirect to Google with
+// no return callback (see the comment on handleClick below), so Google never
+// tells us how — or whether — the save actually completed. Can't target the
+// nudge, so it's shown to every new member instead of guessing.
+const GOOGLE_WALLET_PLAY_STORE_URL =
+  'https://play.google.com/store/apps/details?id=com.google.android.apps.walletnfcrel'
+
 // Resolves null on denial/timeout/unsupported rather than rejecting — the
 // server falls back to the scanned business's own coordinates in that case,
 // so a declined permission prompt still produces a usable pass.
@@ -31,6 +46,7 @@ export default function AddToWalletMembershipButton({ businessId }: { businessId
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState('')
   const [saveUrl, setSaveUrl] = useState('')
+  const [showAppNudge, setShowAppNudge] = useState(true)
 
   async function handleClick() {
     setStatus('working')
@@ -90,6 +106,38 @@ export default function AddToWalletMembershipButton({ businessId }: { businessId
         >
           Continue to Google Wallet
         </button>
+
+        {/* Not a blocking requirement — the pass saves and works either way
+            (see GOOGLE_WALLET_PLAY_STORE_URL comment above). This is just
+            honest information at the moment it's actually relevant, same
+            principle as the confirmation panel itself. Dismissible, shown to
+            every new member since there's no reliable way to detect whether
+            they already have the app. */}
+        {showAppNudge && (
+          <div className="relative mt-3 rounded-lg border border-blue-100 bg-blue-50 p-3 text-left">
+            <button
+              type="button"
+              onClick={() => setShowAppNudge(false)}
+              aria-label="Dismiss"
+              className="absolute top-2 right-2 text-blue-400 hover:text-blue-600 leading-none text-base px-1"
+            >
+              ×
+            </button>
+            <p className="text-xs text-blue-800 pr-5">
+              <strong>One more thing:</strong> get the free Google Wallet app (about 30 seconds) — it&apos;s
+              what actually delivers new-offer alerts to your lock screen. Your pass works without it,
+              you just won&apos;t be notified when new deals appear nearby.
+            </p>
+            <a
+              href={GOOGLE_WALLET_PLAY_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-2 text-xs font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900"
+            >
+              Get Google Wallet
+            </a>
+          </div>
+        )}
       </div>
     )
   }

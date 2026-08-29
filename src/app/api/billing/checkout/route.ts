@@ -29,12 +29,16 @@ export async function POST(req: NextRequest) {
     const stripe = getStripeClient()
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-    const metadata = {
+    const metadata: Record<string, string> = {
       accountType: account.type,
       accountId: account.id,
       catalogKey: catalogEntry.key,
       creditsGranted: String(catalogEntry.creditsGranted),
     }
+    // Only present for type: 'addon' entries — the webhook branches on this
+    // to route the paid event to business_addons instead of the base
+    // subscription's businesses.stripe_subscription_id/is_subscription_active.
+    if (catalogEntry.addonKey) metadata.addonKey = catalogEntry.addonKey
 
     const session = await stripe.checkout.sessions.create({
       mode: catalogEntry.mode,

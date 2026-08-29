@@ -1,0 +1,41 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="dots" width="56" height="56" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="2" fill="#E4E1D6"/>
+    </pattern>
+  </defs>
+
+  <rect width="1080" height="1080" fill="#F7F5EE"/>
+  <rect width="1080" height="1080" fill="url(#dots)"/>
+
+  <!-- faded decorative pins -->
+  <path d="M 130 140 C 130 110 155 90 180 90 C 205 90 230 110 230 140 C 230 175 180 220 180 220 C 180 220 130 175 130 140 Z" fill="#EEEAD8"/>
+  <circle cx="180" cy="140" r="22" fill="#F7F5EE"/>
+  <path d="M 880 900 C 880 875 900 858 922 858 C 944 858 964 875 964 900 C 964 928 922 964 922 964 C 922 964 880 928 880 900 Z" fill="#EEEAD8" transform="rotate(10 922 900)"/>
+  <circle cx="922" cy="900" r="18" fill="#F7F5EE" transform="rotate(10 922 900)"/>
+
+  <!-- logo mark -->
+  <rect x="90" y="90" width="72" height="72" rx="18" fill="#042C53"/>
+  <text x="126" y="140" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#F0997B" text-anchor="middle">ج</text>
+  <text x="180" y="140" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#042C53">Jeeran</text>
+
+  <!-- headline -->
+  <text x="90" y="440" font-family="Arial, sans-serif" font-size="64" font-weight="700" fill="#1D1B1A">
+    <tspan x="90" dy="0">Your counter</tspan>
+    <tspan x="90" dy="76">could be earning</tspan>
+    <tspan x="90" dy="76">you customers</tspan>
+    <tspan x="90" dy="76">right now.</tspan>
+  </text>
+
+  <!-- subcopy -->
+  <text x="90" y="750" font-family="Arial, sans-serif" font-size="28" fill="#57544A">
+    <tspan x="90" dy="0">Host a free Jeeran QR stand and earn ad</tspan>
+    <tspan x="90" dy="38">credit on every customer it brings into</tspan>
+    <tspan x="90" dy="38">the network. No agency, no ad budget.</tspan>
+  </text>
+
+  <!-- CTA button -->
+  <rect x="90" y="900" width="360" height="88" rx="12" fill="#D85A30"/>
+  <text x="270" y="954" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#FFFFFF" text-anchor="middle">Get your free stand</text>
+
+</svg>

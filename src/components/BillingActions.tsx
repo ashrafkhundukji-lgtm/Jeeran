@@ -26,9 +26,11 @@ function billingErrorCopyFor(rawError: string, copy: DashboardCopy['billing']): 
 export default function BillingActions({
   catalog,
   isSubscriptionActive,
+  isInstantNotifyActive,
 }: {
   catalog: CatalogEntry[]
   isSubscriptionActive: boolean
+  isInstantNotifyActive: boolean
 }) {
   const [locale] = useLocale()
   const copy = DASHBOARD_COPY[locale].billing
@@ -58,8 +60,9 @@ export default function BillingActions({
 
   const subscriptionEntry = catalog.find((c) => c.type === 'subscription')
   const topupEntries = catalog.filter((c) => c.type === 'topup')
+  const instantNotifyEntry = catalog.find((c) => c.type === 'addon' && c.addonKey === 'instant_notify')
 
-  if (!subscriptionEntry && topupEntries.length === 0) {
+  if (!subscriptionEntry && topupEntries.length === 0 && !instantNotifyEntry) {
     return <p className="text-sm text-neutral-400">{copy.notConfigured}</p>
   }
 
@@ -98,6 +101,26 @@ export default function BillingActions({
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {instantNotifyEntry && (
+        <div className="border border-neutral-200 rounded-xl p-4">
+          <h3 className="text-sm font-medium text-neutral-700 mb-1">{copy.instantNotifyLabel}</h3>
+          <p className="text-xs text-neutral-500 mb-3">{copy.instantNotifyDescription}</p>
+          {isInstantNotifyActive ? (
+            <p className="text-sm font-semibold text-emerald-600">{copy.instantNotifyActive}</p>
+          ) : (
+            <button
+              onClick={() => handleCheckout(instantNotifyEntry.priceId, instantNotifyEntry.key)}
+              disabled={loadingKey !== null}
+              className="bg-[#1E3A8A] text-white rounded-lg py-2.5 px-4 text-sm font-medium transition-colors hover:bg-[#16295e] disabled:opacity-50"
+            >
+              {loadingKey === instantNotifyEntry.key
+                ? copy.redirecting
+                : copy.instantNotifySubscribe.replace('{n}', String(instantNotifyEntry.amountUsd))}
+            </button>
+          )}
         </div>
       )}
     </div>

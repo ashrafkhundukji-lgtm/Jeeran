@@ -82,6 +82,12 @@ export interface DashboardCopy {
     campaignFallback: string
     errorNotAuthenticated: string
     errorNoBusiness: string
+    instantNotifyLabel: string
+    instantNotifyDescription: string
+    instantNotifyActive: string
+    instantNotifySubscribe: string
+    addonStarted: string
+    addonRenewed: string
   }
   profile: {
     heading: string
@@ -231,6 +237,12 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       campaignFallback: 'حملة',
       errorNotAuthenticated: 'يجب تسجيل الدخول',
       errorNoBusiness: 'لم يتم العثور على حساب محل مرتبط بهذا المستخدم',
+      instantNotifyLabel: 'الإشعار الفوري',
+      instantNotifyDescription: 'يُرسل إشعار عرضك فور تفعيله أو تعديله، متجاوزاً الدفعة اليومية — ويحجز مكانه قبل العروض غير المشتركة.',
+      instantNotifyActive: 'الإشعار الفوري مفعّل',
+      instantNotifySubscribe: 'اشترك — ${n}/شهريًا',
+      addonStarted: 'بدأ اشتراك الإضافة',
+      addonRenewed: 'تم تجديد اشتراك الإضافة',
     },
     profile: {
       heading: 'الملف الشخصي',
@@ -378,6 +390,13 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       campaignFallback: 'campaign',
       errorNotAuthenticated: 'You must be signed in',
       errorNoBusiness: 'No business account found for this user',
+      instantNotifyLabel: 'Instant Notify',
+      instantNotifyDescription:
+        "Sends your offer's notification the moment it goes active or is edited, skipping the daily batch — and claims its slot ahead of non-premium offers.",
+      instantNotifyActive: 'Instant Notify is active',
+      instantNotifySubscribe: 'Subscribe — ${n}/mo',
+      addonStarted: 'Add-on subscription started',
+      addonRenewed: 'Add-on subscription renewed',
     },
     profile: {
       heading: 'Profile',
@@ -524,6 +543,12 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       campaignFallback: 'کیمپین',
       errorNotAuthenticated: 'آپ کو سائن ان ہونا ضروری ہے',
       errorNoBusiness: 'اس صارف کے لیے کوئی دکان اکاؤنٹ نہیں ملا',
+      instantNotifyLabel: 'فوری اطلاع',
+      instantNotifyDescription: 'آپ کی آفر کی اطلاع فعال یا ترمیم ہوتے ہی فوراً بھیجی جاتی ہے، روزانہ بیچ کو نظرانداز کرتے ہوئے — اور غیر پریمیم آفرز سے پہلے سلاٹ محفوظ کر لیتی ہے۔',
+      instantNotifyActive: 'فوری اطلاع فعال ہے',
+      instantNotifySubscribe: 'سبسکرائب کریں — ${n}/ماہانہ',
+      addonStarted: 'ایڈ آن سبسکرپشن شروع ہوئی',
+      addonRenewed: 'ایڈ آن سبسکرپشن تجدید ہوئی',
     },
     profile: {
       heading: 'پروفائل',

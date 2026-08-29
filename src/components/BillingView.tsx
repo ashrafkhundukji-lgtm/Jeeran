@@ -14,9 +14,23 @@ export interface LedgerEntry {
   isCredit: boolean
   kind: 'topup' | 'subscription_initial' | 'subscription_renewal' | 'usage'
   campaignTitle: string | null
+  // Set only for add-on billing_transactions rows (see
+  // billing_transactions.addon_key's migration comment) — distinguishes an
+  // add-on subscription event from a base-subscription one despite sharing
+  // the same `kind` values, so the ledger doesn't mislabel an Instant Notify
+  // renewal as "Subscription renewed".
+  addonKey: string | null
 }
 
 function labelFor(entry: LedgerEntry, copy: DashboardCopy['billing']) {
+  if (entry.addonKey) {
+    switch (entry.kind) {
+      case 'subscription_initial':
+        return copy.addonStarted
+      case 'subscription_renewal':
+        return copy.addonRenewed
+    }
+  }
   switch (entry.kind) {
     case 'topup':
       return copy.topupTransaction
@@ -32,12 +46,14 @@ function labelFor(entry: LedgerEntry, copy: DashboardCopy['billing']) {
 export default function BillingView({
   accountName,
   isSubscriptionActive,
+  isInstantNotifyActive,
   adCredits,
   catalog,
   ledger,
 }: {
   accountName: string
   isSubscriptionActive: boolean
+  isInstantNotifyActive: boolean
   adCredits: number
   catalog: CatalogEntry[]
   ledger: LedgerEntry[]
@@ -65,7 +81,11 @@ export default function BillingView({
         </div>
       </div>
 
-      <BillingActions catalog={catalog} isSubscriptionActive={isSubscriptionActive} />
+      <BillingActions
+        catalog={catalog}
+        isSubscriptionActive={isSubscriptionActive}
+        isInstantNotifyActive={isInstantNotifyActive}
+      />
 
       <section className="mt-10">
         <h2 className="text-lg font-semibold mb-3">{copy.history}</h2>

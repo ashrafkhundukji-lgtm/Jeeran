@@ -11,6 +11,8 @@
 import { GoogleAuth } from 'google-auth-library'
 import { loadGoogleWalletCredentials, signRS256Jwt } from './google'
 import { signMemberToken } from './member-token'
+import { resolveOfferContent, type ResolvedOfferContent } from './offer-locale'
+import type { Locale } from '@/lib/i18n/locale'
 
 const CLASS_SUFFIX = 'jeeran_offers_membership'
 const BASE_URL = 'https://walletobjects.googleapis.com/walletobjects/v1'
@@ -59,6 +61,35 @@ function localizedStringWithSuffix(en: string, ar: string, ur: string, suffix: s
       { language: 'ur', value: `${ur}${suffix}` },
     ],
   }
+}
+
+// A member's explicit preferred_language (wallet_members) overrides the
+// auto-detection above: it sends ONLY that one language as defaultValue,
+// with no translatedValues at all. That's deliberate, not an oversight —
+// translatedValues is resolved against the VIEWER's own phone/Google-account
+// language, which is exactly the thing an explicit in-app choice needs to
+// win over, not add to. `null` (no explicit choice — every member's default
+// before this feature existed, and still the default for a new one) falls
+// through to localizedString()/localizedStringWithSuffix() so nothing
+// changes for anyone who's never touched the new "Change language" link.
+function pick(en: string, ar: string, ur: string, preferredLanguage: Locale | null): string {
+  if (preferredLanguage === 'ar') return ar
+  if (preferredLanguage === 'ur') return ur
+  return en
+}
+
+function localized(en: string, ar: string, ur: string, preferredLanguage: Locale | null) {
+  if (preferredLanguage) {
+    return { defaultValue: { language: preferredLanguage, value: pick(en, ar, ur, preferredLanguage) } }
+  }
+  return localizedString(en, ar, ur)
+}
+
+function localizedWithSuffix(en: string, ar: string, ur: string, suffix: string, preferredLanguage: Locale | null) {
+  if (preferredLanguage) {
+    return { defaultValue: { language: preferredLanguage, value: `${pick(en, ar, ur, preferredLanguage)}${suffix}` } }
+  }
+  return localizedStringWithSuffix(en, ar, ur, suffix)
 }
 
 function classId(): string {
@@ -187,6 +218,20 @@ export interface NearbyOffer {
   // already the single source of truth for "everything about a nearby
   // offer" — see the other business-derived fields above.
   business_category: string
+  // Shop-provided per-locale overrides (campaigns.title_ar/en/ur,
+  // description_ar/en/ur — supabase/migrations/20260822b_campaign_translations.sql),
+  // added via supabase/migrations/20260829_wallet_preferred_language.sql so
+  // offer-locale.ts's resolveOfferContent() can apply the SAME
+  // shop-override > auto-translation-cache > raw-text fallback chain the
+  // offer landing page already uses, for a member with an explicit
+  // preferred_language set. Unused (left null-checked but ignored) for
+  // members with no preference — see that file's header comment.
+  title_ar: string | null
+  title_en: string | null
+  title_ur: string | null
+  description_ar: string | null
+  description_en: string | null
+  description_ur: string | null
 }
 
 // OS-level geofencing: Google Wallet compares the phone's live GPS against
@@ -327,7 +372,7 @@ function offersToImageModules(offers: NearbyOffer[]) {
 // a raw memberId or raw lat/lng in the URL — keeps both out of a link that
 // can end up in browser history/referrers, and the target page verifies it
 // server-side the same way /api/redeem already does for the barcode.
-function offersToLinksModule(memberId: string, offers: NearbyOffer[]) {
+function offersToLinksModule(memberId: string, offers: NearbyOffer[], preferredLanguage: Locale | null) {
   const shown = offers.slice(0, MAX_OFFERS_SHOWN)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
@@ -339,16 +384,16 @@ function offersToLinksModule(memberId: string, offers: NearbyOffer[]) {
       return {
         id: `view_offer_${n}`,
         uri: `${appUrl}/offers/${o.offer_id}`,
-        description: `View offer${suffix}`,
-        localizedDescription: localizedStringWithSuffix('View offer', 'عرض التفاصيل', 'آفر دیکھیں', suffix),
+        description: `${pick('View offer', 'عرض التفاصيل', 'آفر دیکھیں', preferredLanguage)}${suffix}`,
+        localizedDescription: localizedWithSuffix('View offer', 'عرض التفاصيل', 'آفر دیکھیں', suffix, preferredLanguage),
       }
     }
 
     return {
       id: `directions_${n}`,
       uri: `https://www.google.com/maps/dir/?api=1&destination=${o.business_lat},${o.business_lng}`,
-      description: `Directions${suffix}`,
-      localizedDescription: localizedStringWithSuffix('Directions', 'الاتجاهات', 'راستہ دیکھیں', suffix),
+      description: `${pick('Directions', 'الاتجاهات', 'راستہ دیکھیں', preferredLanguage)}${suffix}`,
+      localizedDescription: localizedWithSuffix('Directions', 'الاتجاهات', 'راستہ دیکھیں', suffix, preferredLanguage),
     }
   })
 
@@ -356,8 +401,21 @@ function offersToLinksModule(memberId: string, offers: NearbyOffer[]) {
     uris.push({
       id: 'other_offers',
       uri: `${appUrl}/offers/nearby?token=${signMemberToken(memberId)}`,
-      description: 'Other offers nearby',
-      localizedDescription: localizedString('Other offers nearby', 'عروض أخرى قريبة منك', 'قریب دیگر آفرز'),
+      description: pick('Other offers nearby', 'عروض أخرى قريبة منك', 'قریب دیگر آفرز', preferredLanguage),
+      localizedDescription: localized('Other offers nearby', 'عروض أخرى قريبة منك', 'قریب دیگر آفرز', preferredLanguage),
+    })
+  }
+
+  // Always present when appUrl is configured (not gated on offer count, the
+  // way "Other offers nearby" is) — this is a settings action, not a
+  // dead-end to avoid showing. Points at src/app/wallet/language, verified
+  // via the same signed member token as every other card link.
+  if (appUrl) {
+    uris.push({
+      id: 'change_language',
+      uri: `${appUrl}/wallet/language?token=${signMemberToken(memberId)}`,
+      description: pick('Change language', 'تغيير اللغة', 'زبان تبدیل کریں', preferredLanguage),
+      localizedDescription: localized('Change language', 'تغيير اللغة', 'زبان تبدیل کریں', preferredLanguage),
     })
   }
 
@@ -368,10 +426,15 @@ function offersToLinksModule(memberId: string, offers: NearbyOffer[]) {
  * Creates the per-customer OBJECT (the actual pass instance) at save-time.
  * Returns the objectId to store in wallet_members.google_object_id.
  */
-export async function createMembershipObject(memberId: string, initialOffers: NearbyOffer[]) {
+export async function createMembershipObject(
+  memberId: string,
+  initialOffers: NearbyOffer[],
+  preferredLanguage: Locale | null = null,
+) {
   const authClient = await client()
   const { issuerId } = loadGoogleWalletCredentials()
   const objectId = `${issuerId}.member_${memberId}`
+  const resolvedContent = preferredLanguage ? await resolveOfferContent(initialOffers, preferredLanguage) : undefined
 
   await authClient.request({
     url: `${BASE_URL}/genericObject`,
@@ -380,12 +443,12 @@ export async function createMembershipObject(memberId: string, initialOffers: Ne
       id: objectId,
       classId: classId(),
       state: 'ACTIVE',
-      cardTitle: localizedString('Jeeran Offers', 'عروض جيران', 'جیران آفرز'),
-      header: localizedString('Nearby deals for you', 'عروض قريبة منك', 'آپ کے قریب آفرز'),
-      textModulesData: offersToTextModules(initialOffers),
+      cardTitle: localized('Jeeran Offers', 'عروض جيران', 'جیران آفرز', preferredLanguage),
+      header: localized('Nearby deals for you', 'عروض قريبة منك', 'آپ کے قریب آفرز', preferredLanguage),
+      textModulesData: offersToTextModules(initialOffers, resolvedContent),
       merchantLocations: offersToMerchantLocations(initialOffers),
       imageModulesData: offersToImageModules(initialOffers),
-      linksModuleData: offersToLinksModule(memberId, initialOffers),
+      linksModuleData: offersToLinksModule(memberId, initialOffers, preferredLanguage),
       hexBackgroundColor: BRAND_NAVY,
       logo: { sourceUri: { uri: LOGO_URL } },
       heroImage: { sourceUri: { uri: HERO_IMAGE_URL } },
@@ -415,8 +478,14 @@ export async function createMembershipObject(memberId: string, initialOffers: Ne
  * set on a Message sent through the dedicated addMessage endpoint — not by
  * embedding an untyped `messages` array in a general object PATCH like this.
  */
-export async function patchMembershipObject(objectId: string, memberId: string, offers: NearbyOffer[]) {
+export async function patchMembershipObject(
+  objectId: string,
+  memberId: string,
+  offers: NearbyOffer[],
+  preferredLanguage: Locale | null = null,
+) {
   const authClient = await client()
+  const resolvedContent = preferredLanguage ? await resolveOfferContent(offers, preferredLanguage) : undefined
 
   await authClient.request({
     url: `${BASE_URL}/genericObject/${objectId}`,
@@ -430,16 +499,16 @@ export async function patchMembershipObject(objectId: string, memberId: string, 
       // localizedString() existed only ever got the English-only
       // defaultValue, with no translatedValues — resending it here backfills
       // ar/ur for those on their next refresh instead of leaving them stuck.
-      cardTitle: localizedString('Jeeran Offers', 'عروض جيران', 'جیران آفرز'),
-      header: localizedString('Nearby deals for you', 'عروض قريبة منك', 'آپ کے قریب آفرز'),
-      textModulesData: offersToTextModules(offers),
+      cardTitle: localized('Jeeran Offers', 'عروض جيران', 'جیران آفرز', preferredLanguage),
+      header: localized('Nearby deals for you', 'عروض قريبة منك', 'آپ کے قریب آفرز', preferredLanguage),
+      textModulesData: offersToTextModules(offers, resolvedContent),
       // Rides the same trigger as textModulesData above (campaign
       // activate/deactivate, periodic sweep) — no separate update path.
       // See offersToMerchantLocations() for why this is what actually makes
       // offers "follow" the customer, not home_lat/home_lng.
       merchantLocations: offersToMerchantLocations(offers),
       imageModulesData: offersToImageModules(offers),
-      linksModuleData: offersToLinksModule(memberId, offers),
+      linksModuleData: offersToLinksModule(memberId, offers, preferredLanguage),
     },
   })
 }
@@ -464,21 +533,32 @@ export async function patchMembershipObject(objectId: string, memberId: string, 
  * header is localized (see localizedString()) since "New offer nearby" is
  * fixed chrome text; body isn't — it's the shop's own business_name/
  * offer_title, in whatever language they typed, which we have no
- * translation for. Keeping the plain `header` alongside `localizedHeader`
- * since Google's docs don't say whether localizedHeader alone is sufficient
- * or the plain field is still read as a fallback by some clients.
+ * translation for by default. Keeping the plain `header` alongside
+ * `localizedHeader` since Google's docs don't say whether localizedHeader
+ * alone is sufficient or the plain field is still read as a fallback by some
+ * clients — same reasoning now applies to `resolvedTitle` vs offer_title in
+ * the body: pass a title already resolved via offer-locale.ts's
+ * resolveOfferContent() (this function has no offer list to resolve against
+ * on its own) when the member has a preferred_language set, else the raw
+ * offer_title.
  */
-export async function notifyNewOffer(objectId: string, offer: NearbyOffer) {
+export async function notifyNewOffer(
+  objectId: string,
+  offer: NearbyOffer,
+  preferredLanguage: Locale | null = null,
+  resolvedTitle?: string,
+) {
   const authClient = await client()
+  const title = resolvedTitle ?? offer.offer_title
 
   await authClient.request({
     url: `${BASE_URL}/genericObject/${objectId}/addMessage`,
     method: 'POST',
     data: {
       message: {
-        header: 'New offer nearby',
-        localizedHeader: localizedString('New offer nearby', 'عرض جديد بالقرب منك', 'قریب نیا آفر'),
-        body: `${offer.business_name}: ${offer.offer_title}`,
+        header: pick('New offer nearby', 'عرض جديد بالقرب منك', 'قریب نیا آفر', preferredLanguage),
+        localizedHeader: localized('New offer nearby', 'عرض جديد بالقرب منك', 'قریب نیا آفر', preferredLanguage),
+        body: `${offer.business_name}: ${title}`,
         id: `offer-${offer.offer_id}-${Date.now()}`,
         messageType: 'TEXT_AND_NOTIFY',
       },
@@ -486,10 +566,13 @@ export async function notifyNewOffer(objectId: string, offer: NearbyOffer) {
   })
 }
 
-function offersToTextModules(offers: NearbyOffer[]) {
-  return offers.slice(0, MAX_OFFERS_SHOWN).map((o, i) => ({
-    id: `nearby_${i + 1}`,
-    header: o.business_name,
-    body: `${o.offer_title} · ${o.distance_km.toFixed(1)} km`,
-  }))
+function offersToTextModules(offers: NearbyOffer[], resolvedContent?: Map<string, ResolvedOfferContent>) {
+  return offers.slice(0, MAX_OFFERS_SHOWN).map((o, i) => {
+    const title = resolvedContent?.get(o.offer_id)?.title ?? o.offer_title
+    return {
+      id: `nearby_${i + 1}`,
+      header: o.business_name,
+      body: `${title} · ${o.distance_km.toFixed(1)} km`,
+    }
+  })
 }

@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
         const accountType = session.metadata?.accountType
         const accountId = session.metadata?.accountId
         const creditsGranted = Number(session.metadata?.creditsGranted ?? 0)
+        const addonKey = session.metadata?.addonKey
 
         if (accountType !== 'business') {
           console.error('billing/webhook: missing/invalid accountType metadata on session', session.id)
@@ -46,11 +47,40 @@ export async function POST(req: NextRequest) {
           break
         }
 
-        const table = 'businesses'
         const customerId = typeof session.customer === 'string' ? session.customer : (session.customer?.id ?? null)
         const subscriptionId =
           typeof session.subscription === 'string' ? session.subscription : (session.subscription?.id ?? null)
 
+        // Add-on purchase (e.g. instant_notify): a separate Stripe
+        // subscription from the base plan, so this writes to business_addons
+        // instead of businesses.stripe_customer_id/stripe_subscription_id —
+        // see supabase/migrations/20260823_instant_notify_addon.sql for why
+        // the two must never share a column (is_subscription_active gates
+        // campaign eligibility in get_top_ads(); an add-on must not touch it).
+        if (addonKey) {
+          const { error: upsertError } = await supabaseAdmin.from('business_addons').upsert(
+            {
+              business_id: accountId,
+              addon_key: addonKey,
+              stripe_customer_id: customerId,
+              stripe_subscription_id: subscriptionId,
+            },
+            { onConflict: 'business_id,addon_key' },
+          )
+          if (upsertError) console.error('billing/webhook business_addons upsert error:', upsertError.message)
+
+          const { error } = await supabaseAdmin.rpc('record_addon_billing_event', {
+            p_business_id: accountId,
+            p_addon_key: addonKey,
+            p_type: session.mode === 'subscription' ? 'subscription_initial' : 'topup',
+            p_stripe_event_id: event.id,
+            p_amount_usd: (session.amount_total ?? 0) / 100,
+          })
+          if (error) console.error('billing/webhook record_addon_billing_event error:', error.message)
+          break
+        }
+
+        const table = 'businesses'
         if (customerId || subscriptionId) {
           await supabaseAdmin
             .from(table)
@@ -86,28 +116,47 @@ export async function POST(req: NextRequest) {
           .select('id')
           .eq('stripe_subscription_id', subscriptionId)
           .maybeSingle()
-        const accountType = business ? 'business' : null
-        const accountId = business?.id
-        if (!accountType || !accountId) {
+
+        if (business) {
+          // credits_granted is deliberately 0: a new subscription's *first*
+          // invoice.paid fires alongside checkout.session.completed (which
+          // already granted the one-time onboarding credits under a
+          // different Stripe event id, so event-id dedup wouldn't catch a
+          // double-grant here). Renewals only reaffirm active status and log
+          // the ledger entry.
+          const { error } = await supabaseAdmin.rpc('record_billing_event', {
+            p_account_type: 'business',
+            p_account_id: business.id,
+            p_type: 'subscription_renewal',
+            p_stripe_event_id: event.id,
+            p_amount_usd: (invoice.amount_paid ?? 0) / 100,
+            p_credits_granted: 0,
+          })
+          if (error) console.error('billing/webhook record_billing_event (renewal) error:', error.message)
+          break
+        }
+
+        // Not the base subscription — check whether it's an add-on's
+        // subscription instead (e.g. instant_notify) before giving up.
+        const { data: addon } = await supabaseAdmin
+          .from('business_addons')
+          .select('business_id, addon_key')
+          .eq('stripe_subscription_id', subscriptionId)
+          .maybeSingle()
+
+        if (!addon) {
           console.error('billing/webhook: invoice.paid for unknown subscription', subscriptionId)
           break
         }
 
-        // credits_granted is deliberately 0: a new subscription's *first*
-        // invoice.paid fires alongside checkout.session.completed (which
-        // already granted the one-time onboarding credits under a
-        // different Stripe event id, so event-id dedup wouldn't catch a
-        // double-grant here). Renewals only reaffirm active status and log
-        // the ledger entry.
-        const { error } = await supabaseAdmin.rpc('record_billing_event', {
-          p_account_type: accountType,
-          p_account_id: accountId,
+        const { error } = await supabaseAdmin.rpc('record_addon_billing_event', {
+          p_business_id: addon.business_id,
+          p_addon_key: addon.addon_key,
           p_type: 'subscription_renewal',
           p_stripe_event_id: event.id,
           p_amount_usd: (invoice.amount_paid ?? 0) / 100,
-          p_credits_granted: 0,
         })
-        if (error) console.error('billing/webhook record_billing_event (renewal) error:', error.message)
+        if (error) console.error('billing/webhook record_addon_billing_event (renewal) error:', error.message)
         break
       }
 

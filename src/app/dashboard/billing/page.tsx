@@ -48,6 +48,7 @@ export default async function BillingPage() {
       isCredit: true,
       kind: t.type as LedgerEntry['kind'],
       campaignTitle: null,
+      addonKey: t.addon_key ?? null,
     })),
     ...(usage ?? []).map((u) => ({
       id: u.id,
@@ -56,6 +57,7 @@ export default async function BillingPage() {
       isCredit: false,
       kind: 'usage' as const,
       campaignTitle: titleById.get(u.campaign_id) ?? null,
+      addonKey: null,
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
@@ -65,6 +67,7 @@ export default async function BillingPage() {
     <BillingView
       accountName={account.name}
       isSubscriptionActive={account.isSubscriptionActive}
+      isInstantNotifyActive={account.isInstantNotifyActive}
       adCredits={account.adCredits}
       catalog={catalog}
       ledger={ledger}

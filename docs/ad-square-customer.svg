@@ -1,0 +1,48 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="dots2" width="56" height="56" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="2" fill="#DCE8F5"/>
+    </pattern>
+  </defs>
+
+  <rect width="1080" height="1080" fill="#F2F7FC"/>
+  <rect width="1080" height="1080" fill="url(#dots2)"/>
+
+  <!-- faded decorative pins -->
+  <path d="M 900 130 C 900 100 925 80 950 80 C 975 80 1000 100 1000 130 C 1000 165 950 210 950 210 C 950 210 900 165 900 130 Z" fill="#E1EDF8"/>
+  <circle cx="950" cy="130" r="22" fill="#F2F7FC"/>
+  <path d="M 100 900 C 100 875 120 858 142 858 C 164 858 184 875 184 900 C 184 928 142 964 142 964 C 142 964 100 928 100 900 Z" fill="#E1EDF8" transform="rotate(-10 142 900)"/>
+  <circle cx="142" cy="900" r="18" fill="#F2F7FC" transform="rotate(-10 142 900)"/>
+
+  <!-- logo mark -->
+  <rect x="90" y="90" width="72" height="72" rx="18" fill="#042C53"/>
+  <text x="126" y="140" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#F0997B" text-anchor="middle">ج</text>
+  <text x="180" y="140" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#042C53">Jeeran</text>
+
+  <!-- headline -->
+  <text x="90" y="440" font-family="Arial, sans-serif" font-size="60" font-weight="700" fill="#1D1B1A">
+    <tspan x="90" dy="0">No app.</tspan>
+    <tspan x="90" dy="72">No signup.</tspan>
+    <tspan x="90" dy="72">Just deals.</tspan>
+  </text>
+
+  <!-- subcopy -->
+  <text x="90" y="680" font-family="Arial, sans-serif" font-size="28" fill="#57544A">
+    <tspan x="90" dy="0">One scan adds a pass to your phone's</tspan>
+    <tspan x="90" dy="38">Wallet. Nearby shops' offers show up</tspan>
+    <tspan x="90" dy="38">on your lock screen from then on.</tspan>
+  </text>
+
+  <!-- mini wallet card mockup -->
+  <rect x="90" y="770" width="300" height="150" rx="16" fill="#042C53"/>
+  <text x="112" y="808" font-family="Arial, sans-serif" font-size="16" fill="#B4C8DC">Jeeran Offers</text>
+  <rect x="112" y="826" width="256" height="36" rx="8" fill="#F0997B"/>
+  <text x="124" y="849" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#4A1B0C">Cafe Rosa — 20% off</text>
+  <rect x="112" y="868" width="256" height="36" rx="8" fill="#85B7EB"/>
+  <text x="124" y="891" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#042C53">Nova Barber — Free trim</text>
+
+  <!-- CTA button -->
+  <rect x="90" y="950" width="320" height="88" rx="12" fill="#D85A30"/>
+  <text x="250" y="1004" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF" text-anchor="middle">Scan &amp; save</text>
+
+</svg>

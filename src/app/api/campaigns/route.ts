@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     const lat = business.latitude
     const lng = business.longitude
     after(() =>
-      notifyMembersNearBusiness(lat, lng).catch((err) => {
+      notifyMembersNearBusiness(lat, lng, business.id).catch((err) => {
         console.error('notifyMembersNearBusiness failed after campaign create', { campaignId: campaign.id, err })
       }),
     )

@@ -68,7 +68,9 @@ export async function POST(req: NextRequest) {
   // Returning member: don't issue a second pass.
   const { data: existing, error: lookupErr } = await supabaseAdmin
     .from('wallet_members')
-    .select('id, google_object_id, origin_business_id, home_lat, home_lng, push_radius_km, last_notified_offers')
+    .select(
+      'id, google_object_id, origin_business_id, home_lat, home_lng, push_radius_km, last_notified_offers, preferred_language',
+    )
     .eq('device_id', deviceId)
     .maybeSingle()
 
@@ -158,6 +160,7 @@ export async function POST(req: NextRequest) {
             home_lng: refreshHomeLng,
             push_radius_km: existing.push_radius_km,
             last_notified_offers: existing.last_notified_offers ?? {},
+            preferred_language: existing.preferred_language,
           },
           { force: true },
         ).catch((err) => {

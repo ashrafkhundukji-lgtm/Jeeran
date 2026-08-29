@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { INSTANT_NOTIFY_ADDON_KEY } from './catalog'
 
 export interface BillingAccount {
   type: 'business'
@@ -8,6 +9,7 @@ export interface BillingAccount {
   isSubscriptionActive: boolean
   adCredits: number
   isFrozen: boolean
+  isInstantNotifyActive: boolean
 }
 
 // Resolves the caller's billing account. Pass a session-scoped client so
@@ -24,6 +26,18 @@ export async function getBillingAccountForUser(
   if (businessError) throw new Error(businessError.message)
   if (!business) return null
 
+  // Separate lookup, not a join: business_addons is keyed by (business_id,
+  // addon_key) with its own RLS ("owner can read") — see
+  // supabase/migrations/20260823_instant_notify_addon.sql. A missing row
+  // just means the add-on was never purchased, not an error.
+  const { data: addon, error: addonError } = await supabase
+    .from('business_addons')
+    .select('is_active')
+    .eq('business_id', business.id)
+    .eq('addon_key', INSTANT_NOTIFY_ADDON_KEY)
+    .maybeSingle()
+  if (addonError) throw new Error(addonError.message)
+
   return {
     type: 'business',
     id: business.id,
@@ -32,5 +46,6 @@ export async function getBillingAccountForUser(
     isSubscriptionActive: business.is_subscription_active,
     adCredits: business.ad_credits,
     isFrozen: business.is_frozen,
+    isInstantNotifyActive: addon?.is_active ?? false,
   }
 }

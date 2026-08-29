@@ -6,7 +6,15 @@
 // unconfigured pack just doesn't show up (graceful degradation, same spirit
 // as the wallet cert handling) instead of the app crashing or lying about
 // what's purchasable.
-export type CatalogEntryType = 'subscription' | 'topup'
+//
+// 'addon' is a separate product line from 'subscription' (the base plan) —
+// same Stripe subscription mode, but billed as its own Product/Price and
+// tracked in business_addons rather than businesses.stripe_subscription_id/
+// is_subscription_active (see that table's migration comment,
+// supabase/migrations/20260823_instant_notify_addon.sql, for why the two
+// can't share a column). addonKey identifies WHICH add-on for entries of
+// that type — required there, meaningless for 'subscription'/'topup'.
+export type CatalogEntryType = 'subscription' | 'topup' | 'addon'
 
 export interface CatalogEntry {
   key: string
@@ -16,7 +24,13 @@ export interface CatalogEntry {
   creditsGranted: number
   label: string
   amountUsd: number
+  addonKey?: string
 }
+
+// Shared constant so the catalog entry (below), the checkout/webhook routes,
+// account.ts, and geo-notify.ts all key off the exact same string rather
+// than each hardcoding 'instant_notify' independently.
+export const INSTANT_NOTIFY_ADDON_KEY = 'instant_notify'
 
 function entry(key: string, envVar: string, rest: Omit<CatalogEntry, 'key' | 'priceId'>): CatalogEntry | null {
   const priceId = process.env[envVar]
@@ -53,6 +67,19 @@ export function getBillingCatalog(): CatalogEntry[] {
       creditsGranted: 5000,
       label: '5,000 Credits',
       amountUsd: 90,
+    }),
+    // Instant Notify: bypasses the once-daily notification batch so this
+    // business's campaign fires its lock-screen push immediately and claims
+    // a slot ahead of non-premium contenders — see src/lib/wallet/geo-notify.ts
+    // notifyInstantOffer(). Does NOT affect nearby_active_offers() card
+    // ranking (bid-per-view/tier), only which offers get an actual push.
+    entry('instant_notify', 'STRIPE_PRICE_INSTANT_NOTIFY', {
+      type: 'addon',
+      mode: 'subscription',
+      creditsGranted: 0,
+      label: 'Instant Notify Add-on',
+      amountUsd: 29,
+      addonKey: INSTANT_NOTIFY_ADDON_KEY,
     }),
   ]
   return entries.filter((e): e is CatalogEntry => e !== null)

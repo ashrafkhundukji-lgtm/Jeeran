@@ -72,7 +72,7 @@ async function handleToggle(
       const lat = toggledBusiness.latitude
       const lng = toggledBusiness.longitude
       after(() =>
-        notifyMembersNearBusiness(lat, lng).catch((err) => {
+        notifyMembersNearBusiness(lat, lng, updated.creator_id).catch((err) => {
           console.error('notifyMembersNearBusiness failed after campaign toggle', { campaignId: id, isActive, err })
         }),
       )
@@ -176,7 +176,7 @@ async function handleEdit(
       const lat = editedBusiness.latitude
       const lng = editedBusiness.longitude
       after(() =>
-        notifyMembersNearBusiness(lat, lng).catch((err) => {
+        notifyMembersNearBusiness(lat, lng, updated.creator_id).catch((err) => {
           console.error('notifyMembersNearBusiness failed after campaign edit', { campaignId: id, err })
         }),
       )
