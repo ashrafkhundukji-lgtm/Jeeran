@@ -5,9 +5,7 @@ import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir } from '@/lib/i18n/locale'
 import { NEARBY_OFFERS_COPY } from '@/lib/i18n/offers'
 import { CATEGORIES, CATEGORY_EMOJI, CATEGORY_LABELS } from '@/lib/categories'
-import LanguageSwitcher from '@/components/LanguageSwitcher'
-import SiteLogo from '@/components/SiteLogo'
-import BackButton from '@/components/BackButton'
+import WalletSiteHeader from '@/components/WalletSiteHeader'
 import type { NearbyOffer } from '@/lib/wallet/google-membership-pass'
 
 const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
@@ -35,8 +33,8 @@ function BackChevron({ rtl }: { rtl: boolean }) {
 // same reason as OfferPageView.tsx — useLocale()/LanguageSwitcher are
 // client-only. offer_title/business_name are never run through the locale
 // copy — shop-typed content, same reasoning as everywhere else in this app.
-export default function NearbyOffersView({ otherOffers }: { otherOffers: NearbyOffer[] }) {
-  const [locale, setLocale] = useLocale()
+export default function NearbyOffersView({ otherOffers, token }: { otherOffers: NearbyOffer[]; token?: string }) {
+  const [locale] = useLocale()
   const copy = NEARBY_OFFERS_COPY[locale]
   const dir = getDir(locale)
   const [search, setSearch] = useState('')
@@ -85,13 +83,7 @@ export default function NearbyOffersView({ otherOffers }: { otherOffers: NearbyO
 
   return (
     <main dir={dir} className="min-h-screen bg-[#FBFCFD] text-[#1a1a1a]">
-      <header className="mx-auto flex max-w-[720px] items-center justify-between px-6 pt-8 sm:px-8">
-        <div className="flex items-center gap-3">
-          <BackButton dir={dir} label={copy.back} />
-          <SiteLogo className="h-12" />
-        </div>
-        <LanguageSwitcher locale={locale} onChange={setLocale} />
-      </header>
+      <WalletSiteHeader token={token} />
 
       <div className="mx-auto max-w-[720px] px-6 pt-10 pb-20 sm:px-8">
         <h1 className={`${ARCHIVO} mb-2 text-[28px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[34px]`}>
@@ -172,7 +164,7 @@ export default function NearbyOffersView({ otherOffers }: { otherOffers: NearbyO
                 // (from the Wallet card's "Other offers nearby" link).
                 <a
                   key={o.offer_id}
-                  href={`/offers/${o.offer_id}`}
+                  href={token ? `/offers/${o.offer_id}?token=${encodeURIComponent(token)}` : `/offers/${o.offer_id}`}
                   className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition-colors active:border-[#FF6B4A]/50 active:bg-[#FFF7F3]"
                 >
                   <div

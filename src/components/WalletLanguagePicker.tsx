@@ -4,18 +4,19 @@ import { useState } from 'react'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { LOCALES, getDir, type Locale } from '@/lib/i18n/locale'
 import { WALLET_LANGUAGE_COPY } from '@/lib/i18n/walletLanguage'
-import SiteLogo from '@/components/SiteLogo'
+import WalletSiteHeader from '@/components/WalletSiteHeader'
 
 const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
 
 // Reached only via a signed member token from the Wallet card's own "Change
-// language" link — no dashboard chrome, no site nav, just this one control.
-// Two DIFFERENT locale concepts share this screen, deliberately kept
-// separate: useLocale() below just picks which language THIS PAGE's own
-// text renders in (same localStorage mechanism as every other public page —
-// see OfferPageView.tsx), while the button grid is the actual point of the
-// page — persisting wallet_members.preferred_language via the API route,
-// which is what changes the WALLET CARD's language, not this page's.
+// language" link. Two DIFFERENT locale concepts share this screen,
+// deliberately kept separate: useLocale() below just picks which language
+// THIS PAGE's own text renders in (same localStorage mechanism as every
+// other public page — see OfferPageView.tsx; WalletSiteHeader's own
+// LanguageSwitcher controls the same thing, no separate picker needed here
+// anymore), while the button grid is the actual point of the page —
+// persisting wallet_members.preferred_language via the API route, which is
+// what changes the WALLET CARD's language, not this page's.
 export default function WalletLanguagePicker({
   token,
   initialLocale,
@@ -23,7 +24,7 @@ export default function WalletLanguagePicker({
   token: string
   initialLocale: Locale | null
 }) {
-  const [pageLocale, setPageLocale] = useLocale()
+  const [pageLocale] = useLocale()
   const copy = WALLET_LANGUAGE_COPY[pageLocale]
   const dir = getDir(pageLocale)
 
@@ -50,8 +51,8 @@ export default function WalletLanguagePicker({
 
   return (
     <main dir={dir} className={`min-h-screen bg-[#FBFCFD] text-[#1a1a1a] ${ARCHIVO}`}>
-      <div className="mx-auto flex max-w-[480px] flex-col items-center gap-6 px-6 pt-16 pb-12 text-center sm:px-8">
-        <SiteLogo className="h-12" />
+      <WalletSiteHeader token={token} />
+      <div className="mx-auto flex max-w-[480px] flex-col items-center gap-6 px-6 pt-10 pb-12 text-center sm:px-8">
         <div className="space-y-2">
           <h1 className="text-xl font-semibold">{copy.heading}</h1>
           <p className="text-sm text-neutral-600">{copy.body}</p>
@@ -108,21 +109,6 @@ export default function WalletLanguagePicker({
         >
           {copy.browseShops}
         </a>
-
-        {/* This page's OWN display language — unrelated to the wallet
-            language chosen above, see this component's header comment. */}
-        <div className="flex gap-3 pt-4 text-xs text-neutral-400">
-          {LOCALES.map((l) => (
-            <button
-              key={l.code}
-              type="button"
-              onClick={() => setPageLocale(l.code)}
-              className={pageLocale === l.code ? 'font-semibold text-neutral-600' : 'hover:text-neutral-600'}
-            >
-              {l.label}
-            </button>
-          ))}
-        </div>
       </div>
     </main>
   )

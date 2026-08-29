@@ -4,9 +4,7 @@ import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir, type Locale } from '@/lib/i18n/locale'
 import { OFFER_PAGE_COPY } from '@/lib/i18n/offers'
 import { CATEGORY_LABELS } from '@/lib/categories'
-import LanguageSwitcher from '@/components/LanguageSwitcher'
-import SiteLogo from '@/components/SiteLogo'
-import BackButton from '@/components/BackButton'
+import WalletSiteHeader from '@/components/WalletSiteHeader'
 
 // Same brand tokens as LandingPage.tsx: #FBFCFD canvas, #1a1a1a ink,
 // Archivo for display type, #FF6B4A accent.
@@ -30,6 +28,7 @@ export default function OfferPageView({
   directionsUrl,
   whatsappUrl,
   callUrl,
+  token,
 }: {
   isActive: boolean
   imageUrl: string | null
@@ -43,8 +42,16 @@ export default function OfferPageView({
   directionsUrl: string | null
   whatsappUrl: string | null
   callUrl: string | null
+  // Optional: present when reached via the Wallet card's own "View offer"
+  // link or from a same-site list (NearbyOffersView/NearbyShopsView), which
+  // now carry it forward — absent for a link forwarded without it, or an
+  // older Wallet pass that hasn't re-patched since this existed. See
+  // WalletSiteHeader's header comment for what changes when it's missing
+  // (Back can still show; Home can't, since there's no member to build one
+  // for).
+  token?: string
 }) {
-  const [locale, setLocale] = useLocale()
+  const [locale] = useLocale()
   const copy = OFFER_PAGE_COPY[locale]
   const dir = getDir(locale)
   const categoryLabel = CATEGORY_LABELS[locale][category] ?? category
@@ -52,13 +59,7 @@ export default function OfferPageView({
 
   return (
     <main dir={dir} className="min-h-screen bg-[#FBFCFD] text-[#1a1a1a]">
-      <header className="mx-auto flex max-w-[720px] items-center justify-between px-6 pt-8 sm:px-8">
-        <div className="flex items-center gap-3">
-          <BackButton dir={dir} label={copy.back} />
-          <SiteLogo className="h-12" />
-        </div>
-        <LanguageSwitcher locale={locale} onChange={setLocale} />
-      </header>
+      <WalletSiteHeader token={token} />
 
       <div className="mx-auto max-w-[720px] px-6 pt-10 pb-20 sm:px-8">
         {!isActive && (

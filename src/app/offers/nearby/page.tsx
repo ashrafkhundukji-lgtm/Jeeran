@@ -52,5 +52,5 @@ export default async function NearbyOffersPage({
   // reprint of what the customer already saw before tapping through.
   const otherOffers = ((offers ?? []) as NearbyOffer[]).slice(MAX_OFFERS_SHOWN)
 
-  return <NearbyOffersView otherOffers={otherOffers} />
+  return <NearbyOffersView otherOffers={otherOffers} token={token} />
 }

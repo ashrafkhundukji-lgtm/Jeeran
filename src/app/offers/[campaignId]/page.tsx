@@ -18,10 +18,18 @@ const LOCALES: Locale[] = ['ar', 'en', 'ur']
 // component split off from this one).
 export default async function OfferPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ campaignId: string }>
+  searchParams: Promise<{ token?: string }>
 }) {
   const { campaignId } = await params
+  // Optional and NOT verified server-side here (unlike /offers/nearby or
+  // /wallet/shops, which use it to look up a member row) — this page has no
+  // member-scoped data to gate, so an invalid/tampered token just means
+  // WalletSiteHeader quietly skips its Home link rather than 404ing an
+  // otherwise-perfectly-valid public offer page over a bad querystring.
+  const { token } = await searchParams
 
   const { data: campaign } = await supabaseAdmin
     .from('campaigns')
@@ -112,6 +120,7 @@ export default async function OfferPage({
       directionsUrl={directionsUrl}
       whatsappUrl={whatsappUrl}
       callUrl={callUrl}
+      token={token}
     />
   )
 }

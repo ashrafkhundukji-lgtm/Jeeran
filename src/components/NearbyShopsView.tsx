@@ -5,9 +5,7 @@ import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir } from '@/lib/i18n/locale'
 import { NEARBY_SHOPS_COPY } from '@/lib/i18n/nearbyShops'
 import { CATEGORIES, CATEGORY_EMOJI, CATEGORY_LABELS } from '@/lib/categories'
-import LanguageSwitcher from '@/components/LanguageSwitcher'
-import SiteLogo from '@/components/SiteLogo'
-import BackButton from '@/components/BackButton'
+import WalletSiteHeader from '@/components/WalletSiteHeader'
 import type { NearbyBusiness } from '@/lib/wallet/nearby-businesses'
 
 const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
@@ -34,8 +32,8 @@ function BackChevron({ rtl }: { rtl: boolean }) {
 // when the shop has one live, same destination the Wallet card's own "View
 // offer" links use; otherwise it's a plain Directions link — still a useful
 // tap, just not an offer page that doesn't exist for that shop.
-export default function NearbyShopsView({ shops }: { shops: NearbyBusiness[] }) {
-  const [locale, setLocale] = useLocale()
+export default function NearbyShopsView({ shops, token }: { shops: NearbyBusiness[]; token?: string }) {
+  const [locale] = useLocale()
   const copy = NEARBY_SHOPS_COPY[locale]
   const dir = getDir(locale)
   const [search, setSearch] = useState('')
@@ -66,13 +64,7 @@ export default function NearbyShopsView({ shops }: { shops: NearbyBusiness[] }) 
 
   return (
     <main dir={dir} className="min-h-screen bg-[#FBFCFD] text-[#1a1a1a]">
-      <header className="mx-auto flex max-w-[720px] items-center justify-between px-6 pt-8 sm:px-8">
-        <div className="flex items-center gap-3">
-          <BackButton dir={dir} label={copy.back} />
-          <SiteLogo className="h-12" />
-        </div>
-        <LanguageSwitcher locale={locale} onChange={setLocale} />
-      </header>
+      <WalletSiteHeader token={token} />
 
       <div className="mx-auto max-w-[720px] px-6 pt-10 pb-20 sm:px-8">
         <h1 className={`${ARCHIVO} mb-2 text-[28px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[34px]`}>
@@ -144,7 +136,9 @@ export default function NearbyShopsView({ shops }: { shops: NearbyBusiness[] }) 
                 // otherwise a maps link is still a genuinely useful tap for
                 // a shop with no active offer to view.
                 const href = s.has_active_offer
-                  ? `/offers/${s.top_offer_id}`
+                  ? token
+                    ? `/offers/${s.top_offer_id}?token=${encodeURIComponent(token)}`
+                    : `/offers/${s.top_offer_id}`
                   : `https://www.google.com/maps/dir/?api=1&destination=${s.business_lat},${s.business_lng}`
 
                 return (

@@ -383,7 +383,13 @@ function offersToLinksModule(memberId: string, offers: NearbyOffer[], preferredL
     if (appUrl) {
       return {
         id: `view_offer_${n}`,
-        uri: `${appUrl}/offers/${o.offer_id}`,
+        // ?token= carries the member's identity onto the offer page so its
+        // header (WalletSiteHeader) can render a working "Home" link and
+        // NearbyOffersView/NearbyShopsView can keep passing it forward on
+        // any further taps — see WalletSiteHeader's header comment for why
+        // this exists at all (an offer page opened with no token still
+        // works, it just can't offer Home).
+        uri: `${appUrl}/offers/${o.offer_id}?token=${signMemberToken(memberId)}`,
         description: `${pick('View offer', 'عرض التفاصيل', 'آفر دیکھیں', preferredLanguage)}${suffix}`,
         localizedDescription: localizedWithSuffix('View offer', 'عرض التفاصيل', 'آفر دیکھیں', suffix, preferredLanguage),
       }

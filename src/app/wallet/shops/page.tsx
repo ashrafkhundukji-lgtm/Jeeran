@@ -41,5 +41,5 @@ export default async function NearbyShopsPage({
     p_limit: SHOPS_PAGE_LIMIT,
   })
 
-  return <NearbyShopsView shops={(shops ?? []) as NearbyBusiness[]} />
+  return <NearbyShopsView shops={(shops ?? []) as NearbyBusiness[]} token={token} />
 }
