@@ -16,6 +16,7 @@ export interface WalletLanguageCopy {
   saved: string
   error: string
   back: string
+  browseShops: string
 }
 
 export const WALLET_LANGUAGE_COPY: Record<Locale, WalletLanguageCopy> = {
@@ -28,6 +29,7 @@ export const WALLET_LANGUAGE_COPY: Record<Locale, WalletLanguageCopy> = {
     saved: 'تم الحفظ — ستتحدث بطاقتك خلال لحظات.',
     error: 'حدث خطأ ما — حاول مرة أخرى.',
     back: 'رجوع',
+    browseShops: 'تصفح المحلات القريبة منك',
   },
   en: {
     heading: 'Wallet card language',
@@ -38,6 +40,7 @@ export const WALLET_LANGUAGE_COPY: Record<Locale, WalletLanguageCopy> = {
     saved: 'Saved — your card will update shortly.',
     error: 'Something went wrong — please try again.',
     back: 'Back',
+    browseShops: 'Browse shops near you',
   },
   ur: {
     heading: 'والٹ کارڈ کی زبان',
@@ -48,5 +51,6 @@ export const WALLET_LANGUAGE_COPY: Record<Locale, WalletLanguageCopy> = {
     saved: 'محفوظ ہو گیا — آپ کا کارڈ جلد اپ ڈیٹ ہو جائے گا۔',
     error: 'کچھ غلط ہو گیا — دوبارہ کوشش کریں۔',
     back: 'واپس',
+    browseShops: 'اپنے قریب دکانیں دیکھیں',
   },
 }

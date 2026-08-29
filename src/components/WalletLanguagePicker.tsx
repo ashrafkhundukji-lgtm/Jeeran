@@ -97,6 +97,18 @@ export default function WalletLanguagePicker({
           {status === 'error' && <span className="text-red-600">{copy.error}</span>}
         </div>
 
+        {/* Otherwise this page is a dead end once a choice is made — a real
+            customer flagged exactly that after testing. Always shown, not
+            gated on status === 'saved': there's nothing wrong with using it
+            before saving either. Reuses the SAME member token this page was
+            opened with (src/app/wallet/shops), so no separate signing here. */}
+        <a
+          href={`/wallet/shops?token=${encodeURIComponent(token)}`}
+          className="w-full rounded-full bg-[#1E3A8A] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1E3A8A]/90"
+        >
+          {copy.browseShops}
+        </a>
+
         {/* This page's OWN display language — unrelated to the wallet
             language chosen above, see this component's header comment. */}
         <div className="flex gap-3 pt-4 text-xs text-neutral-400">
