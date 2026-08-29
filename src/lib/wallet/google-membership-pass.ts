@@ -397,7 +397,15 @@ function offersToLinksModule(memberId: string, offers: NearbyOffer[], preferredL
     }
   })
 
-  if (appUrl && offers.length > MAX_OFFERS_SHOWN) {
+  // Was gated on `offers.length > MAX_OFFERS_SHOWN` (omitted when there's
+  // nothing beyond the top 2, so as never to be a dead-end button) — a real
+  // customer flagged that this made the link disappear unpredictably
+  // whenever their area happened to have 2 or fewer active offers, with
+  // "Change language" silently sliding into its slot. Now always present,
+  // same as every other link below: the target page's own empty state ("No
+  // other offers nearby right now") is a perfectly fine thing to land on
+  // occasionally, and a stable menu beats an occasionally-shorter one.
+  if (appUrl) {
     uris.push({
       id: 'other_offers',
       uri: `${appUrl}/offers/nearby?token=${signMemberToken(memberId)}`,
@@ -406,10 +414,22 @@ function offersToLinksModule(memberId: string, offers: NearbyOffer[], preferredL
     })
   }
 
-  // Always present when appUrl is configured (not gated on offer count, the
-  // way "Other offers nearby" is) — this is a settings action, not a
-  // dead-end to avoid showing. Points at src/app/wallet/language, verified
-  // via the same signed member token as every other card link.
+  // Every nearby shop, offer or not (nearby_businesses() / src/app/wallet/shops)
+  // — distinct from "Other offers nearby" above, which only ever lists shops
+  // that currently have one live.
+  if (appUrl) {
+    uris.push({
+      id: 'nearby_shops',
+      uri: `${appUrl}/wallet/shops?token=${signMemberToken(memberId)}`,
+      description: pick('Shops near you', 'محلات قريبة منك', 'قریب دکانیں', preferredLanguage),
+      localizedDescription: localized('Shops near you', 'محلات قريبة منك', 'قریب دکانیں', preferredLanguage),
+    })
+  }
+
+  // A settings action, not a browsing destination — kept last so the two
+  // browsing links above stay adjacent to the offer rows they're an
+  // extension of. Points at src/app/wallet/language, verified via the same
+  // signed member token as every other card link.
   if (appUrl) {
     uris.push({
       id: 'change_language',
