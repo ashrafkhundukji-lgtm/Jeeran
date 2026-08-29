@@ -6,6 +6,7 @@ import { getDir } from '@/lib/i18n/locale'
 import { NEARBY_OFFERS_COPY } from '@/lib/i18n/offers'
 import { CATEGORIES, CATEGORY_EMOJI, CATEGORY_LABELS } from '@/lib/categories'
 import WalletTabBar from '@/components/WalletTabBar'
+import SiteLogo from '@/components/SiteLogo'
 import type { NearbyOffer } from '@/lib/wallet/google-membership-pass'
 
 const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
@@ -20,7 +21,7 @@ const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
 // single scrollable list filterable by a horizontal chip row, matching how
 // most native shopping/delivery apps do category filtering. "All" is
 // selected by default so the full list shows immediately.
-export default function NearbyOffersView({ otherOffers, token }: { otherOffers: NearbyOffer[]; token?: string }) {
+export default function NearbyOffersView({ offers, token }: { offers: NearbyOffer[]; token?: string }) {
   const [locale] = useLocale()
   const copy = NEARBY_OFFERS_COPY[locale]
   const dir = getDir(locale)
@@ -33,13 +34,13 @@ export default function NearbyOffersView({ otherOffers, token }: { otherOffers: 
   // iteration source so chip order stays stable and matches the canonical
   // category order used everywhere else (e.g. /browse).
   const presentCategories = useMemo(() => {
-    const present = new Set(otherOffers.map((o) => o.business_category))
+    const present = new Set(offers.map((o) => o.business_category))
     return CATEGORIES.filter((c) => present.has(c))
-  }, [otherOffers])
+  }, [offers])
 
   const query = search.trim().toLowerCase()
   const visibleOffers = useMemo(() => {
-    return otherOffers.filter((o) => {
+    return offers.filter((o) => {
       if (selectedCategory && o.business_category !== selectedCategory) return false
       if (!query) return true
       const categoryLabel = CATEGORY_LABELS[locale][o.business_category] ?? o.business_category
@@ -49,17 +50,18 @@ export default function NearbyOffersView({ otherOffers, token }: { otherOffers: 
         categoryLabel.toLowerCase().includes(query)
       )
     })
-  }, [otherOffers, query, selectedCategory, locale])
+  }, [offers, query, selectedCategory, locale])
 
   return (
     <main dir={dir} className="min-h-screen bg-[#FBFCFD] pb-24 text-[#1a1a1a]">
-      <div className="mx-auto max-w-[720px] px-6 pt-10 sm:px-8">
+      <div className="mx-auto max-w-[720px] px-6 pt-8 sm:px-8">
+        {token && <SiteLogo className="mb-5 h-8" href={`/wallet/home?token=${encodeURIComponent(token)}`} />}
         <h1 className={`${ARCHIVO} mb-2 text-[28px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[34px]`}>
           {copy.heading}
         </h1>
         <p className="mb-6 text-[15px] text-[#5a5a5a]">{copy.subheading}</p>
 
-        {otherOffers.length > 0 && (
+        {offers.length > 0 && (
           <>
             <div className="relative mb-4">
               <svg
@@ -112,7 +114,7 @@ export default function NearbyOffersView({ otherOffers, token }: { otherOffers: 
           </>
         )}
 
-        {otherOffers.length === 0 ? (
+        {offers.length === 0 ? (
           <p className="text-sm text-neutral-500">{copy.empty}</p>
         ) : visibleOffers.length === 0 ? (
           <p className="text-sm text-neutral-500">{copy.emptySearch}</p>

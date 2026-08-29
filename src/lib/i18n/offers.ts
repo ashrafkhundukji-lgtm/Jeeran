@@ -71,9 +71,9 @@ export interface NearbyOffersCopy {
 
 export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
   ar: {
-    heading: 'عروض أخرى قريبة منك',
-    subheading: 'المزيد من العروض من محلات قريبة منك، الآن.',
-    empty: 'لا توجد عروض أخرى قريبة الآن — تحقق لاحقاً.',
+    heading: 'عروض قريبة منك',
+    subheading: 'كل العروض المتاحة حولك الآن.',
+    empty: 'لا توجد عروض قريبة الآن — تحقق لاحقاً.',
     emptySearch: 'لا توجد نتائج مطابقة لبحثك.',
     searchPlaceholder: 'ابحث عن عرض أو محل أو فئة…',
     viewOffer: 'عرض التفاصيل',
@@ -81,9 +81,9 @@ export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
     allCategories: 'الكل',
   },
   en: {
-    heading: 'Other offers nearby',
-    subheading: 'More deals from shops near you, right now.',
-    empty: 'No other offers nearby right now — check back later.',
+    heading: 'Offers near you',
+    subheading: 'Everything shops around you are offering right now.',
+    empty: 'No offers nearby right now — check back later.',
     emptySearch: 'No offers match your search.',
     searchPlaceholder: 'Search offers, shops, or categories…',
     viewOffer: 'View offer',
@@ -91,9 +91,9 @@ export const NEARBY_OFFERS_COPY: Record<Locale, NearbyOffersCopy> = {
     allCategories: 'All',
   },
   ur: {
-    heading: 'قریب دیگر آفرز',
-    subheading: 'آپ کے قریب دکانوں کی مزید پیشکشیں، ابھی۔',
-    empty: 'اس وقت کوئی اور آفر قریب نہیں ہے — بعد میں دوبارہ چیک کریں۔',
+    heading: 'آپ کے قریب آفرز',
+    subheading: 'آپ کے ارد گرد دکانوں کی تمام موجودہ پیشکشیں۔',
+    empty: 'اس وقت قریب کوئی آفر نہیں ہے — بعد میں دوبارہ چیک کریں۔',
     emptySearch: 'آپ کی تلاش سے کوئی آفر میل نہیں کھاتا۔',
     searchPlaceholder: 'آفرز، دکانیں، یا کیٹگری تلاش کریں…',
     viewOffer: 'آفر دیکھیں',

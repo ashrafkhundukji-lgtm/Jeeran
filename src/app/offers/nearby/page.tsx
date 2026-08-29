@@ -1,19 +1,25 @@
 import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { verifyMemberToken } from '@/lib/wallet/member-token'
-import { MAX_OFFERS_SHOWN, type NearbyOffer } from '@/lib/wallet/google-membership-pass'
+import type { NearbyOffer } from '@/lib/wallet/google-membership-pass'
 import NearbyOffersView from '@/components/NearbyOffersView'
 
 export const dynamic = 'force-dynamic'
 
-// Reachable only from the Wallet card's "Other offers nearby" link (see
-// offersToLinksModule in google-membership-pass.ts) — that link only ever
-// appears when the card's own capped list (p_limit: 5 everywhere it's
-// fetched) had more rows than fit on the card (MAX_OFFERS_SHOWN, currently
-// 2). This page does its OWN fresh, higher-limit query rather than reusing
-// whatever was embedded on the card at last patch time — the card's list
-// would undercount once a dense area has more active campaigns than its
-// own p_limit, and campaigns can go active/inactive between card patches.
+// The Offers tab (WalletTabBar) — a top-level destination now, not a
+// "everything else beyond the card" supplement to it. It used to slice off
+// the first MAX_OFFERS_SHOWN results (whatever the card's own front
+// already showed) on the theory that this page only existed as a
+// "more" link the card itself provided; now that it's reached directly
+// from a persistent tab bar on every wallet page, slicing those off meant
+// a member with only 1-2 nearby offers total saw an empty "no offers"
+// list here even while their card (and the Home tab) showed one — a real
+// customer hit exactly that. Shows the FULL nearby list instead, same
+// query, no slice. Still does its OWN fresh, higher-limit query rather
+// than reusing whatever was embedded on the card at last patch time — the
+// card's own list (p_limit: 5 everywhere it's fetched) would undercount
+// once a dense area has more active campaigns than that, and campaigns can
+// go active/inactive between card patches.
 const NEARBY_PAGE_LIMIT = 20
 
 export default async function NearbyOffersPage({
@@ -47,10 +53,7 @@ export default async function NearbyOffersPage({
     p_limit: NEARBY_PAGE_LIMIT,
   })
 
-  // Skip whatever's already on the card's front (same ranking, same
-  // MAX_OFFERS_SHOWN cap) so this page is genuinely "everything ELSE," not a
-  // reprint of what the customer already saw before tapping through.
-  const otherOffers = ((offers ?? []) as NearbyOffer[]).slice(MAX_OFFERS_SHOWN)
+  const nearbyOffers = (offers ?? []) as NearbyOffer[]
 
-  return <NearbyOffersView otherOffers={otherOffers} token={token} />
+  return <NearbyOffersView offers={nearbyOffers} token={token} />
 }

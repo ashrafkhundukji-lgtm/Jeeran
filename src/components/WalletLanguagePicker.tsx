@@ -5,6 +5,7 @@ import { useLocale } from '@/lib/i18n/useLocale'
 import { LOCALES, getDir, type Locale } from '@/lib/i18n/locale'
 import { WALLET_LANGUAGE_COPY } from '@/lib/i18n/walletLanguage'
 import WalletTabBar from '@/components/WalletTabBar'
+import SiteLogo from '@/components/SiteLogo'
 
 const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
 
@@ -60,7 +61,8 @@ export default function WalletLanguagePicker({
 
   return (
     <main dir={dir} className="min-h-screen bg-[#FBFCFD] pb-24 text-[#1a1a1a]">
-      <div className="mx-auto max-w-[480px] px-6 pt-10 sm:px-8">
+      <div className="mx-auto max-w-[480px] px-6 pt-8 sm:px-8">
+        <SiteLogo className="mb-5 h-8" href={`/wallet/home?token=${encodeURIComponent(token)}`} />
         <h1 className={`${ARCHIVO} mb-1 text-[24px] font-bold tracking-[-0.01em]`}>{copy.heading}</h1>
         <p className="mb-6 text-sm text-neutral-600">{copy.body}</p>
 

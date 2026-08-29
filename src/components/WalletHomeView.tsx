@@ -4,6 +4,7 @@ import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir } from '@/lib/i18n/locale'
 import { WALLET_HOME_COPY } from '@/lib/i18n/walletHome'
 import WalletTabBar from '@/components/WalletTabBar'
+import SiteLogo from '@/components/SiteLogo'
 import type { NearbyOffer } from '@/lib/wallet/google-membership-pass'
 
 const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
@@ -31,8 +32,8 @@ export default function WalletHomeView({
 
   return (
     <main dir={dir} className="min-h-screen bg-[#FBFCFD] pb-24 text-[#1a1a1a]">
-      <div className="mx-auto max-w-[480px] px-6 pt-10">
-        <div className="mb-1 text-xs font-semibold tracking-wide text-[#FF6B4A] uppercase">{copy.brand}</div>
+      <div className="mx-auto max-w-[480px] px-6 pt-8">
+        <SiteLogo className="mb-5 h-8" href={`/wallet/home${q}`} />
         <h1 className={`${ARCHIVO} mb-6 text-[30px] font-black leading-[1.05] tracking-[-0.01em]`}>{copy.heading}</h1>
 
         <div className="mb-3 text-xs font-semibold tracking-wide text-neutral-400 uppercase">

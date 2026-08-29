@@ -6,6 +6,7 @@ import { getDir } from '@/lib/i18n/locale'
 import { NEARBY_SHOPS_COPY } from '@/lib/i18n/nearbyShops'
 import { CATEGORIES, CATEGORY_EMOJI, CATEGORY_LABELS } from '@/lib/categories'
 import WalletTabBar from '@/components/WalletTabBar'
+import SiteLogo from '@/components/SiteLogo'
 import type { NearbyBusiness } from '@/lib/wallet/nearby-businesses'
 
 const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
@@ -43,7 +44,8 @@ export default function NearbyShopsView({ shops, token }: { shops: NearbyBusines
 
   return (
     <main dir={dir} className="min-h-screen bg-[#FBFCFD] pb-24 text-[#1a1a1a]">
-      <div className="mx-auto max-w-[720px] px-6 pt-10 sm:px-8">
+      <div className="mx-auto max-w-[720px] px-6 pt-8 sm:px-8">
+        {token && <SiteLogo className="mb-5 h-8" href={`/wallet/home?token=${encodeURIComponent(token)}`} />}
         <h1 className={`${ARCHIVO} mb-2 text-[28px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[34px]`}>
           {copy.heading}
         </h1>
