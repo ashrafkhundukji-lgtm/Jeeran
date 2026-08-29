@@ -27,7 +27,8 @@ export default async function OfferPage({
   // Optional and NOT verified server-side here (unlike /offers/nearby or
   // /wallet/shops, which use it to look up a member row) — this page has no
   // member-scoped data to gate, so an invalid/tampered token just means
-  // WalletSiteHeader quietly skips its Home link rather than 404ing an
+  // OfferPageView's floating back button quietly falls back to plain
+  // history.back() instead of the Home tab, rather than 404ing an
   // otherwise-perfectly-valid public offer page over a bad querystring.
   const { token } = await searchParams
 

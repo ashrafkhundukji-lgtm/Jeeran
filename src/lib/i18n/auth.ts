@@ -2,6 +2,10 @@ import type { Locale } from './locale'
 
 export interface LoginCopy {
   title: string
+  // Mobile-only, under the brand mark (see login/page.tsx's mobile-native
+  // layout) — desktop's existing single-line title doesn't have room for
+  // it and doesn't need it, sitting right next to the site logo already.
+  subtitle: string
   emailPlaceholder: string
   passwordPlaceholder: string
   submit: string
@@ -12,6 +16,7 @@ export interface LoginCopy {
 
 export interface SignupCopy {
   title: string
+  subtitle: string
   emailPlaceholder: string
   passwordPlaceholder: string
   submit: string
@@ -23,7 +28,8 @@ export interface SignupCopy {
 
 export const LOGIN_COPY: Record<Locale, LoginCopy> = {
   ar: {
-    title: 'تسجيل الدخول',
+    title: 'أهلاً بعودتك',
+    subtitle: 'سجّل الدخول لإدارة عروض محلك.',
     emailPlaceholder: 'البريد الإلكتروني',
     passwordPlaceholder: 'كلمة المرور',
     submit: 'تسجيل الدخول',
@@ -32,7 +38,8 @@ export const LOGIN_COPY: Record<Locale, LoginCopy> = {
     signUpLink: 'إنشاء حساب',
   },
   en: {
-    title: 'Log in',
+    title: 'Welcome back',
+    subtitle: "Log in to manage your shop's offers.",
     emailPlaceholder: 'Email',
     passwordPlaceholder: 'Password',
     submit: 'Log in',
@@ -41,7 +48,8 @@ export const LOGIN_COPY: Record<Locale, LoginCopy> = {
     signUpLink: 'Sign up',
   },
   ur: {
-    title: 'لاگ اِن',
+    title: 'خوش آمدید',
+    subtitle: 'اپنی دکان کے آفرز چلانے کے لیے لاگ اِن کریں۔',
     emailPlaceholder: 'ای میل',
     passwordPlaceholder: 'پاس ورڈ',
     submit: 'لاگ اِن',
@@ -54,6 +62,7 @@ export const LOGIN_COPY: Record<Locale, LoginCopy> = {
 export const SIGNUP_COPY: Record<Locale, SignupCopy> = {
   ar: {
     title: 'إنشاء حساب',
+    subtitle: 'أنشئ حساباً لمحلك — مجاني للبدء.',
     emailPlaceholder: 'البريد الإلكتروني',
     passwordPlaceholder: 'كلمة المرور (٦ أحرف على الأقل)',
     submit: 'إنشاء حساب',
@@ -63,7 +72,8 @@ export const SIGNUP_COPY: Record<Locale, SignupCopy> = {
     confirmationNotice: 'تحقق من بريدك الإلكتروني لتأكيد حسابك، ثم سجّل الدخول.',
   },
   en: {
-    title: 'Create an account',
+    title: 'Get started',
+    subtitle: 'Create an account for your shop — free to start.',
     emailPlaceholder: 'Email',
     passwordPlaceholder: 'Password (min 6 characters)',
     submit: 'Sign up',
@@ -73,7 +83,8 @@ export const SIGNUP_COPY: Record<Locale, SignupCopy> = {
     confirmationNotice: 'Check your email to confirm your account, then log in.',
   },
   ur: {
-    title: 'اکاؤنٹ بنائیں',
+    title: 'شروع کریں',
+    subtitle: 'اپنی دکان کے لیے اکاؤنٹ بنائیں — شروع کرنا مفت ہے۔',
     emailPlaceholder: 'ای میل',
     passwordPlaceholder: 'پاس ورڈ (کم از کم 6 حروف)',
     submit: 'سائن اپ کریں',

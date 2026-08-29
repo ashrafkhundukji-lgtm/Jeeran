@@ -63,7 +63,7 @@ export default function BillingView({
   const copy = DASHBOARD_COPY[locale].billing
 
   return (
-    <main dir={dir} className="max-w-2xl mx-auto px-4 py-10">
+    <main dir={dir} className="max-w-2xl mx-auto px-4 pt-10 pb-24 md:pb-10">
       <DashboardNav />
       <h1 className="text-xl font-semibold mb-1">{copy.heading}</h1>
       <p className="text-sm text-neutral-500 mb-6">{accountName}</p>

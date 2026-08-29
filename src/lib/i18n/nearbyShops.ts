@@ -2,9 +2,9 @@ import type { Locale } from './locale'
 
 // Fixed chrome text for src/app/wallet/shops (NearbyShopsView) — same
 // three-locale system as offers.ts's NEARBY_OFFERS_COPY, which this
-// deliberately mirrors closely (same page shape: search + category grid +
-// drill-down list), just for shops generally rather than only ones with an
-// active offer right now.
+// deliberately mirrors closely (same page shape: search + category chip
+// row + a single flat list), just for shops generally rather than only
+// ones with an active offer right now.
 export interface NearbyShopsCopy {
   heading: string
   subheading: string
@@ -15,9 +15,7 @@ export interface NearbyShopsCopy {
   getDirections: string
   hasOffer: string
   kmAway: (km: string) => string
-  backToCategories: string
-  shopsCount: (n: number) => string
-  back: string
+  allCategories: string
 }
 
 export const NEARBY_SHOPS_COPY: Record<Locale, NearbyShopsCopy> = {
@@ -31,9 +29,7 @@ export const NEARBY_SHOPS_COPY: Record<Locale, NearbyShopsCopy> = {
     getDirections: 'الاتجاهات',
     hasOffer: 'يوجد عرض',
     kmAway: (km) => `${km} كم`,
-    backToCategories: 'الفئات',
-    shopsCount: (n) => `${n} محل`,
-    back: 'رجوع',
+    allCategories: 'الكل',
   },
   en: {
     heading: 'Shops near you',
@@ -45,9 +41,7 @@ export const NEARBY_SHOPS_COPY: Record<Locale, NearbyShopsCopy> = {
     getDirections: 'Get directions',
     hasOffer: 'Has an offer',
     kmAway: (km) => `${km} km away`,
-    backToCategories: 'Categories',
-    shopsCount: (n) => `${n} shop${n === 1 ? '' : 's'}`,
-    back: 'Back',
+    allCategories: 'All',
   },
   ur: {
     heading: 'آپ کے قریب دکانیں',
@@ -59,8 +53,6 @@ export const NEARBY_SHOPS_COPY: Record<Locale, NearbyShopsCopy> = {
     getDirections: 'راستہ دیکھیں',
     hasOffer: 'آفر موجود ہے',
     kmAway: (km) => `${km} کلومیٹر دور`,
-    backToCategories: 'کیٹگریز',
-    shopsCount: (n) => `${n} دکانیں`,
-    back: 'واپس',
+    allCategories: 'تمام',
   },
 }

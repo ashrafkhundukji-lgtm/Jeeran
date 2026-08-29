@@ -1,48 +1,54 @@
 import type { Locale } from './locale'
 
-// Fixed chrome for src/app/wallet/home (WalletHomeView) — the hub every
-// "Home" link in WalletSiteHeader points to. One menu row per destination a
-// customer can reach from their Wallet card.
+// Fixed chrome for src/app/wallet/home (WalletHomeView) — the landing tab
+// every wallet-linked page can reach via WalletTabBar. Mirrors what's
+// actually on the customer's physical Wallet card (same top offer, same
+// ranking — see the server page's own comment) rather than showing a
+// second, possibly-different opinion about what's nearby.
 export interface WalletHomeCopy {
+  brand: string
   heading: string
-  subheading: string
+  cardSectionLabel: string
+  moreOnCard: (n: number) => string
+  noOffersYet: string
   offersTitle: string
   offersSubtitle: string
   shopsTitle: string
   shopsSubtitle: string
-  languageTitle: string
-  languageSubtitle: string
 }
 
 export const WALLET_HOME_COPY: Record<Locale, WalletHomeCopy> = {
   ar: {
+    brand: 'جيران',
     heading: 'مرحباً بك',
-    subheading: 'كل ما يمكنك فعله من بطاقة جيران الخاصة بك.',
-    offersTitle: 'عروض قريبة منك',
-    offersSubtitle: 'تصفح العروض المتاحة حولك الآن.',
-    shopsTitle: 'محلات قريبة منك',
-    shopsSubtitle: 'كل المحلات حولك، بعرض أو بدون.',
-    languageTitle: 'لغة البطاقة',
-    languageSubtitle: 'اختر لغة عرض بطاقتك في المحفظة.',
+    cardSectionLabel: 'بطاقتك الآن',
+    moreOnCard: (n) => `+${n} عروض أخرى على بطاقتك`,
+    noOffersYet: 'لا توجد عروض على بطاقتك حالياً — تحقق لاحقاً.',
+    offersTitle: 'العروض',
+    offersSubtitle: 'قريبة منك',
+    shopsTitle: 'المحلات',
+    shopsSubtitle: 'قريبة منك',
   },
   en: {
+    brand: 'Jeeran',
     heading: 'Welcome',
-    subheading: 'Everything you can do from your Jeeran pass.',
-    offersTitle: 'Offers near you',
-    offersSubtitle: 'Browse what shops nearby are offering right now.',
-    shopsTitle: 'Shops near you',
-    shopsSubtitle: 'Every shop around you, offer or not.',
-    languageTitle: 'Card language',
-    languageSubtitle: 'Choose which language your Wallet card shows.',
+    cardSectionLabel: 'Your card right now',
+    moreOnCard: (n) => `+${n} more on your card`,
+    noOffersYet: "Nothing on your card right now — check back later.",
+    offersTitle: 'Offers',
+    offersSubtitle: 'nearby',
+    shopsTitle: 'Shops',
+    shopsSubtitle: 'nearby',
   },
   ur: {
+    brand: 'جیران',
     heading: 'خوش آمدید',
-    subheading: 'آپ کے جیران پاس سے آپ جو کچھ کر سکتے ہیں۔',
-    offersTitle: 'آپ کے قریب آفرز',
-    offersSubtitle: 'ابھی اپنے قریب دکانوں کی پیشکشیں دیکھیں۔',
-    shopsTitle: 'آپ کے قریب دکانیں',
-    shopsSubtitle: 'آپ کے ارد گرد ہر دکان، آفر ہو یا نہ ہو۔',
-    languageTitle: 'کارڈ کی زبان',
-    languageSubtitle: 'اپنے والٹ کارڈ کی زبان منتخب کریں۔',
+    cardSectionLabel: 'آپ کا کارڈ ابھی',
+    moreOnCard: (n) => `+${n} مزید آپ کے کارڈ پر`,
+    noOffersYet: 'اس وقت آپ کے کارڈ پر کچھ نہیں ہے — بعد میں دوبارہ چیک کریں۔',
+    offersTitle: 'آفرز',
+    offersSubtitle: 'قریب',
+    shopsTitle: 'دکانیں',
+    shopsSubtitle: 'قریب',
   },
 }

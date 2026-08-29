@@ -384,11 +384,11 @@ function offersToLinksModule(memberId: string, offers: NearbyOffer[], preferredL
       return {
         id: `view_offer_${n}`,
         // ?token= carries the member's identity onto the offer page so its
-        // header (WalletSiteHeader) can render a working "Home" link and
+        // floating back button (OfferPageView.tsx) can fall back to the
+        // Home tab when there's no real browser history to go back to, and
         // NearbyOffersView/NearbyShopsView can keep passing it forward on
-        // any further taps — see WalletSiteHeader's header comment for why
-        // this exists at all (an offer page opened with no token still
-        // works, it just can't offer Home).
+        // any further taps — an offer page opened with no token still
+        // works, its back button just falls back to plain history.back().
         uri: `${appUrl}/offers/${o.offer_id}?token=${signMemberToken(memberId)}`,
         description: `${pick('View offer', 'عرض التفاصيل', 'آفر دیکھیں', preferredLanguage)}${suffix}`,
         localizedDescription: localizedWithSuffix('View offer', 'عرض التفاصيل', 'آفر دیکھیں', suffix, preferredLanguage),
