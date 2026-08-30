@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { INSTANT_NOTIFY_ADDON_KEY } from './catalog'
+import { INSTANT_NOTIFY_ADDON_KEY, REACH_EXTENDED_ADDON_KEY, REACH_PREMIUM_ADDON_KEY } from './catalog'
+
+export type ReachTier = 'none' | 'extended' | 'premium'
 
 export interface BillingAccount {
   type: 'business'
@@ -10,6 +12,7 @@ export interface BillingAccount {
   adCredits: number
   isFrozen: boolean
   isInstantNotifyActive: boolean
+  reachTier: ReachTier
 }
 
 // Resolves the caller's billing account. Pass a session-scoped client so
@@ -38,6 +41,23 @@ export async function getBillingAccountForUser(
     .maybeSingle()
   if (addonError) throw new Error(addonError.message)
 
+  // Separate lookup for both reach tiers at once — same "missing row means
+  // never purchased" reasoning as instant_notify above. Premium wins if
+  // somehow both are active (matches business_reach_radius_km()'s max()).
+  const { data: reachAddons, error: reachError } = await supabase
+    .from('business_addons')
+    .select('addon_key, is_active')
+    .eq('business_id', business.id)
+    .in('addon_key', [REACH_EXTENDED_ADDON_KEY, REACH_PREMIUM_ADDON_KEY])
+  if (reachError) throw new Error(reachError.message)
+
+  const activeReachKeys = new Set((reachAddons ?? []).filter((a) => a.is_active).map((a) => a.addon_key))
+  const reachTier: ReachTier = activeReachKeys.has(REACH_PREMIUM_ADDON_KEY)
+    ? 'premium'
+    : activeReachKeys.has(REACH_EXTENDED_ADDON_KEY)
+      ? 'extended'
+      : 'none'
+
   return {
     type: 'business',
     id: business.id,
@@ -47,5 +67,6 @@ export async function getBillingAccountForUser(
     adCredits: business.ad_credits,
     isFrozen: business.is_frozen,
     isInstantNotifyActive: addon?.is_active ?? false,
+    reachTier,
   }
 }

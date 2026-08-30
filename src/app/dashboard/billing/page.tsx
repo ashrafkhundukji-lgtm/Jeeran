@@ -68,6 +68,7 @@ export default async function BillingPage() {
       accountName={account.name}
       isSubscriptionActive={account.isSubscriptionActive}
       isInstantNotifyActive={account.isInstantNotifyActive}
+      reachTier={account.reachTier}
       adCredits={account.adCredits}
       catalog={catalog}
       ledger={ledger}

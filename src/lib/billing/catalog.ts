@@ -32,6 +32,15 @@ export interface CatalogEntry {
 // than each hardcoding 'instant_notify' independently.
 export const INSTANT_NOTIFY_ADDON_KEY = 'instant_notify'
 
+// Same sharing reasoning as INSTANT_NOTIFY_ADDON_KEY above. Values (10km/
+// 25km) are NOT read from here — the ranking functions
+// (business_reach_radius_km() in supabase/migrations/20260830_reach_radius_addon.sql)
+// hardcode them against these same key strings, since the radius has to be
+// evaluated inside a Postgres query (nearby_active_offers/nearby_businesses),
+// not fetched from application code. Keep the two in sync if either changes.
+export const REACH_EXTENDED_ADDON_KEY = 'reach_extended'
+export const REACH_PREMIUM_ADDON_KEY = 'reach_premium'
+
 function entry(key: string, envVar: string, rest: Omit<CatalogEntry, 'key' | 'priceId'>): CatalogEntry | null {
   const priceId = process.env[envVar]
   if (!priceId) return null
@@ -80,6 +89,29 @@ export function getBillingCatalog(): CatalogEntry[] {
       label: 'Instant Notify Add-on',
       amountUsd: 29,
       addonKey: INSTANT_NOTIFY_ADDON_KEY,
+    }),
+    // Reach radius: widens which customers this business is eligible to be
+    // discovered/ranked for, beyond their own wallet_members.push_radius_km
+    // (1km by default) — see business_reach_radius_km() in
+    // 20260830_reach_radius_addon.sql. Two tiers, same business_addons/
+    // webhook mechanism as instant_notify above (a business should only
+    // ever have one active at a time — nothing in the checkout/webhook path
+    // enforces that today, same as any other addon combination).
+    entry('reach_extended', 'STRIPE_PRICE_REACH_EXTENDED', {
+      type: 'addon',
+      mode: 'subscription',
+      creditsGranted: 0,
+      label: 'Extended Reach Add-on (10km)',
+      amountUsd: 19,
+      addonKey: REACH_EXTENDED_ADDON_KEY,
+    }),
+    entry('reach_premium', 'STRIPE_PRICE_REACH_PREMIUM', {
+      type: 'addon',
+      mode: 'subscription',
+      creditsGranted: 0,
+      label: 'Premium Reach Add-on (25km)',
+      amountUsd: 39,
+      addonKey: REACH_PREMIUM_ADDON_KEY,
     }),
   ]
   return entries.filter((e): e is CatalogEntry => e !== null)

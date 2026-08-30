@@ -6,6 +6,7 @@ import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir } from '@/lib/i18n/locale'
 import { DASHBOARD_COPY, type DashboardCopy } from '@/lib/i18n/dashboard'
 import type { CatalogEntry } from '@/lib/billing/catalog'
+import type { ReachTier } from '@/lib/billing/account'
 
 export interface LedgerEntry {
   id: string
@@ -47,6 +48,7 @@ export default function BillingView({
   accountName,
   isSubscriptionActive,
   isInstantNotifyActive,
+  reachTier,
   adCredits,
   catalog,
   ledger,
@@ -54,6 +56,7 @@ export default function BillingView({
   accountName: string
   isSubscriptionActive: boolean
   isInstantNotifyActive: boolean
+  reachTier: ReachTier
   adCredits: number
   catalog: CatalogEntry[]
   ledger: LedgerEntry[]
@@ -85,6 +88,7 @@ export default function BillingView({
         catalog={catalog}
         isSubscriptionActive={isSubscriptionActive}
         isInstantNotifyActive={isInstantNotifyActive}
+        reachTier={reachTier}
       />
 
       <section className="mt-10">

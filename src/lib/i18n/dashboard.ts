@@ -88,6 +88,16 @@ export interface DashboardCopy {
     instantNotifySubscribe: string
     addonStarted: string
     addonRenewed: string
+    reachHeading: string
+    reachDescription: string
+    reachStandardLabel: string
+    reachStandardDescription: string
+    reachExtendedLabel: string
+    reachExtendedDescription: string
+    reachPremiumLabel: string
+    reachPremiumDescription: string
+    reachCurrentPlan: string
+    reachSubscribe: string
   }
   profile: {
     heading: string
@@ -243,6 +253,16 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       instantNotifySubscribe: 'اشترك — ${n}/شهريًا',
       addonStarted: 'بدأ اشتراك الإضافة',
       addonRenewed: 'تم تجديد اشتراك الإضافة',
+      reachHeading: 'خطة الوصول',
+      reachDescription: 'إلى أي مدى خارج نطاق العميل يمكن أن تظل عروضك قابلة للاكتشاف.',
+      reachStandardLabel: 'أساسي',
+      reachStandardDescription: 'مُضمّن — بلا تعزيز',
+      reachExtendedLabel: 'موسّع',
+      reachExtendedDescription: 'يصل عرضك إلى العملاء ضمن 10 كم، حتى خارج نطاقهم المعتاد.',
+      reachPremiumLabel: 'مميز',
+      reachPremiumDescription: 'يصل عرضك إلى العملاء ضمن 25 كم — أقصى ظهور ممكن.',
+      reachCurrentPlan: 'الخطة الحالية',
+      reachSubscribe: 'اشترك — ${n}/شهريًا',
     },
     profile: {
       heading: 'الملف الشخصي',
@@ -397,6 +417,16 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       instantNotifySubscribe: 'Subscribe — ${n}/mo',
       addonStarted: 'Add-on subscription started',
       addonRenewed: 'Add-on subscription renewed',
+      reachHeading: 'Your reach plan',
+      reachDescription: "How far outside a customer's own radius your offers can still be discovered.",
+      reachStandardLabel: 'Standard',
+      reachStandardDescription: 'Included — no boost',
+      reachExtendedLabel: 'Extended',
+      reachExtendedDescription: 'Reach customers up to 10 km away, even outside their own radius.',
+      reachPremiumLabel: 'Premium',
+      reachPremiumDescription: 'Reach customers up to 25 km away — maximum visibility.',
+      reachCurrentPlan: 'Current plan',
+      reachSubscribe: 'Subscribe — ${n}/mo',
     },
     profile: {
       heading: 'Profile',
@@ -549,6 +579,16 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       instantNotifySubscribe: 'سبسکرائب کریں — ${n}/ماہانہ',
       addonStarted: 'ایڈ آن سبسکرپشن شروع ہوئی',
       addonRenewed: 'ایڈ آن سبسکرپشن تجدید ہوئی',
+      reachHeading: 'آپ کا ریچ پلان',
+      reachDescription: 'آپ کی آفرز گاہک کے اپنے دائرے سے کتنی دور تک دریافت ہو سکتی ہیں۔',
+      reachStandardLabel: 'اسٹینڈرڈ',
+      reachStandardDescription: 'شامل — کوئی اضافہ نہیں',
+      reachExtendedLabel: 'ایکسٹینڈڈ',
+      reachExtendedDescription: '10 کلومیٹر دور تک گاہکوں تک رسائی، ان کے اپنے دائرے سے باہر بھی۔',
+      reachPremiumLabel: 'پریمیم',
+      reachPremiumDescription: '25 کلومیٹر دور تک گاہکوں تک رسائی — زیادہ سے زیادہ نمائش۔',
+      reachCurrentPlan: 'موجودہ پلان',
+      reachSubscribe: 'سبسکرائب کریں — ${n}/ماہانہ',
     },
     profile: {
       heading: 'پروفائل',
