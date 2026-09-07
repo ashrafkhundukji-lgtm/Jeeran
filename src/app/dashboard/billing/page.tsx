@@ -65,7 +65,6 @@ export default async function BillingPage() {
 
   return (
     <BillingView
-      accountName={account.name}
       isSubscriptionActive={account.isSubscriptionActive}
       isInstantNotifyActive={account.isInstantNotifyActive}
       reachTier={account.reachTier}

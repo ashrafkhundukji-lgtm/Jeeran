@@ -86,6 +86,12 @@ export default function BillingActions({
 
   const subscriptionEntry = catalog.find((c) => c.type === 'subscription')
   const topupEntries = catalog.filter((c) => c.type === 'topup')
+  // Best-value pack: highest credits-per-dollar ratio, computed here rather
+  // than a stored `recommended` flag on CatalogEntry (design_handoff_jeeran_
+  // mobile/README.md §4 — no such flag exists in the catalog today).
+  const bestValueKey = topupEntries.length
+    ? topupEntries.reduce((best, e) => (e.creditsGranted / e.amountUsd > best.creditsGranted / best.amountUsd ? e : best)).key
+    : null
   const instantNotifyEntry = catalog.find((c) => c.type === 'addon' && c.addonKey === 'instant_notify')
   const reachExtendedEntry = catalog.find((c) => c.type === 'addon' && c.addonKey === 'reach_extended')
   const reachPremiumEntry = catalog.find((c) => c.type === 'addon' && c.addonKey === 'reach_premium')
@@ -189,37 +195,57 @@ export default function BillingActions({
 
       {topupEntries.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-neutral-700 mb-2">{copy.buyCredits}</h3>
-          <div className="grid grid-cols-3 gap-3">
-            {topupEntries.map((entry) => (
-              <button
-                key={entry.key}
-                onClick={() => handleCheckout(entry.priceId, entry.key)}
-                disabled={loadingKey !== null}
-                className="border border-neutral-200 rounded-xl p-4 text-center hover:border-[#1E3A8A] transition-colors disabled:opacity-50"
-              >
-                <div className="text-lg font-semibold">{entry.creditsGranted.toLocaleString()}</div>
-                <div className="text-xs text-neutral-500 mb-2">{copy.creditsSuffix}</div>
-                <div className="text-sm font-medium">
-                  {loadingKey === entry.key ? '…' : `$${entry.amountUsd}`}
-                </div>
-              </button>
-            ))}
+          <h3 className="mb-2.5 text-[13px] font-semibold tracking-[0.06em] text-[#8a8a8a]">{copy.buyCredits}</h3>
+          <div className="grid grid-cols-3 gap-2.5">
+            {topupEntries.map((entry) => {
+              const isBestValue = entry.key === bestValueKey
+              return (
+                <button
+                  key={entry.key}
+                  onClick={() => handleCheckout(entry.priceId, entry.key)}
+                  disabled={loadingKey !== null}
+                  className={`relative rounded-2xl p-[14px_8px] text-center transition-colors disabled:opacity-50 ${
+                    isBestValue
+                      ? 'border-2 border-[#FF6B4A] shadow-[0_8px_18px_-12px_rgba(255,107,74,0.7)]'
+                      : 'border border-[#ececec] bg-white'
+                  }`}
+                >
+                  {isBestValue && (
+                    <span className="absolute -top-[9px] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#FF6B4A] px-2 py-[3px] text-[9.5px] font-semibold text-white">
+                      {copy.bestValue}
+                    </span>
+                  )}
+                  <div className="text-[21px] font-bold">{entry.creditsGranted.toLocaleString()}</div>
+                  <div className="mt-0.5 text-[11px] text-[#8a8a8a]">{copy.creditsSuffix}</div>
+                  <div className="mt-[9px] text-[13px] font-semibold">
+                    {loadingKey === entry.key ? '…' : `$${entry.amountUsd}`}
+                  </div>
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
 
       {instantNotifyEntry && (
-        <div className="border border-neutral-200 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-neutral-700 mb-1">{copy.instantNotifyLabel}</h3>
-          <p className="text-xs text-neutral-500 mb-3">{copy.instantNotifyDescription}</p>
+        <div className="rounded-[20px] border border-[#FF6B4A]/30 bg-[#FFF7F3] p-[17px]">
+          <div className="mb-[7px] flex items-center gap-[9px]">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" />
+            </svg>
+            <h3 className="text-[15px] font-semibold">{copy.instantNotifyLabel}</h3>
+          </div>
+          <p className="mb-3.5 text-[13px] leading-[1.6] text-[#5a5a5a]">{copy.instantNotifyDescription}</p>
           {isInstantNotifyActive ? (
-            <p className="text-sm font-semibold text-emerald-600">{copy.instantNotifyActive}</p>
+            <div className="flex items-center gap-[7px]">
+              <span className="h-[7px] w-[7px] rounded-full bg-[#16a34a]" aria-hidden="true" />
+              <span className="text-[14px] font-semibold text-[#15803d]">{copy.instantNotifyActive}</span>
+            </div>
           ) : (
             <button
               onClick={() => handleCheckout(instantNotifyEntry.priceId, instantNotifyEntry.key)}
               disabled={loadingKey !== null}
-              className="bg-[#1E3A8A] text-white rounded-lg py-2.5 px-4 text-sm font-medium transition-colors hover:bg-[#16295e] disabled:opacity-50"
+              className="rounded-[13px] bg-[#FF6B4A] px-4 py-[13px] text-[14.5px] font-semibold text-white transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
             >
               {loadingKey === instantNotifyEntry.key
                 ? copy.redirecting

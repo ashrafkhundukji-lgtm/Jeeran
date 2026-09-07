@@ -107,6 +107,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'already redeemed by this customer' }, { status: 409 })
   }
 
+  // New-vs-returning customer, for the mobile redesign's redeem-result
+  // context card (design_handoff_jeeran_mobile/README.md §3) — any prior
+  // redemption at THIS business (any offer), not scoped to the current
+  // offer like the already-redeemed check above. Read before the insert
+  // below so the row we're about to add doesn't count against itself.
+  // Best-effort: a failed count shouldn't block the redemption itself, it
+  // just means the context card omits that row (see the client, which
+  // treats these fields as optional).
+  const { count: priorRedemptionCount, error: priorErr } = await supabaseAdmin
+    .from('redemptions')
+    .select('id', { count: 'exact', head: true })
+    .eq('business_id', businessId)
+    .eq('member_id', decoded.memberId)
+  if (priorErr) {
+    console.error('prior-redemption count failed', { businessId, memberId: decoded.memberId, priorErr })
+  }
+  const isNewCustomer = priorErr ? null : priorRedemptionCount === 0
+
   const { error: insertErr } = await supabaseAdmin.from('redemptions').insert({
     member_id: decoded.memberId,
     business_id: businessId,
@@ -156,8 +174,24 @@ export async function POST(req: NextRequest) {
     console.error('milestone bonus check failed', { businessId, milestoneErr })
   }
 
+  // Today's redemption count for this business, including the one just
+  // inserted above — "redemption #n today" reads more usefully than "n
+  // before this one." Best-effort, same reasoning as the count above.
+  const startOfDay = new Date()
+  startOfDay.setHours(0, 0, 0, 0)
+  const { count: redemptionsTodayCount, error: todayErr } = await supabaseAdmin
+    .from('redemptions')
+    .select('id', { count: 'exact', head: true })
+    .eq('business_id', businessId)
+    .gte('redeemed_at', startOfDay.toISOString())
+  if (todayErr) {
+    console.error('today-redemption count failed', { businessId, todayErr })
+  }
+
   return NextResponse.json({
     ok: true,
     offer: { id: offer.id, title: offer.title, description: offer.description },
+    isNewCustomer,
+    redemptionsToday: todayErr ? null : redemptionsTodayCount,
   })
 }

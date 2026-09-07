@@ -37,9 +37,15 @@ function FlagIcon({ code }: { code: Locale }) {
 export default function LanguageSwitcher({
   locale,
   onChange,
+  compact = false,
 }: {
   locale: Locale
   onChange: (next: Locale) => void
+  // Trigger shows just the code chip ("AR") instead of "{label} (AR)" — used
+  // by the landing page's mobile header, where the full label was one of
+  // three items wrapping to two rows at 390px (design_handoff_jeeran_mobile/
+  // README.md §8). Off by default so signup/login keep their current look.
+  compact?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -65,12 +71,12 @@ export default function LanguageSwitcher({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex items-center gap-2 text-sm border border-neutral-300 rounded-full pl-3 pr-2.5 py-1.5 bg-white text-neutral-700 hover:bg-neutral-50"
+        className={`flex items-center gap-2 text-sm border border-neutral-300 rounded-full bg-white text-neutral-700 hover:bg-neutral-50 ${
+          compact ? 'pl-2.5 pr-2 py-1' : 'pl-3 pr-2.5 py-1.5'
+        }`}
       >
-        <FlagIcon code={current.code} />
-        <span>
-          {current.label} ({current.code.toUpperCase()})
-        </span>
+        {!compact && <FlagIcon code={current.code} />}
+        <span>{compact ? current.code.toUpperCase() : `${current.label} (${current.code.toUpperCase()})`}</span>
         <svg
           width="12"
           height="12"

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { archivo, workSans } from "@/lib/fonts";
+import { archivo, notoKufiArabic, workSans } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${workSans.variable} h-full antialiased`}
+      className={`${archivo.variable} ${notoKufiArabic.variable} ${workSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>

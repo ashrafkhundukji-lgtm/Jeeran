@@ -1,6 +1,11 @@
 import type { Locale } from './locale'
 
 export interface DashboardCopy {
+  // Cross-cutting UI text shared across the owner cluster (e.g. OwnerAppBar's
+  // subpage back button) that doesn't belong to any one screen's section.
+  common: {
+    back: string
+  }
   nav: {
     dashboard: string
     billing: string
@@ -16,6 +21,15 @@ export interface DashboardCopy {
     qrStandHeading: string
     qrStandBody: string
     downloadPdf: string
+    // Mobile redesign additions (design_handoff_jeeran_mobile/README.md §1).
+    creditsRunway: string // '{n}' views, '{bid}' credits/view
+    topUpBalance: string
+    activeOfferHeading: string
+    previewAsCustomer: string
+    // Short redemption-count clause for the title block's subtitle line
+    // ('{category} · {n} redemptions via Jeeran') — promotionCaption above is
+    // the older, longer two-clause version used elsewhere.
+    redemptionCountShort: string
   }
   subscriptionBanner: {
     inactiveMessage: string
@@ -98,6 +112,17 @@ export interface DashboardCopy {
     reachPremiumDescription: string
     reachCurrentPlan: string
     reachSubscribe: string
+    // Mobile redesign additions (README.md §4). bestValue is the
+    // recommended-pack badge, computed at render time from credits-per-dollar
+    // rather than a stored flag. todayLabel/yesterdayLabel head the ledger's
+    // grouped-by-day sections; other days use a plain formatted date.
+    bestValue: string
+    todayLabel: string
+    yesterdayLabel: string
+    // The "/mo" in "${n}/mo" as a standalone fragment, for the status hero's
+    // price line — the existing subscribe/reachSubscribe/instantNotifySubscribe
+    // strings all bundle it into a full button label instead.
+    perMonthSuffix: string
   }
   profile: {
     heading: string
@@ -125,6 +150,15 @@ export interface DashboardCopy {
     errorNoBusiness: string
     errorNameRequired: string
     errorBusinessRequired: string
+    // Mobile redesign additions (README.md §5) — sign-out moved into its own
+    // confirm-before-acting card; categoryPicker/languagePicker head the new
+    // sheet pickers for those two rows.
+    signOutConfirm: string
+    signOutConfirmYes: string
+    categoryPicker: string
+    languagePicker: string
+    shopSectionLabel: string
+    contactSectionLabel: string
   }
   redeem: {
     heading: string
@@ -145,6 +179,20 @@ export interface DashboardCopy {
     errorPassInactive: string
     errorInvalidBarcode: string
     errorGeneric: string
+    // Mobile redesign additions (README.md §2-3).
+    aimHint: string
+    manualEntrySubtitle: string
+    torch: string
+    customerLabel: string
+    newCustomerFirstVisit: string
+    returningCustomer: string
+    redemptionsTodayLabel: string
+    finish: string
+    // Short status-line label ('تم الاستبدال') — resultSuccess above bundles
+    // this with the offer title into one sentence, but the redesign's result
+    // sheet shows the title separately at display size, so this needs to
+    // stand alone.
+    redeemedLabel: string
   }
   leaderboard: {
     heading: string
@@ -160,10 +208,44 @@ export interface DashboardCopy {
     reached: string
     dismiss: string
   }
+  // Restructured for the mobile redesign's 3-step flow (README.md §6) — was a
+  // single flat heading/subtitle pair for the whole one-page form.
+  onboarding: {
+    step1Heading: string
+    step1Subtitle: string
+    step2Heading: string
+    step2Subtitle: string
+    step3Heading: string
+    step3Subtitle: string
+    stepCounter: string // '{n}' of 3
+    continueButton: string
+    yourName: string
+    businessName: string
+    category: string
+    location: string
+    useMyLocation: string
+    findingYou: string
+    locationHint: string
+    locationSet: string
+    error: string
+    finishSetup: string
+    savingSetup: string
+  }
+  frozen: {
+    heading: string
+    body: string
+    contactSupport: string
+    whatsappCta: string
+    // Mobile redesign addition (README.md §7).
+    reasonLabel: string
+  }
 }
 
 export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
   ar: {
+    common: {
+      back: 'رجوع',
+    },
     nav: {
       dashboard: 'لوحة التحكم',
       billing: 'الفواتير',
@@ -173,13 +255,18 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
     },
     owner: {
       adCredits: 'نقاط الإعلان',
-      scansHosted: 'عمليات المسح المستضافة',
-      customersAcquired: 'العملاء المكتسبون',
+      scansHosted: 'عملية مسح مستضافة',
+      customersAcquired: 'عميل مكتسب',
       promotionCaption:
         '{n} عملية استبدال عبر جيران حتى الآن — المستويات الأعلى تظهر أولًا للعملاء القريبين في فئتك.',
       qrStandHeading: 'حامل رمز QR الخاص بك',
-      qrStandBody: 'اطبع هذا وضعه في حامل الأكريليك.',
+      qrStandBody: 'جاهز للطباعة',
       downloadPdf: 'تحميل ملف PDF جاهز للطباعة',
+      creditsRunway: 'تكفي لـ {n} مشاهدة عند {bid} نقاط/مشاهدة',
+      topUpBalance: 'شحن الرصيد',
+      activeOfferHeading: 'عرضك النشط',
+      previewAsCustomer: 'معاينة كما يراها العميل',
+      redemptionCountShort: '{n} عملية استبدال عبر جيران',
     },
     subscriptionBanner: {
       inactiveMessage: 'اشتراكك غير نشط — لن تظهر حملاتك للعملاء القريبين.',
@@ -263,6 +350,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       reachPremiumDescription: 'يصل عرضك إلى العملاء ضمن 25 كم — أقصى ظهور ممكن.',
       reachCurrentPlan: 'الخطة الحالية',
       reachSubscribe: 'اشترك — ${n}/شهريًا',
+      bestValue: 'الأفضل قيمة',
+      todayLabel: 'اليوم',
+      yesterdayLabel: 'أمس',
+      perMonthSuffix: 'شهريًا',
     },
     profile: {
       heading: 'الملف الشخصي',
@@ -275,7 +366,7 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       useMyLocation: 'استخدام موقعي الحالي',
       findingYou: 'جارٍ تحديد موقعك…',
       locationHint: 'اضغط على الخريطة لتثبيت دبوس على محلك، أو اسحبه لضبطه.',
-      locationSet: '📍 تم تحديد الموقع',
+      locationSet: 'تم تحديد الموقع',
       phone: 'رقم الهاتف',
       phonePlaceholder: 'اختياري',
       whatsapp: 'واتساب',
@@ -290,6 +381,12 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       errorNoBusiness: 'لم يتم العثور على محل مرتبط بهذا الحساب',
       errorNameRequired: 'الاسم مطلوب',
       errorBusinessRequired: 'اسم المحل والفئة مطلوبان',
+      signOutConfirm: 'تسجيل الخروج من الحساب؟',
+      signOutConfirmYes: 'نعم، تسجيل الخروج',
+      categoryPicker: 'اختر الفئة',
+      languagePicker: 'اختر اللغة',
+      shopSectionLabel: 'المحل',
+      contactSectionLabel: 'التواصل',
     },
     redeem: {
       heading: 'استبدال العروض',
@@ -310,6 +407,15 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       errorPassInactive: 'لم تعد البطاقة نشطة — ربما أزالها العميل من محفظته',
       errorInvalidBarcode: 'رمز غير صالح أو تم التلاعب به',
       errorGeneric: 'تعذر التحقق من الرمز',
+      aimHint: 'وجّه الكاميرا نحو بطاقة العميل',
+      manualEntrySubtitle: 'إذا كانت الكاميرا لا تعمل',
+      torch: 'الفلاش',
+      customerLabel: 'العميل',
+      newCustomerFirstVisit: 'عميل جديد · أول زيارة',
+      returningCustomer: 'عميل عائد',
+      redemptionsTodayLabel: 'استبدالات اليوم',
+      finish: 'إنهاء',
+      redeemedLabel: 'تم الاستبدال',
     },
     leaderboard: {
       heading: 'المحلات الأكثر نشاطًا',
@@ -325,8 +431,39 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       reached: 'وصلت إلى مستوى {tier}! تم منحك {n} نقاط إعلانية.',
       dismiss: 'حسنًا',
     },
+    onboarding: {
+      step1Heading: 'مرحبًا بك في شبكة جيران',
+      step1Subtitle: 'أخبرنا قليلًا عن نفسك للبدء.',
+      step2Heading: 'أين محلك؟',
+      step2Subtitle: 'نستخدم الموقع لعرض عرضك على الجيران الأقرب إليك فقط.',
+      step3Heading: 'ما نوع محلك؟',
+      step3Subtitle: 'يساعدنا هذا في تصنيف محلك بين المحلات المشابهة القريبة منك.',
+      stepCounter: '{n} / 3',
+      continueButton: 'متابعة',
+      yourName: 'اسمك',
+      businessName: 'اسم المحل',
+      category: 'الفئة',
+      location: 'الموقع',
+      useMyLocation: 'استخدام موقعي الحالي',
+      findingYou: 'جارٍ تحديد موقعك…',
+      locationHint: 'اضغط على الخريطة لتثبيت دبوس على محلك، أو اسحبه لضبطه.',
+      locationSet: 'تم تحديد الموقع',
+      error: 'حدث خطأ ما',
+      finishSetup: 'إنهاء الإعداد',
+      savingSetup: 'جارٍ الحفظ…',
+    },
+    frozen: {
+      heading: 'الحساب مجمّد مؤقتًا',
+      body: 'تم إيقاف حساب محلك مؤقتًا، ولن يظهر للعملاء أو يتمكن من تشغيل الحملات في الوقت الحالي.',
+      contactSupport: 'تواصل مع الدعم لحل هذا الأمر.',
+      whatsappCta: 'راسل الدعم عبر واتساب',
+      reasonLabel: 'السبب',
+    },
   },
   en: {
+    common: {
+      back: 'Back',
+    },
     nav: {
       dashboard: 'Dashboard',
       billing: 'Billing',
@@ -336,13 +473,18 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
     },
     owner: {
       adCredits: 'Ad Credits',
-      scansHosted: 'Scans Hosted',
-      customersAcquired: 'Customers Acquired',
+      scansHosted: 'scan hosted',
+      customersAcquired: 'customer acquired',
       promotionCaption:
         '{n} redemptions via Jeeran so far — higher levels get shown first to nearby customers in your category.',
       qrStandHeading: 'Your QR Stand',
-      qrStandBody: 'Print this and slip it into your acrylic stand.',
+      qrStandBody: 'Ready to print',
       downloadPdf: 'Download Print-Ready PDF',
+      creditsRunway: 'Enough for {n} views at {bid} credits/view',
+      topUpBalance: 'Top up',
+      activeOfferHeading: 'Your active offer',
+      previewAsCustomer: 'Preview as a customer sees it',
+      redemptionCountShort: '{n} redemptions via Jeeran',
     },
     subscriptionBanner: {
       inactiveMessage: "Your subscription is inactive — your campaigns won't appear to nearby customers.",
@@ -427,6 +569,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       reachPremiumDescription: 'Reach customers up to 25 km away — maximum visibility.',
       reachCurrentPlan: 'Current plan',
       reachSubscribe: 'Subscribe — ${n}/mo',
+      bestValue: 'Best value',
+      todayLabel: 'Today',
+      yesterdayLabel: 'Yesterday',
+      perMonthSuffix: 'mo',
     },
     profile: {
       heading: 'Profile',
@@ -439,7 +585,7 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       useMyLocation: 'Use my current location',
       findingYou: 'Finding you…',
       locationHint: 'Tap the map to drop a pin on your shop, or drag it to adjust.',
-      locationSet: '📍 Location set',
+      locationSet: 'Location set',
       phone: 'Phone number',
       phonePlaceholder: 'Optional',
       whatsapp: 'WhatsApp',
@@ -454,6 +600,12 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       errorNoBusiness: 'No business found for this account',
       errorNameRequired: 'Name is required',
       errorBusinessRequired: 'Business name and category are required',
+      signOutConfirm: 'Sign out of your account?',
+      signOutConfirmYes: 'Yes, sign out',
+      categoryPicker: 'Choose a category',
+      languagePicker: 'Choose a language',
+      shopSectionLabel: 'Shop',
+      contactSectionLabel: 'Contact',
     },
     redeem: {
       heading: 'Redeem Offers',
@@ -474,6 +626,15 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       errorPassInactive: 'This pass is no longer active — the customer may have removed it from their wallet',
       errorInvalidBarcode: 'Invalid or tampered barcode',
       errorGeneric: 'Could not check this code',
+      aimHint: 'Point the camera at the customer’s card',
+      manualEntrySubtitle: "If the camera isn't working",
+      torch: 'Flashlight',
+      customerLabel: 'Customer',
+      newCustomerFirstVisit: 'New customer · first visit',
+      returningCustomer: 'Returning customer',
+      redemptionsTodayLabel: "Today's redemptions",
+      finish: 'Finish',
+      redeemedLabel: 'Redeemed',
     },
     leaderboard: {
       heading: 'Most Active Shops',
@@ -489,8 +650,39 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       reached: "You've reached {tier}! +{n} ad credits awarded.",
       dismiss: 'Got it',
     },
+    onboarding: {
+      step1Heading: 'Welcome to Jeeran Network',
+      step1Subtitle: 'Tell us a bit about yourself to get started.',
+      step2Heading: "Where's your shop?",
+      step2Subtitle: "We use this to show your offer only to the neighbors closest to you.",
+      step3Heading: 'What kind of shop is it?',
+      step3Subtitle: 'This helps us group you with similar businesses nearby.',
+      stepCounter: '{n} / 3',
+      continueButton: 'Continue',
+      yourName: 'Your name',
+      businessName: 'Business name',
+      category: 'Category',
+      location: 'Location',
+      useMyLocation: 'Use my current location',
+      findingYou: 'Finding you…',
+      locationHint: 'Tap the map to drop a pin on your shop, or drag it to adjust.',
+      locationSet: 'Location set',
+      error: 'Something went wrong',
+      finishSetup: 'Finish setup',
+      savingSetup: 'Saving…',
+    },
+    frozen: {
+      heading: 'Account temporarily frozen',
+      body: "Your shop account has been paused and isn't visible to customers or able to run campaigns right now.",
+      contactSupport: 'Contact support to resolve this.',
+      whatsappCta: 'Message support on WhatsApp',
+      reasonLabel: 'Reason',
+    },
   },
   ur: {
+    common: {
+      back: 'واپس',
+    },
     nav: {
       dashboard: 'ڈیش بورڈ',
       billing: 'بلنگ',
@@ -500,13 +692,18 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
     },
     owner: {
       adCredits: 'اشتہاری کریڈٹس',
-      scansHosted: 'میزبانی شدہ اسکینز',
-      customersAcquired: 'حاصل شدہ کسٹمرز',
+      scansHosted: 'میزبانی شدہ اسکین',
+      customersAcquired: 'حاصل شدہ کسٹمر',
       promotionCaption:
         'اب تک جیران کے ذریعے {n} ریڈیمپشنز — اعلیٰ سطحیں آپ کی کیٹگری میں قریبی کسٹمرز کو پہلے دکھائی جاتی ہیں۔',
       qrStandHeading: 'آپ کا QR اسٹینڈ',
-      qrStandBody: 'اسے پرنٹ کریں اور ایکریلک اسٹینڈ میں رکھیں۔',
+      qrStandBody: 'پرنٹ کرنے کے لیے تیار',
       downloadPdf: 'پرنٹ کے لیے تیار PDF ڈاؤن لوڈ کریں',
+      creditsRunway: '{bid} کریڈٹس/ویو پر {n} ویوز کے لیے کافی',
+      topUpBalance: 'ٹاپ اپ کریں',
+      activeOfferHeading: 'آپ کی فعال آفر',
+      previewAsCustomer: 'کسٹمر کے نظریے سے دیکھیں',
+      redemptionCountShort: 'جیران کے ذریعے {n} ریڈیمپشنز',
     },
     subscriptionBanner: {
       inactiveMessage: 'آپ کی سبسکرپشن غیر فعال ہے — آپ کے کیمپینز قریبی کسٹمرز کو نظر نہیں آئیں گے۔',
@@ -589,6 +786,10 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       reachPremiumDescription: '25 کلومیٹر دور تک گاہکوں تک رسائی — زیادہ سے زیادہ نمائش۔',
       reachCurrentPlan: 'موجودہ پلان',
       reachSubscribe: 'سبسکرائب کریں — ${n}/ماہانہ',
+      bestValue: 'بہترین ویلیو',
+      todayLabel: 'آج',
+      yesterdayLabel: 'کل',
+      perMonthSuffix: 'ماہانہ',
     },
     profile: {
       heading: 'پروفائل',
@@ -601,7 +802,7 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       useMyLocation: 'میرا موجودہ مقام استعمال کریں',
       findingYou: 'آپ کا مقام تلاش کیا جا رہا ہے…',
       locationHint: 'اپنی دکان پر پن لگانے کے لیے نقشے پر ٹیپ کریں، یا اسے ایڈجسٹ کرنے کے لیے گھسیٹیں۔',
-      locationSet: '📍 مقام مقرر ہو گیا',
+      locationSet: 'مقام مقرر ہو گیا',
       phone: 'فون نمبر',
       phonePlaceholder: 'اختیاری',
       whatsapp: 'واٹس ایپ',
@@ -616,6 +817,12 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       errorNoBusiness: 'اس اکاؤنٹ کے لیے کوئی دکان نہیں ملی',
       errorNameRequired: 'نام ضروری ہے',
       errorBusinessRequired: 'دکان کا نام اور کیٹگری ضروری ہیں',
+      signOutConfirm: 'اپنے اکاؤنٹ سے سائن آؤٹ کریں؟',
+      signOutConfirmYes: 'ہاں، سائن آؤٹ کریں',
+      categoryPicker: 'کیٹگری منتخب کریں',
+      languagePicker: 'زبان منتخب کریں',
+      shopSectionLabel: 'دکان',
+      contactSectionLabel: 'رابطہ',
     },
     redeem: {
       heading: 'آفرز ریڈیم کریں',
@@ -636,6 +843,15 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
       errorPassInactive: 'یہ پاس اب فعال نہیں ہے — ہو سکتا ہے کسٹمر نے اسے والٹ سے ہٹا دیا ہو',
       errorInvalidBarcode: 'غلط یا چھیڑ چھاڑ شدہ بارکوڈ',
       errorGeneric: 'اس کوڈ کو چیک نہیں کیا جا سکا',
+      aimHint: 'کیمرہ کسٹمر کے کارڈ کی طرف رکھیں',
+      manualEntrySubtitle: 'اگر کیمرہ کام نہیں کر رہا',
+      torch: 'فلیش لائٹ',
+      customerLabel: 'کسٹمر',
+      newCustomerFirstVisit: 'نیا کسٹمر · پہلی وزٹ',
+      returningCustomer: 'واپس آنے والا کسٹمر',
+      redemptionsTodayLabel: 'آج کی ریڈیمپشنز',
+      finish: 'ختم کریں',
+      redeemedLabel: 'ریڈیم ہو گیا',
     },
     leaderboard: {
       heading: 'سب سے زیادہ فعال دکانیں',
@@ -650,6 +866,34 @@ export const DASHBOARD_COPY: Record<Locale, DashboardCopy> = {
     milestone: {
       reached: 'آپ {tier} سطح پر پہنچ گئے! آپ کو {n} اشتہاری کریڈٹس ملے۔',
       dismiss: 'ٹھیک ہے',
+    },
+    onboarding: {
+      step1Heading: 'جیران نیٹ ورک میں خوش آمدید',
+      step1Subtitle: 'شروع کرنے کے لیے اپنے بارے میں کچھ بتائیں۔',
+      step2Heading: 'آپ کی دکان کہاں ہے؟',
+      step2Subtitle: 'ہم مقام کا استعمال صرف آپ کے قریب ترین ہمسایوں کو آپ کی آفر دکھانے کے لیے کرتے ہیں۔',
+      step3Heading: 'آپ کی دکان کس قسم کی ہے؟',
+      step3Subtitle: 'اس سے ہمیں آپ کو قریبی ملتی جلتی دکانوں کے ساتھ گروپ کرنے میں مدد ملتی ہے۔',
+      stepCounter: '{n} / 3',
+      continueButton: 'جاری رکھیں',
+      yourName: 'آپ کا نام',
+      businessName: 'دکان کا نام',
+      category: 'کیٹگری',
+      location: 'مقام',
+      useMyLocation: 'میرا موجودہ مقام استعمال کریں',
+      findingYou: 'آپ کا مقام تلاش کیا جا رہا ہے…',
+      locationHint: 'اپنی دکان پر پن لگانے کے لیے نقشے پر ٹیپ کریں، یا اسے ایڈجسٹ کرنے کے لیے گھسیٹیں۔',
+      locationSet: 'مقام مقرر ہو گیا',
+      error: 'کچھ غلط ہو گیا',
+      finishSetup: 'سیٹ اپ مکمل کریں',
+      savingSetup: 'محفوظ ہو رہا ہے…',
+    },
+    frozen: {
+      heading: 'اکاؤنٹ عارضی طور پر منجمد ہے',
+      body: 'آپ کی دکان کا اکاؤنٹ روک دیا گیا ہے اور فی الحال گاہکوں کو نظر نہیں آتا اور نہ ہی کیمپینز چلا سکتا ہے۔',
+      contactSupport: 'اسے حل کرنے کے لیے سپورٹ سے رابطہ کریں۔',
+      whatsappCta: 'واٹس ایپ پر سپورٹ سے رابطہ کریں',
+      reasonLabel: 'وجہ',
     },
   },
 }

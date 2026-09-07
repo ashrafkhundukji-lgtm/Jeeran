@@ -84,7 +84,10 @@ function formatDate(date: string) {
 // though the fallback generic message was already translated. Anything not
 // in this list (an unexpected 500, a raw Postgres error) falls back to the
 // given translated generic message instead of leaking raw English text.
-function campaignErrorCopyFor(rawError: string, copy: DashboardCopy['campaigns'], fallback: string): string {
+// Exported so OwnerDashboardView.tsx's mobile-redesign "active offer" card
+// can map /api/campaigns/[id]'s toggle errors the same way, without
+// duplicating this switch — see that component's own toggle handler.
+export function campaignErrorCopyFor(rawError: string, copy: DashboardCopy['campaigns'], fallback: string): string {
   switch (rawError) {
     case 'Not authenticated':
       return copy.errorNotAuthenticated
@@ -319,12 +322,30 @@ function ActiveToggle({
   )
 }
 
-export default function CampaignManager({ initialCampaigns }: { initialCampaigns: Campaign[] }) {
+export default function CampaignManager({
+  initialCampaigns,
+  showForm: showFormProp,
+  onShowFormChange,
+}: {
+  initialCampaigns: Campaign[]
+  // Optional controlled pair, added for the mobile redesign's owner-home
+  // "active offer" card (OwnerDashboardView.tsx) — its "+ New campaign" link
+  // needs to open this same create form rather than a separate one. Falls
+  // back to internal state when omitted, so every other existing caller is
+  // unaffected.
+  showForm?: boolean
+  onShowFormChange?: (show: boolean) => void
+}) {
   const [locale] = useLocale()
   const copy = DASHBOARD_COPY[locale].campaigns
 
   const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns)
-  const [showForm, setShowForm] = useState(false)
+  const [internalShowForm, setInternalShowForm] = useState(false)
+  const showForm = showFormProp ?? internalShowForm
+  function setShowForm(show: boolean) {
+    setInternalShowForm(show)
+    onShowFormChange?.(show)
+  }
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [bid, setBid] = useState(5)
@@ -487,10 +508,10 @@ export default function CampaignManager({ initialCampaigns }: { initialCampaigns
   }
 
   return (
-    <section>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold">{copy.heading}</h2>
-        <button onClick={() => setShowForm((s) => !s)} className="text-sm font-medium underline">
+    <section id="campaign-manager">
+      <div className="flex items-center justify-between mb-2.5">
+        <h2 className="text-[13px] font-semibold tracking-[0.06em] text-[#8a8a8a]">{copy.heading}</h2>
+        <button onClick={() => setShowForm(!showForm)} className="text-[13px] font-semibold text-[#FF6B4A]">
           {showForm ? copy.cancel : copy.newCampaign}
         </button>
       </div>

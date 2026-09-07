@@ -32,7 +32,7 @@ export default function LevelBadge({
   locale = 'en',
 }: {
   level: PromotionLevel
-  variant?: 'pill' | 'medal'
+  variant?: 'pill' | 'medal' | 'chip'
   locale?: Locale
 }) {
   const label = LABELS[locale][level]
@@ -43,6 +43,18 @@ export default function LevelBadge({
         <span className="text-xl leading-none">{MEDALS[level]}</span>
         {label}
       </span>
+    )
+  }
+
+  // Mobile redesign's tier indicator (design_handoff_jeeran_mobile/README.md,
+  // owner-home §1) — a flat tint/ink pair, same regardless of tier (unlike
+  // `pill`'s per-tier STYLES), replacing `medal`'s emoji there since emoji
+  // render inconsistently across platforms and can't be brand-colored. A new
+  // variant rather than changing `medal` in place, since admin views
+  // (AdminShopsList) still use `medal`.
+  if (variant === 'chip') {
+    return (
+      <span className="rounded-full bg-[#FFF1E8] px-[9px] py-1 text-[11px] font-semibold text-[#9A3412]">{label}</span>
     )
   }
 

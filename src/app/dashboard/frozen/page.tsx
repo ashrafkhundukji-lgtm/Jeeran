@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import SiteLogo from '@/components/SiteLogo'
-import SignOutButton from '@/components/SignOutButton'
+import FrozenView from '@/components/FrozenView'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,24 +21,12 @@ export default async function FrozenPage() {
   // owner back to their normal dashboard instead of showing a stale notice.
   if (!business?.is_frozen) redirect('/dashboard/owner')
 
-  return (
-    <main className="max-w-sm mx-auto px-4 py-16 text-center">
-      <div className="flex justify-center mb-8">
-        <SiteLogo className="h-20" />
-      </div>
+  // Same wa.me digits-only requirement as the customer-facing offer page
+  // (see src/app/offers/[campaignId]/page.tsx) — unset in an environment
+  // that hasn't configured a support line, in which case FrozenView just
+  // shows the plain "contact support" text with no button.
+  const supportWhatsappDigits = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP?.replace(/\D/g, '') || null
+  const supportWhatsappUrl = supportWhatsappDigits ? `https://wa.me/${supportWhatsappDigits}` : null
 
-      <h1 className="text-xl font-semibold mb-2">Account temporarily frozen</h1>
-      <p className="text-sm text-neutral-600 mb-4">
-        Your shop account has been paused and isn&apos;t visible to customers or able to run campaigns right now.
-      </p>
-      {business.frozen_reason && (
-        <p className="text-sm text-neutral-500 bg-neutral-50 border border-neutral-200 rounded-lg p-3 mb-4">
-          {business.frozen_reason}
-        </p>
-      )}
-      <p className="text-sm text-neutral-500 mb-8">Contact support to resolve this.</p>
-
-      <SignOutButton />
-    </main>
-  )
+  return <FrozenView reason={business.frozen_reason} supportWhatsappUrl={supportWhatsappUrl} />
 }

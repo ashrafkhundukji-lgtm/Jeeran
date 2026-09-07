@@ -19,3 +19,16 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* Redeem scanner's reticle scan line (RedeemScanner.tsx) — top-only keyframe
+   so the line sweeps the reticle's vertical travel. Applied only under
+   `motion-safe:` at the call site, per design_handoff_jeeran_mobile/README.md
+   accessibility notes (must respect prefers-reduced-motion: reduce). */
+@keyframes scan-line-move {
+  from {
+    top: 24px;
+  }
+  to {
+    top: 226px;
+  }
+}
