@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { LANDING_COPY, type LandingCopy } from '@/lib/i18n/landing'
 import { getDir, type Locale } from '@/lib/i18n/locale'
 import { useLocale } from '@/lib/i18n/useLocale'
+import { displayFont } from '@/lib/i18n/displayFont'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import Backdrop from '@/components/Backdrop'
 
@@ -11,19 +12,12 @@ import Backdrop from '@/components/Backdrop'
 // Tailwind's content scanner sees the full arbitrary-value class name.
 // Work Sans is already the site-wide default (see src/lib/fonts.ts +
 // src/app/layout.tsx), so only headings/display type need to opt into
-// Archivo explicitly here.
+// Archivo explicitly here. displayFont(locale) (src/lib/i18n/displayFont.ts)
+// swaps to the real Arabic display face for locale-driven text — see that
+// file's comment. The illustrative wallet-card mock content (business
+// names, "Exclusive Member Deal", ghost step numerals) is always
+// English/numeral by design and keeps plain ARCHIVO regardless of locale.
 const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
-const NOTO_KUFI_ARABIC = 'font-[family-name:var(--font-noto-kufi-arabic)]'
-
-// Archivo has no Arabic glyphs (see src/lib/fonts.ts), so any *locale text*
-// rendered in it under 'ar' falls back to a synthesized fake bold. Swap to
-// the real Arabic display face there. Only for text that actually varies
-// by locale — the illustrative wallet-card mock content (business names,
-// "Exclusive Member Deal", ghost step numerals) is always English/numeral
-// by design and keeps plain Archivo regardless of locale.
-function displayFont(locale: Locale): string {
-  return locale === 'ar' ? NOTO_KUFI_ARABIC : ARCHIVO
-}
 
 export default function LandingPage() {
   const [locale, setLocale] = useLocale()

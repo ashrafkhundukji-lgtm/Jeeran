@@ -3,11 +3,10 @@
 import { useState } from 'react'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { LOCALES, getDir, type Locale } from '@/lib/i18n/locale'
+import { displayFont } from '@/lib/i18n/displayFont'
 import { WALLET_LANGUAGE_COPY } from '@/lib/i18n/walletLanguage'
 import WalletTabBar from '@/components/WalletTabBar'
-import SiteLogo from '@/components/SiteLogo'
-
-const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
+import WalletAppBar from '@/components/WalletAppBar'
 
 // The Language tab — a native settings-list (grouped rows, trailing
 // checkmark on the selected one) rather than the individual bordered
@@ -61,12 +60,12 @@ export default function WalletLanguagePicker({
 
   return (
     <main dir={dir} className="min-h-screen bg-[#FBFCFD] pb-24 text-[#1a1a1a]">
-      <div className="mx-auto max-w-[480px] px-6 pt-8 sm:px-8">
-        <SiteLogo className="mb-5 h-8" href={`/wallet/home?token=${encodeURIComponent(token)}`} />
-        <h1 className={`${ARCHIVO} mb-1 text-[24px] font-bold tracking-[-0.01em]`}>{copy.heading}</h1>
-        <p className="mb-6 text-sm text-neutral-600">{copy.body}</p>
+      <WalletAppBar token={token} />
+      <div className="mx-auto max-w-[480px] px-6 pt-6 sm:px-8">
+        <h1 className={`${displayFont(pageLocale)} mb-1 text-[24px] font-bold tracking-[-0.01em]`}>{copy.heading}</h1>
+        <p className="mb-6 text-sm text-[#5a5a5a]">{copy.body}</p>
 
-        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+        <div className="overflow-hidden rounded-[18px] border border-[#ececec] bg-white">
           {rows.map((row, i) => (
             <button
               key={row.key}
@@ -74,7 +73,7 @@ export default function WalletLanguagePicker({
               onClick={row.onSelect}
               aria-pressed={row.selected}
               className={`flex w-full items-center justify-between px-4 py-4 text-start transition-colors ${
-                i > 0 ? 'border-t border-neutral-200' : ''
+                i > 0 ? 'border-t border-[#f4f4f4]' : ''
               } ${row.selected ? 'bg-[#FF6B4A]/5' : 'hover:bg-neutral-50'}`}
             >
               <div>

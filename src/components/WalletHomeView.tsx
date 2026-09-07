@@ -2,9 +2,10 @@
 
 import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir } from '@/lib/i18n/locale'
+import { displayFont } from '@/lib/i18n/displayFont'
 import { WALLET_HOME_COPY } from '@/lib/i18n/walletHome'
 import WalletTabBar from '@/components/WalletTabBar'
-import SiteLogo from '@/components/SiteLogo'
+import WalletAppBar from '@/components/WalletAppBar'
 import type { NearbyOffer } from '@/lib/wallet/google-membership-pass'
 
 const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
@@ -32,9 +33,9 @@ export default function WalletHomeView({
 
   return (
     <main dir={dir} className="min-h-screen bg-[#FBFCFD] pb-24 text-[#1a1a1a]">
-      <div className="mx-auto max-w-[480px] px-6 pt-8">
-        <SiteLogo className="mb-5 h-8" href={`/wallet/home${q}`} />
-        <h1 className={`${ARCHIVO} mb-6 text-[30px] font-black leading-[1.05] tracking-[-0.01em]`}>{copy.heading}</h1>
+      <WalletAppBar token={token} />
+      <div className="mx-auto max-w-[480px] px-6 pt-6">
+        <h1 className={`${displayFont(locale)} mb-6 text-[30px] font-black leading-[1.05] tracking-[-0.01em]`}>{copy.heading}</h1>
 
         <div className="mb-3 text-xs font-semibold tracking-wide text-neutral-400 uppercase">
           {copy.cardSectionLabel}
@@ -60,15 +61,15 @@ export default function WalletHomeView({
             </div>
           </a>
         ) : (
-          <p className="mb-8 text-sm text-neutral-500">{copy.noOffersYet}</p>
+          <p className="mb-8 text-sm text-[#8a8a8a]">{copy.noOffersYet}</p>
         )}
 
         <div className="flex gap-3">
           <a
             href={`/offers/nearby${q}`}
-            className="flex flex-1 flex-col gap-2.5 rounded-[18px] border border-neutral-200 bg-white p-4 transition-colors active:border-[#FF6B4A]/50 active:bg-[#FFF7F3]"
+            className="flex flex-1 flex-col gap-2.5 rounded-[18px] border border-[#ececec] bg-white p-4 transition-colors active:border-[#FF6B4A]/50 active:bg-[#FFF7F3]"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFF7F3]" aria-hidden="true">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#FFF7F3]" aria-hidden="true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20.59 13.41 12 22 2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z" />
                 <circle cx="7" cy="7" r="1.4" fill="#FF6B4A" stroke="none" />
@@ -76,14 +77,14 @@ export default function WalletHomeView({
             </div>
             <div>
               <div className="text-sm font-semibold">{copy.offersTitle}</div>
-              <div className="text-xs text-neutral-500">{copy.offersSubtitle}</div>
+              <div className="text-xs text-[#8a8a8a]">{copy.offersSubtitle}</div>
             </div>
           </a>
           <a
             href={`/wallet/shops${q}`}
-            className="flex flex-1 flex-col gap-2.5 rounded-[18px] border border-neutral-200 bg-white p-4 transition-colors active:border-[#FF6B4A]/50 active:bg-[#FFF7F3]"
+            className="flex flex-1 flex-col gap-2.5 rounded-[18px] border border-[#ececec] bg-white p-4 transition-colors active:border-[#FF6B4A]/50 active:bg-[#FFF7F3]"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFF7F3]" aria-hidden="true">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#FFF7F3]" aria-hidden="true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 9l1-5h14l1 5" />
                 <path d="M4 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0" />
@@ -92,7 +93,7 @@ export default function WalletHomeView({
             </div>
             <div>
               <div className="text-sm font-semibold">{copy.shopsTitle}</div>
-              <div className="text-xs text-neutral-500">{copy.shopsSubtitle}</div>
+              <div className="text-xs text-[#8a8a8a]">{copy.shopsSubtitle}</div>
             </div>
           </a>
         </div>

@@ -2,11 +2,14 @@
 
 import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir, type Locale } from '@/lib/i18n/locale'
+import { displayFont } from '@/lib/i18n/displayFont'
 import { OFFER_PAGE_COPY } from '@/lib/i18n/offers'
 import { CATEGORY_LABELS } from '@/lib/categories'
 
 // Same brand tokens as LandingPage.tsx: #FBFCFD canvas, #1a1a1a ink,
-// Archivo for display type, #FF6B4A accent.
+// Archivo for display type, #FF6B4A accent. This one constant stays plain
+// ARCHIVO (not displayFont) — it wraps the image-fallback business-name
+// span, which is shop-typed content, not locale-driven copy.
 const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
 
 // Split from the server page.tsx (src/app/offers/[campaignId]/page.tsx)
@@ -120,13 +123,16 @@ export default function OfferPageView({
 
       <div className="mx-auto max-w-[720px] px-6 pt-6 sm:px-8">
         {!isActive && (
-          <div className="mb-6 rounded-xl border border-neutral-200 bg-white px-5 py-4 text-sm text-[#5a5a5a]">
+          <div className="mb-6 rounded-xl border border-[#ececec] bg-white px-5 py-4 text-sm text-[#5a5a5a]">
             {copy.inactiveNotice(businessName)}
           </div>
         )}
 
         <p className="mb-2 text-xs font-medium tracking-wide text-[#6b6b6b] uppercase">{categoryLabel}</p>
-        <h1 className={`${ARCHIVO} mb-2 text-[28px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[34px]`}>
+        {/* title is locale-driven (shop translation > auto-translation cache
+            > original — see the server page.tsx), unlike businessName above,
+            so it needs the real Arabic display face, not plain ARCHIVO. */}
+        <h1 className={`${displayFont(locale)} mb-2 text-[28px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[34px]`}>
           {title}
         </h1>
         <p className="mb-6 text-[15px] font-medium text-[#1E3A8A]">{copy.atBusiness(businessName)}</p>
@@ -148,7 +154,7 @@ export default function OfferPageView({
           keeps these one thumb-reach away regardless of scroll position. */}
       {(directionsUrl || whatsappUrl || callUrl) && (
         <div
-          className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t border-neutral-200 bg-white px-4 py-3"
+          className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t border-[#ececec] bg-white px-4 py-3"
           style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
         >
           {directionsUrl && (
@@ -180,7 +186,7 @@ export default function OfferPageView({
           {callUrl && (
             <a
               href={callUrl}
-              className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-neutral-200 bg-white py-2.5 text-[#1a1a1a] transition-colors hover:bg-neutral-50"
+              className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-[#ececec] bg-white py-2.5 text-[#1a1a1a] transition-colors hover:bg-neutral-50"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" />
