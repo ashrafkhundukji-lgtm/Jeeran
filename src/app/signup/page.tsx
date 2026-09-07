@@ -65,7 +65,12 @@ export default function SignupPage() {
       {/* Mobile-native layout (<640px) — same reasoning as login/page.tsx:
           a plain full-screen centered form, no decorative backdrop. */}
       <div className="flex min-h-screen flex-col sm:hidden">
-        <div dir="ltr" className="flex justify-end p-5">
+        <div dir="ltr" className="flex items-center justify-between p-5">
+          <a href="/" className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/design/jeeran-mark.svg" alt="" aria-hidden="true" className="h-6 w-6" />
+            <span className="font-[family-name:var(--font-archivo)] text-[15px] font-black text-[#1E3A8A]">Jeeran</span>
+          </a>
           <LanguageSwitcher locale={locale} onChange={setLocale} />
         </div>
 

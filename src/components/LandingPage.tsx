@@ -106,7 +106,7 @@ export default function LandingPage() {
           <p className="mb-10 hidden max-w-[460px] text-[19px] leading-[1.6] text-[#5a5a5a] sm:block">{copy.subheadline}</p>
           <a
             ref={heroCtaRef}
-            href="/signup"
+            href="/login"
             className="inline-block rounded-[10px] bg-[#FF6B4A] px-8 py-4 text-[15px] font-semibold text-white shadow-[0_12px_24px_-8px_rgba(255,107,74,0.5)] transition-colors hover:bg-[#e85a3b]"
           >
             {copy.ctaBusiness}
@@ -135,7 +135,7 @@ export default function LandingPage() {
         style={{ paddingBottom: 'calc(22px + env(safe-area-inset-bottom))' }}
       >
         <a
-          href="/signup"
+          href="/login"
           className="flex-1 rounded-[14px] bg-[#FF6B4A] py-[15px] text-center text-[15px] font-semibold text-white"
         >
           {copy.ctaBusiness}
@@ -296,7 +296,7 @@ function ClosingCtaSection({ copy, locale }: { copy: LandingCopy; locale: Locale
       <h2 className={`${displayFont(locale)} mb-2.5 text-[25px] font-bold leading-[1.3]`}>{copy.closingCtaHeading}</h2>
       <p className="mx-auto mb-[22px] max-w-[420px] text-[15px] leading-[1.6] text-[#5a5a5a]">{copy.closingCtaSubtitle}</p>
       <a
-        href="/signup"
+        href="/login"
         className="inline-block rounded-[14px] bg-[#FF6B4A] px-8 py-4 text-[16px] font-semibold text-white shadow-[0_12px_24px_-10px_rgba(255,107,74,0.55)] transition-colors hover:bg-[#e85a3b]"
       >
         {copy.ctaBusiness}

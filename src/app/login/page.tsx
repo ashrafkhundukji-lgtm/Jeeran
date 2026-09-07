@@ -48,7 +48,12 @@ function LoginForm() {
           chrome reads as more "app," matching the approved mobile redesign
           mockup and every other wallet-linked screen's own reasoning. */}
       <div className="flex min-h-screen flex-col sm:hidden">
-        <div dir="ltr" className="flex justify-end p-5">
+        <div dir="ltr" className="flex items-center justify-between p-5">
+          <a href="/" className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/design/jeeran-mark.svg" alt="" aria-hidden="true" className="h-6 w-6" />
+            <span className="font-[family-name:var(--font-archivo)] text-[15px] font-black text-[#1E3A8A]">Jeeran</span>
+          </a>
           <LanguageSwitcher locale={locale} onChange={setLocale} />
         </div>
 
