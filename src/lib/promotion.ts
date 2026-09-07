@@ -98,6 +98,11 @@ export interface RankedBusiness {
   category: string
   score: number
   level: PromotionLevel
+  businessLat: number | null
+  businessLng: number | null
+  hasActiveOffer: boolean
+  topOfferId: string | null
+  topOfferTitle: string | null
 }
 
 interface BrowseRow {
@@ -106,13 +111,21 @@ interface BrowseRow {
   category: string
   score: number
   level: PromotionLevel
+  business_lat: number | null
+  business_lng: number | null
+  has_active_offer: boolean
+  top_offer_id: string | null
+  top_offer_title: string | null
 }
 
-export async function browseBusinessesByCategory(category: string, limit = 50): Promise<RankedBusiness[]> {
-  const { data, error } = await supabaseAdmin.rpc('browse_businesses_by_category', {
-    p_category: category,
-    p_limit: limit,
-  })
+// One flat list across every category — replaces the old one-category-at-a-
+// time browse_businesses_by_category, which powered a category-grid-then-
+// drill-down flow with no search, no chips, and no sense of which shops
+// actually had something live. /browse now filters this client-side with
+// the same search+chip pattern NearbyShopsView (/wallet/shops) already
+// established. See supabase/migrations/20260907_browse_all_businesses.sql.
+export async function browseAllBusinesses(limit = 200): Promise<RankedBusiness[]> {
+  const { data, error } = await supabaseAdmin.rpc('browse_all_businesses', { p_limit: limit })
 
   if (error) throw new Error(error.message)
 
@@ -122,5 +135,10 @@ export async function browseBusinessesByCategory(category: string, limit = 50): 
     category: r.category,
     score: r.score,
     level: r.level,
+    businessLat: r.business_lat,
+    businessLng: r.business_lng,
+    hasActiveOffer: r.has_active_offer,
+    topOfferId: r.top_offer_id,
+    topOfferTitle: r.top_offer_title,
   }))
 }
