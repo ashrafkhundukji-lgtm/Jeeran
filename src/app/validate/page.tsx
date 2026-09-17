@@ -37,27 +37,27 @@ function ValidateInner() {
         <div className="flex justify-center mb-6">
           <SiteLogo className="h-20" />
         </div>
-        <p className="text-red-600 text-sm">Missing or malformed link.</p>
+        <p className="text-[#E8425F] text-sm font-medium">Missing or malformed link.</p>
       </div>
     )
   }
 
   if (status === 'success') {
     return (
-      <div className="min-h-screen bg-emerald-600 flex flex-col items-center justify-center text-white text-center px-6">
-        <div className="text-6xl mb-4">✓</div>
-        <h1 className="text-2xl font-bold mb-2">قسيمة صالحة</h1>
-        <p className="text-lg">{result.title}</p>
+      <div className="min-h-screen bg-[#2E1065] flex flex-col items-center justify-center text-white text-center px-6">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#FFC93C] text-4xl mb-5 text-[#2E1065]">✓</div>
+        <h1 className="font-[family-name:var(--font-baloo)] text-2xl font-bold mb-2">قسيمة صالحة</h1>
+        <p className="text-lg text-white/85">{result.title}</p>
       </div>
     )
   }
 
   if (status === 'error') {
     return (
-      <div className="min-h-screen bg-red-600 flex flex-col items-center justify-center text-white text-center px-6">
-        <div className="text-6xl mb-4">✕</div>
-        <h1 className="text-2xl font-bold mb-2">Invalid coupon</h1>
-        <p className="text-lg">{result.error}</p>
+      <div className="min-h-screen bg-[#E8425F] flex flex-col items-center justify-center text-white text-center px-6">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 text-4xl mb-5">✕</div>
+        <h1 className="font-[family-name:var(--font-baloo)] text-2xl font-bold mb-2">Invalid coupon</h1>
+        <p className="text-lg text-white/85">{result.error}</p>
       </div>
     )
   }
@@ -67,13 +67,13 @@ function ValidateInner() {
       <div className="flex justify-center mb-6">
         <SiteLogo className="h-20" />
       </div>
-      <p className="text-sm text-neutral-600 mb-6">
+      <p className="text-sm text-[#6B5A8C] mb-6">
         Confirm this customer&apos;s wallet coupon to mark it redeemed.
       </p>
       <button
         onClick={handleConfirm}
         disabled={status === 'working'}
-        className="bg-[#FF6B4A] text-white rounded-lg px-6 py-3 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
+        className="bg-[#FF5A79] text-white rounded-full px-6 py-3 text-sm font-medium transition-colors hover:bg-[#E8425F] disabled:opacity-50"
       >
         {status === 'working' ? 'Checking…' : 'Confirm redemption'}
       </button>

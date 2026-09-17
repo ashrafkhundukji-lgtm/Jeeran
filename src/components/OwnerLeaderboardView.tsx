@@ -18,7 +18,7 @@ export default function OwnerLeaderboardView({ businessId }: { businessId: strin
   const copy = DASHBOARD_COPY[locale]
 
   return (
-    <main dir={dir} className="min-h-screen bg-[#FBFCFD] pb-24 md:pb-10">
+    <main dir={dir} className="min-h-screen bg-[#FFF8EC] pb-24 md:pb-10">
       <OwnerAppBar variant="subpage" dir={dir} title={copy.leaderboard.heading} backHref="/dashboard/owner" backLabel={copy.common.back} />
       <div className="px-5 pt-5">
         <NewCustomerLeaderboard businessId={businessId} />

@@ -71,7 +71,7 @@ export default function LanguageSwitcher({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`flex items-center gap-2 text-sm border border-neutral-300 rounded-full bg-white text-neutral-700 hover:bg-neutral-50 ${
+        className={`flex items-center gap-2 text-sm border border-[#EDE3F7] rounded-full bg-white text-[#2E1065] hover:bg-[#FFF6E9] ${
           compact ? 'pl-2.5 pr-2 py-1' : 'pl-3 pr-2.5 py-1.5'
         }`}
       >
@@ -92,7 +92,7 @@ export default function LanguageSwitcher({
       {open && (
         <ul
           role="listbox"
-          className="absolute z-20 mt-1 min-w-full w-max bg-white border border-neutral-200 rounded-xl shadow-lg py-1 overflow-hidden"
+          className="absolute z-20 mt-1 min-w-full w-max bg-white border border-[#EDE3F7] rounded-2xl shadow-[0_10px_26px_-14px_rgba(46,16,101,0.35)] py-1 overflow-hidden"
         >
           {LOCALES.map((l) => {
             const selected = l.code === locale
@@ -107,7 +107,7 @@ export default function LanguageSwitcher({
                     setOpen(false)
                   }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-start whitespace-nowrap ${
-                    selected ? 'bg-blue-50 text-blue-700' : 'text-neutral-700 hover:bg-neutral-50'
+                    selected ? 'bg-[#FFF6E9] text-[#2E1065] font-medium' : 'text-[#6B5A8C] hover:bg-[#FFF6E9]'
                   }`}
                 >
                   <span className="w-4 shrink-0" aria-hidden="true">

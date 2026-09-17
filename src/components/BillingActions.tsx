@@ -12,7 +12,7 @@ import { DASHBOARD_COPY, type DashboardCopy } from '@/lib/i18n/dashboard'
 // `active` (this tier is the one currently subscribed) recolors it orange,
 // matching the selected-row treatment used for the topup cards below.
 function ReachRingIcon({ tier, active }: { tier: 'standard' | 'extended' | 'premium'; active: boolean }) {
-  const color = active ? '#FF6B4A' : '#9ca3af'
+  const color = active ? '#FF5A79' : '#9ca3af'
   return (
     <div
       className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : 'bg-neutral-100'}`}
@@ -114,7 +114,7 @@ export default function BillingActions({
         <button
           onClick={() => handleCheckout(subscriptionEntry.priceId, subscriptionEntry.key)}
           disabled={loadingKey !== null}
-          className="bg-[#FF6B4A] text-white rounded-lg py-2.5 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
+          className="bg-[#FF5A79] text-white rounded-lg py-2.5 text-sm font-medium transition-colors hover:bg-[#E8425F] disabled:opacity-50"
         >
           {loadingKey === subscriptionEntry.key
             ? copy.redirecting
@@ -139,13 +139,13 @@ export default function BillingActions({
             {reachExtendedEntry && (
               <div
                 className={`flex items-center gap-3 rounded-xl p-3 ${
-                  reachTier === 'extended' ? 'border-2 border-[#FF6B4A] bg-[#FFF7F3]' : 'border border-neutral-200'
+                  reachTier === 'extended' ? 'border-2 border-[#FF5A79] bg-[#FFF7F3]' : 'border border-neutral-200'
                 }`}
               >
                 <ReachRingIcon tier="extended" active={reachTier === 'extended'} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium">{copy.reachExtendedLabel}</div>
-                  <div className={`text-xs ${reachTier === 'extended' ? 'text-[#FF6B4A] font-semibold' : 'text-neutral-500'}`}>
+                  <div className={`text-xs ${reachTier === 'extended' ? 'text-[#FF5A79] font-semibold' : 'text-neutral-500'}`}>
                     {reachTier === 'extended' ? copy.reachCurrentPlan : copy.reachExtendedDescription}
                   </div>
                 </div>
@@ -153,7 +153,7 @@ export default function BillingActions({
                   <button
                     onClick={() => handleCheckout(reachExtendedEntry.priceId, reachExtendedEntry.key)}
                     disabled={loadingKey !== null}
-                    className="shrink-0 bg-[#FF6B4A] text-white rounded-lg py-2 px-3 text-xs font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
+                    className="shrink-0 bg-[#FF5A79] text-white rounded-lg py-2 px-3 text-xs font-medium transition-colors hover:bg-[#E8425F] disabled:opacity-50"
                   >
                     {loadingKey === reachExtendedEntry.key
                       ? copy.redirecting
@@ -166,13 +166,13 @@ export default function BillingActions({
             {reachPremiumEntry && (
               <div
                 className={`flex items-center gap-3 rounded-xl p-3 ${
-                  reachTier === 'premium' ? 'border-2 border-[#FF6B4A] bg-[#FFF7F3]' : 'border border-neutral-200'
+                  reachTier === 'premium' ? 'border-2 border-[#FF5A79] bg-[#FFF7F3]' : 'border border-neutral-200'
                 }`}
               >
                 <ReachRingIcon tier="premium" active={reachTier === 'premium'} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium">{copy.reachPremiumLabel}</div>
-                  <div className={`text-xs ${reachTier === 'premium' ? 'text-[#FF6B4A] font-semibold' : 'text-neutral-500'}`}>
+                  <div className={`text-xs ${reachTier === 'premium' ? 'text-[#FF5A79] font-semibold' : 'text-neutral-500'}`}>
                     {reachTier === 'premium' ? copy.reachCurrentPlan : copy.reachPremiumDescription}
                   </div>
                 </div>
@@ -180,7 +180,7 @@ export default function BillingActions({
                   <button
                     onClick={() => handleCheckout(reachPremiumEntry.priceId, reachPremiumEntry.key)}
                     disabled={loadingKey !== null}
-                    className="shrink-0 bg-[#FF6B4A] text-white rounded-lg py-2 px-3 text-xs font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
+                    className="shrink-0 bg-[#FF5A79] text-white rounded-lg py-2 px-3 text-xs font-medium transition-colors hover:bg-[#E8425F] disabled:opacity-50"
                   >
                     {loadingKey === reachPremiumEntry.key
                       ? copy.redirecting
@@ -195,7 +195,7 @@ export default function BillingActions({
 
       {topupEntries.length > 0 && (
         <div>
-          <h3 className="mb-2.5 text-[13px] font-semibold tracking-[0.06em] text-[#8a8a8a]">{copy.buyCredits}</h3>
+          <h3 className="mb-2.5 text-[13px] font-semibold tracking-[0.06em] text-[#8A76BE]">{copy.buyCredits}</h3>
           <div className="grid grid-cols-3 gap-2.5">
             {topupEntries.map((entry) => {
               const isBestValue = entry.key === bestValueKey
@@ -206,17 +206,17 @@ export default function BillingActions({
                   disabled={loadingKey !== null}
                   className={`relative rounded-2xl p-[14px_8px] text-center transition-colors disabled:opacity-50 ${
                     isBestValue
-                      ? 'border-2 border-[#FF6B4A] shadow-[0_8px_18px_-12px_rgba(255,107,74,0.7)]'
-                      : 'border border-[#ececec] bg-white'
+                      ? 'border-2 border-[#FF5A79] shadow-[0_8px_18px_-12px_rgba(255,90,121,0.7)]'
+                      : 'border border-[#EDE3F7] bg-white'
                   }`}
                 >
                   {isBestValue && (
-                    <span className="absolute -top-[9px] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#FF6B4A] px-2 py-[3px] text-[9.5px] font-semibold text-white">
+                    <span className="absolute -top-[9px] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#FF5A79] px-2 py-[3px] text-[9.5px] font-semibold text-white">
                       {copy.bestValue}
                     </span>
                   )}
                   <div className="text-[21px] font-bold">{entry.creditsGranted.toLocaleString()}</div>
-                  <div className="mt-0.5 text-[11px] text-[#8a8a8a]">{copy.creditsSuffix}</div>
+                  <div className="mt-0.5 text-[11px] text-[#8A76BE]">{copy.creditsSuffix}</div>
                   <div className="mt-[9px] text-[13px] font-semibold">
                     {loadingKey === entry.key ? '…' : `$${entry.amountUsd}`}
                   </div>
@@ -228,14 +228,14 @@ export default function BillingActions({
       )}
 
       {instantNotifyEntry && (
-        <div className="rounded-[20px] border border-[#FF6B4A]/30 bg-[#FFF7F3] p-[17px]">
+        <div className="rounded-[20px] border border-[#FF5A79]/30 bg-[#FFF7F3] p-[17px]">
           <div className="mb-[7px] flex items-center gap-[9px]">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF5A79" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" />
             </svg>
             <h3 className="text-[15px] font-semibold">{copy.instantNotifyLabel}</h3>
           </div>
-          <p className="mb-3.5 text-[13px] leading-[1.6] text-[#5a5a5a]">{copy.instantNotifyDescription}</p>
+          <p className="mb-3.5 text-[13px] leading-[1.6] text-[#6B5A8C]">{copy.instantNotifyDescription}</p>
           {isInstantNotifyActive ? (
             <div className="flex items-center gap-[7px]">
               <span className="h-[7px] w-[7px] rounded-full bg-[#16a34a]" aria-hidden="true" />
@@ -245,7 +245,7 @@ export default function BillingActions({
             <button
               onClick={() => handleCheckout(instantNotifyEntry.priceId, instantNotifyEntry.key)}
               disabled={loadingKey !== null}
-              className="rounded-[13px] bg-[#FF6B4A] px-4 py-[13px] text-[14.5px] font-semibold text-white transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
+              className="rounded-[13px] bg-[#FF5A79] px-4 py-[13px] text-[14.5px] font-semibold text-white transition-colors hover:bg-[#E8425F] disabled:opacity-50"
             >
               {loadingKey === instantNotifyEntry.key
                 ? copy.redirecting

@@ -510,8 +510,8 @@ export default function CampaignManager({
   return (
     <section id="campaign-manager">
       <div className="flex items-center justify-between mb-2.5">
-        <h2 className="text-[13px] font-semibold tracking-[0.06em] text-[#8a8a8a]">{copy.heading}</h2>
-        <button onClick={() => setShowForm(!showForm)} className="text-[13px] font-semibold text-[#FF6B4A]">
+        <h2 className="text-[13px] font-semibold tracking-[0.06em] text-[#8A76BE]">{copy.heading}</h2>
+        <button onClick={() => setShowForm(!showForm)} className="text-[13px] font-semibold text-[#FF5A79]">
           {showForm ? copy.cancel : copy.newCampaign}
         </button>
       </div>
@@ -546,7 +546,7 @@ export default function CampaignManager({
           <button
             type="submit"
             disabled={saving || imageUploading}
-            className="bg-[#FF6B4A] text-white rounded-lg py-2 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
+            className="bg-[#FF5A79] text-white rounded-lg py-2 text-sm font-medium transition-colors hover:bg-[#E8425F] disabled:opacity-50"
           >
             {saving ? copy.creatingButton : copy.createButton}
           </button>
@@ -590,7 +590,7 @@ export default function CampaignManager({
                 <button
                   type="submit"
                   disabled={editSaving || editImageUploading}
-                  className="flex-1 bg-[#FF6B4A] text-white rounded-lg py-2 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
+                  className="flex-1 bg-[#FF5A79] text-white rounded-lg py-2 text-sm font-medium transition-colors hover:bg-[#E8425F] disabled:opacity-50"
                 >
                   {editSaving ? copy.savingChanges : copy.saveChanges}
                 </button>

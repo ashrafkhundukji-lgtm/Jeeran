@@ -17,7 +17,7 @@ import Backdrop from '@/components/Backdrop'
 // file's comment. The illustrative wallet-card mock content (business
 // names, "Exclusive Member Deal", ghost step numerals) is always
 // English/numeral by design and keeps plain ARCHIVO regardless of locale.
-const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
+const ARCHIVO = 'font-[family-name:var(--font-baloo)]'
 
 export default function LandingPage() {
   const [locale, setLocale] = useLocale()
@@ -38,7 +38,7 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <main dir={dir} className="relative min-h-screen overflow-hidden bg-[#FBFCFD] pb-[72px] text-[#1a1a1a] md:pb-0">
+    <main dir={dir} className="relative min-h-screen overflow-hidden bg-[#FFF8EC] pb-[72px] text-[#2E1065] md:pb-0">
       <Backdrop />
 
       {/* z-20, not z-10 like the sections below: the language switcher's
@@ -54,7 +54,7 @@ export default function LandingPage() {
         <a href="/" className="flex items-center gap-2 md:hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/design/jeeran-mark.svg" alt="" aria-hidden="true" className="h-7 w-7" />
-          <span className={`${ARCHIVO} text-[17px] font-black text-[#1E3A8A]`}>Jeeran</span>
+          <span className={`${ARCHIVO} text-[17px] font-black text-[#2E1065]`}>Jeeran</span>
         </a>
         {/* Desktop: unchanged full lockup. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -64,20 +64,20 @@ export default function LandingPage() {
             الدخول" + "العربية (AR)" is three items wrapping to two rows at
             390px. */}
         <div className="flex items-center gap-2 md:hidden">
-          <a href="/browse" className="px-2 py-1.5 text-[13px] text-[#5a5a5a]">
+          <a href="/browse" className="px-2 py-1.5 text-[13px] text-[#6B5A8C]">
             {copy.browseShort}
           </a>
-          <a href="/login" className="rounded-full border border-[#e2e2e2] px-[13px] py-[7px] text-[13px] font-semibold">
+          <a href="/login" className="rounded-full border border-[#EDE3F7] px-[13px] py-[7px] text-[13px] font-semibold">
             {copy.loginShort}
           </a>
           <LanguageSwitcher locale={locale} onChange={setLocale} compact />
         </div>
         {/* Desktop: unchanged full labels. */}
         <div className="hidden items-center gap-x-7 md:flex">
-          <a href="/browse" className="py-1 text-sm whitespace-nowrap text-[#6b6b6b] hover:text-[#1a1a1a]">
+          <a href="/browse" className="py-1 text-sm whitespace-nowrap text-[#6B5A8C] hover:text-[#2E1065]">
             {copy.browse}
           </a>
-          <a href="/login" className="py-1 text-sm whitespace-nowrap text-[#6b6b6b] hover:text-[#1a1a1a]">
+          <a href="/login" className="py-1 text-sm whitespace-nowrap text-[#6B5A8C] hover:text-[#2E1065]">
             {copy.login}
           </a>
           <LanguageSwitcher locale={locale} onChange={setLocale} />
@@ -86,13 +86,13 @@ export default function LandingPage() {
 
       <section className="relative z-10 mx-auto grid max-w-[1240px] items-center gap-10 px-6 pt-5 pb-8 sm:px-12 sm:pt-20 sm:pb-28 lg:grid-cols-[1.15fr_0.85fr] lg:pt-[88px] lg:pb-[140px]">
         <div>
-          <div className="mb-[18px] h-[5px] w-[46px] rounded-full bg-[#FF6B4A] sm:mb-7 sm:h-1.5 sm:w-14" />
+          <div className="mb-[18px] h-[5px] w-[46px] rounded-full bg-[#FF5A79] sm:mb-7 sm:h-1.5 sm:w-14" />
           <h1
             className={`${displayFont(locale)} mb-[14px] text-[33px] font-bold leading-[1.22] tracking-[-0.01em] sm:mb-7 sm:text-6xl sm:font-black sm:leading-[0.98] lg:text-[76px]`}
           >
             {/*
               Design spec renders this as two lines, the second in navy
-              (#1E3A8A) — e.g. "Your offers," / "everywhere they go." That
+              (#2E1065) — e.g. "Your offers," / "everywhere they go." That
               split (and the wording itself, since the spec's headline
               differs from our current tagline) is on hold pending the
               headline decision. Rendering the current LANDING_COPY tagline
@@ -102,12 +102,12 @@ export default function LandingPage() {
           </h1>
           {/* Mobile: trimmed to the first sentence — the full paragraph is
               19px x 4 lines at this width. Desktop keeps the full copy. */}
-          <p className="mb-[22px] max-w-[460px] text-[16px] leading-[1.65] text-[#5a5a5a] sm:hidden">{copy.subheadlineShort}</p>
-          <p className="mb-10 hidden max-w-[460px] text-[19px] leading-[1.6] text-[#5a5a5a] sm:block">{copy.subheadline}</p>
+          <p className="mb-[22px] max-w-[460px] text-[16px] leading-[1.65] text-[#6B5A8C] sm:hidden">{copy.subheadlineShort}</p>
+          <p className="mb-10 hidden max-w-[460px] text-[19px] leading-[1.6] text-[#6B5A8C] sm:block">{copy.subheadline}</p>
           <a
             ref={heroCtaRef}
             href="/login"
-            className="inline-block rounded-[10px] bg-[#FF6B4A] px-8 py-4 text-[15px] font-semibold text-white shadow-[0_12px_24px_-8px_rgba(255,107,74,0.5)] transition-colors hover:bg-[#e85a3b]"
+            className="inline-block rounded-full bg-[#FF5A79] px-8 py-4 text-[15px] font-semibold text-white shadow-[0_12px_24px_-8px_rgba(255,90,121,0.5)] transition-colors hover:bg-[#E8425F]"
           >
             {copy.ctaBusiness}
           </a>
@@ -120,29 +120,29 @@ export default function LandingPage() {
 
       <ClosingCtaSection copy={copy} locale={locale} />
 
-      <footer className="relative z-10 flex items-center justify-center gap-2.5 border-t border-[#ececec] px-6 py-6">
-        <div className="h-2 w-2 rounded-full bg-[#FF6B4A]" />
-        <p className="m-0 text-xs text-[#9a9a9a]">Jeeran Network</p>
+      <footer className="relative z-10 flex items-center justify-center gap-2.5 border-t border-[#EDE3F7] px-6 py-6">
+        <div className="h-2 w-2 rounded-full bg-[#FF5A79]" />
+        <p className="m-0 text-xs text-[#8A76BE]">Jeeran Network</p>
       </footer>
 
       {/* Sticky mobile CTA bar — revealed once the hero button above scrolls
           out of view (see the IntersectionObserver above). Desktop never
           shows it regardless of scroll position. */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-20 flex gap-[9px] border-t border-[#e8e8e8] bg-[rgba(251,252,253,0.94)] px-4 pt-[11px] backdrop-blur-[8px] transition-transform duration-200 md:hidden ${
+        className={`fixed inset-x-0 bottom-0 z-20 flex gap-[9px] border-t border-[#EDE3F7] bg-[rgba(255,248,236,0.94)] px-4 pt-[11px] backdrop-blur-[8px] transition-transform duration-200 md:hidden ${
           showStickyBar ? 'translate-y-0' : 'translate-y-full'
         }`}
         style={{ paddingBottom: 'calc(22px + env(safe-area-inset-bottom))' }}
       >
         <a
           href="/login"
-          className="flex-1 rounded-[14px] bg-[#FF6B4A] py-[15px] text-center text-[15px] font-semibold text-white"
+          className="flex-1 rounded-full bg-[#FF5A79] py-[15px] text-center text-[15px] font-semibold text-white"
         >
           {copy.ctaBusiness}
         </a>
         <a
           href="/browse"
-          className="shrink-0 rounded-[14px] border border-[#dcdcdc] px-[18px] py-[15px] text-[15px] font-semibold text-[#1a1a1a]"
+          className="shrink-0 rounded-full border border-[#E3D6F5] px-[18px] py-[15px] text-[15px] font-semibold text-[#2E1065]"
         >
           {copy.browse}
         </a>
@@ -167,31 +167,31 @@ function WalletCardStack({ locale, headline }: { locale: Locale; headline: strin
   return (
     <div className="flex flex-col items-center">
       <div dir="ltr" className="relative flex h-[290px] w-full items-center justify-center sm:h-[440px] lg:h-[460px]" aria-hidden="true">
-        <div className="absolute h-[236px] w-[236px] rounded-full border-[1.5px] border-[#1E3A8A]/25 sm:h-[300px] sm:w-[300px]" />
+        <div className="absolute h-[236px] w-[236px] rounded-full border-[1.5px] border-[#2E1065]/25 sm:h-[300px] sm:w-[300px]" />
 
         <div className="relative w-[214px] sm:w-[250px]">
           {/* Back card: faint neighboring-business offer (Café Aroma) */}
           <div
-            className="absolute top-0 left-0 z-0 box-border h-[129px] w-[214px] overflow-hidden rounded-[18px] border border-[#ececec] bg-white px-5 py-[18px] shadow-[0_20px_40px_-20px_rgba(30,58,138,0.25)] sm:h-[150px] sm:w-[250px] sm:rounded-[20px]"
+            className="absolute top-0 left-0 z-0 box-border h-[129px] w-[214px] overflow-hidden rounded-[22px] border border-[#EDE3F7] bg-white px-5 py-[18px] shadow-[0_20px_40px_-20px_rgba(46,16,101,0.25)] sm:h-[150px] sm:w-[250px] sm:rounded-[26px]"
             style={{ transform: 'rotate(-9deg) translate(-14px, 34px)' }}
           >
-            <div className="text-[9px] font-semibold tracking-[0.08em] text-[#9a9a9a]">CAFÉ AROMA</div>
-            <div className={`${ARCHIVO} mt-1 text-[15px] font-extrabold text-[#1a1a1a]`}>Buy 3, Get 1 Free</div>
+            <div className="text-[9px] font-semibold tracking-[0.08em] text-[#8A76BE]">CAFÉ AROMA</div>
+            <div className={`${ARCHIVO} mt-1 text-[15px] font-extrabold text-[#2E1065]`}>Buy 3, Get 1 Free</div>
           </div>
 
           {/* Front card: the Jeeran subscriber offer — stays in normal flow
               (not absolutely positioned) so it sets this wrapper's height,
               matching the design handoff's own layering. */}
           <div
-            className="relative z-20 box-border h-[129px] w-[214px] overflow-hidden rounded-[18px] px-5 py-[18px] text-white shadow-[0_26px_50px_-18px_rgba(30,58,138,0.5)] sm:h-[150px] sm:w-[250px] sm:rounded-[20px]"
-            style={{ background: 'linear-gradient(155deg,#1E3A8A,#2a4fb8)', transform: 'rotate(3deg)' }}
+            className="relative z-20 box-border h-[129px] w-[214px] overflow-hidden rounded-[22px] px-5 py-[18px] text-white shadow-[0_26px_50px_-18px_rgba(46,16,101,0.5)] sm:h-[150px] sm:w-[250px] sm:rounded-[26px]"
+            style={{ background: 'linear-gradient(155deg,#2E1065,#4C2A98)', transform: 'rotate(3deg)' }}
           >
             <div className="flex items-center justify-between">
               <div className="inline-flex items-center rounded-[7px] bg-white px-2 py-1">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/design/jeeran-mark.svg" alt="Jeeran" className="block h-[19px] w-[19px]" />
               </div>
-              <span className="rounded-[5px] bg-[rgba(255,107,74,0.9)] px-[7px] py-[3px] text-[8px] font-bold tracking-[0.08em]">
+              <span className="rounded-[5px] bg-[#FFC93C] px-[7px] py-[3px] text-[8px] font-bold tracking-[0.08em] text-[#2E1065]">
                 SUBSCRIBER
               </span>
             </div>
@@ -201,9 +201,9 @@ function WalletCardStack({ locale, headline }: { locale: Locale; headline: strin
             </div>
             <div className="mt-2.5 flex items-end justify-between">
               <div className="text-[8px] opacity-55">JEERAN NETWORK</div>
-              <div className="box-border grid h-8 w-8 grid-cols-4 gap-[1.5px] rounded-[5px] bg-white p-[3px]">
+              <div className="box-border grid h-8 w-8 grid-cols-4 gap-[1.5px] rounded-[5px] bg-[#FFC93C] p-[3px]">
                 {QR_DOTS.map((on, i) => (
-                  <div key={i} className={`rounded-[1px] ${on ? 'bg-[#1E3A8A]' : 'bg-transparent'}`} />
+                  <div key={i} className={`rounded-[1px] ${on ? 'bg-[#2E1065]' : 'bg-transparent'}`} />
                 ))}
               </div>
             </div>
@@ -211,15 +211,15 @@ function WalletCardStack({ locale, headline }: { locale: Locale; headline: strin
 
           {/* Back card: faint neighboring-business offer (Glow Spa) */}
           <div
-            className="absolute top-0 left-0 z-10 box-border h-[129px] w-[214px] overflow-hidden rounded-[18px] border border-[#ececec] bg-white px-5 py-[18px] shadow-[0_20px_40px_-20px_rgba(255,107,74,0.25)] sm:h-[150px] sm:w-[250px] sm:rounded-[20px]"
+            className="absolute top-0 left-0 z-10 box-border h-[129px] w-[214px] overflow-hidden rounded-[22px] border border-[#EDE3F7] bg-white px-5 py-[18px] shadow-[0_20px_40px_-20px_rgba(255,90,121,0.25)] sm:h-[150px] sm:w-[250px] sm:rounded-[26px]"
             style={{ transform: 'rotate(11deg) translate(16px, -25px)' }}
           >
-            <div className="text-[9px] font-semibold tracking-[0.08em] text-[#9a9a9a]">GLOW SPA</div>
-            <div className={`${ARCHIVO} mt-1 text-[15px] font-extrabold text-[#1a1a1a]`}>Free Add-On Service</div>
+            <div className="text-[9px] font-semibold tracking-[0.08em] text-[#8A76BE]">GLOW SPA</div>
+            <div className={`${ARCHIVO} mt-1 text-[15px] font-extrabold text-[#2E1065]`}>Free Add-On Service</div>
           </div>
         </div>
 
-        <div className="absolute right-4 bottom-1.5 h-[60px] w-[60px] rounded-full bg-[#FF6B4A] opacity-90" />
+        <div className="absolute right-4 bottom-1.5 h-[60px] w-[60px] rounded-full bg-[#FFC93C] opacity-90" />
       </div>
 
       {/* Real marketing copy, so unlike the illustration above it's a normal
@@ -227,7 +227,7 @@ function WalletCardStack({ locale, headline }: { locale: Locale; headline: strin
           wrapper and invisible to screen readers (BUGS.md item 3). Placed
           below rather than overlapping the top of the stack (its old
           bottom-full position collided with the h1 on narrow screens). */}
-      <p dir="ltr" className={`${displayFont(locale)} mt-4 max-w-[280px] text-center text-[14px] leading-[1.5] font-semibold text-[#1E3A8A]`}>
+      <p dir="ltr" className={`${displayFont(locale)} mt-4 max-w-[280px] text-center text-[14px] leading-[1.5] font-semibold text-[#2E1065]`}>
         {headline}
       </p>
     </div>
@@ -238,14 +238,14 @@ function WalletCardStack({ locale, headline }: { locale: Locale; headline: strin
 // ghost-numeral typography behind each step.
 function StepSection({ copy, locale }: { copy: LandingCopy; locale: Locale }) {
   const steps = [
-    { number: '01', accent: '#FF6B4A', title: copy.step1Title, body: copy.step1Body },
-    { number: '02', accent: '#FFFFFF', title: copy.step2Title, body: copy.step2Body },
-    { number: '03', accent: '#FF6B4A', title: copy.step3Title, body: copy.step3Body },
+    { number: '01', accent: '#FF5A79', title: copy.step1Title, body: copy.step1Body },
+    { number: '02', accent: '#FFC93C', title: copy.step2Title, body: copy.step2Body },
+    { number: '03', accent: '#FF5A79', title: copy.step3Title, body: copy.step3Body },
   ]
 
   return (
     <section
-      className="relative z-10 bg-[#1E3A8A] px-6 py-[44px] sm:px-12 sm:py-24"
+      className="relative z-10 bg-[#2E1065] px-6 py-[44px] sm:px-12 sm:py-24"
       // Fixed px inset, not a percentage: at 3% a ~900px-tall mobile section
       // reads as a much steeper wedge than the same clip on a short desktop
       // section. A fixed 12px keeps the same visual angle at every height.
@@ -280,7 +280,7 @@ function Step({
       </div>
       <div className="mb-4 h-1 w-[34px] rounded-sm" style={{ background: accent }} />
       <h3 className={`${displayFont(locale)} mb-2.5 text-xl font-bold text-white sm:text-[22px]`}>{title}</h3>
-      {/* Opacity raised from /70 to /78 — white/70 on #1E3A8A is ~4.1:1,
+      {/* Opacity raised from /70 to /78 — white/70 on #2E1065 is ~4.1:1,
           under the 4.5:1 floor for 14.5px body text. */}
       <p className="max-w-[280px] text-sm leading-relaxed text-white/[0.78] sm:text-[15px]">{body}</p>
     </div>
@@ -294,10 +294,10 @@ function ClosingCtaSection({ copy, locale }: { copy: LandingCopy; locale: Locale
   return (
     <section className="relative z-10 px-6 py-[44px] text-center sm:px-12 sm:py-10">
       <h2 className={`${displayFont(locale)} mb-2.5 text-[25px] font-bold leading-[1.3]`}>{copy.closingCtaHeading}</h2>
-      <p className="mx-auto mb-[22px] max-w-[420px] text-[15px] leading-[1.6] text-[#5a5a5a]">{copy.closingCtaSubtitle}</p>
+      <p className="mx-auto mb-[22px] max-w-[420px] text-[15px] leading-[1.6] text-[#6B5A8C]">{copy.closingCtaSubtitle}</p>
       <a
         href="/login"
-        className="inline-block rounded-[14px] bg-[#FF6B4A] px-8 py-4 text-[16px] font-semibold text-white shadow-[0_12px_24px_-10px_rgba(255,107,74,0.55)] transition-colors hover:bg-[#e85a3b]"
+        className="inline-block rounded-full bg-[#FF5A79] px-8 py-4 text-[16px] font-semibold text-white shadow-[0_12px_24px_-10px_rgba(255,90,121,0.55)] transition-colors hover:bg-[#E8425F]"
       >
         {copy.ctaBusiness}
       </a>

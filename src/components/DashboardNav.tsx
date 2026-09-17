@@ -7,8 +7,8 @@ import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir } from '@/lib/i18n/locale'
 import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
 
-const ORANGE = '#FF6B4A'
-const TERTIARY = '#9ca3af'
+const ACTIVE_ICON = '#FFC93C'
+const TERTIARY = '#C6B8E8'
 
 // house / scan-corners / credit-card / user — same icon set (and the same
 // "active tab colored orange, rest tertiary gray" convention) as
@@ -58,7 +58,7 @@ export default function DashboardNav() {
       >
         <SiteLogo className="h-14 sm:h-16" />
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <nav className="flex items-center gap-1 bg-[#1E3A8A]/5 rounded-lg p-1">
+          <nav className="flex items-center gap-1 bg-[#2E1065]/5 rounded-lg p-1">
             {navLinks.map((link) => {
               const active = pathname === link.href
               return (
@@ -66,7 +66,7 @@ export default function DashboardNav() {
                   key={link.href}
                   href={link.href}
                   className={`text-sm font-medium rounded-md px-2.5 sm:px-3 py-1.5 transition-colors ${
-                    active ? 'bg-[#1E3A8A] text-white shadow-sm' : 'text-[#5a5a5a] hover:text-[#1a1a1a]'
+                    active ? 'bg-[#2E1065] text-white shadow-sm' : 'text-[#6B5A8C] hover:text-[#2E1065]'
                   }`}
                 >
                   {link.label}
@@ -84,42 +84,52 @@ export default function DashboardNav() {
           regardless of where in the page DashboardNav is mounted; each
           dashboard page adds bottom padding to its own content so nothing
           sits underneath it — see e.g. OwnerDashboardView.tsx. */}
-      <nav
-        dir={dir}
-        className="md:hidden fixed inset-x-0 bottom-0 z-20 flex border-t border-neutral-200 bg-white"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      <div
+        className="md:hidden fixed inset-x-0 bottom-0 z-20 px-4"
+        style={{ paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))' }}
       >
-        {navLinks.map((link) => {
-          const active = pathname === link.href
-          const color = active ? ORANGE : TERTIARY
-          return (
-            <a
-              key={link.href}
-              href={link.href}
-              aria-current={active ? 'page' : undefined}
-              className="flex flex-1 flex-col items-center gap-1 py-2.5"
-              style={{ color }}
-            >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={active ? 1.9 : 1.75}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+        <nav
+          dir={dir}
+          className="mx-auto flex max-w-[420px] items-center justify-around rounded-full bg-white p-1.5 shadow-[0_10px_26px_-14px_rgba(46,16,101,0.45)]"
+        >
+          {navLinks.map((link) => {
+            const active = pathname === link.href
+            return (
+              <a
+                key={link.href}
+                href={link.href}
+                aria-current={active ? 'page' : undefined}
+                className="flex flex-1 flex-col items-center gap-1 py-1.5"
               >
-                {ICONS[link.key]}
-              </svg>
-              <span className="text-[11px]" style={{ fontWeight: active ? 600 : 500 }}>
-                {link.label}
-              </span>
-            </a>
-          )
-        })}
-      </nav>
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-full"
+                  style={{ backgroundColor: active ? '#2E1065' : 'transparent' }}
+                >
+                  <svg
+                    width="19"
+                    height="19"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={active ? ACTIVE_ICON : TERTIARY}
+                    strokeWidth={active ? 2 : 1.75}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    {ICONS[link.key]}
+                  </svg>
+                </span>
+                <span
+                  className="text-[10px]"
+                  style={{ color: active ? '#2E1065' : TERTIARY, fontWeight: active ? 700 : 500 }}
+                >
+                  {link.label}
+                </span>
+              </a>
+            )
+          })}
+        </nav>
+      </div>
     </>
   )
 }

@@ -6,11 +6,11 @@ import { displayFont } from '@/lib/i18n/displayFont'
 import { OFFER_PAGE_COPY } from '@/lib/i18n/offers'
 import { CATEGORY_LABELS } from '@/lib/categories'
 
-// Same brand tokens as LandingPage.tsx: #FBFCFD canvas, #1a1a1a ink,
-// Archivo for display type, #FF6B4A accent. This one constant stays plain
+// Same brand tokens as LandingPage.tsx: #FFF8EC canvas, #2E1065 ink,
+// Archivo for display type, #FF5A79 accent. This one constant stays plain
 // ARCHIVO (not displayFont) — it wraps the image-fallback business-name
 // span, which is shop-typed content, not locale-driven copy.
-const ARCHIVO = 'font-[family-name:var(--font-archivo)]'
+const ARCHIVO = 'font-[family-name:var(--font-baloo)]'
 
 // Split from the server page.tsx (src/app/offers/[campaignId]/page.tsx)
 // purely because useLocale() (localStorage-backed) is client-only — same
@@ -90,7 +90,7 @@ export default function OfferPageView({
   }
 
   return (
-    <main dir={dir} className="min-h-screen bg-[#FBFCFD] pb-28 text-[#1a1a1a]">
+    <main dir={dir} className="min-h-screen bg-[#FFF8EC] pb-28 text-[#2E1065]">
       {/* Hero — floating back button sits over it, native app style, rather
           than a separate top header row this page no longer has. */}
       <div className="relative aspect-[16/10] w-full">
@@ -98,7 +98,7 @@ export default function OfferPageView({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#1E3A8A] to-[#3B5BC4]">
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#2E1065] to-[#4C2A98]">
             <span className={`${ARCHIVO} px-8 text-center text-3xl font-black text-white/90`}>{businessName}</span>
           </div>
         )}
@@ -106,7 +106,7 @@ export default function OfferPageView({
           type="button"
           onClick={handleBack}
           aria-label={copy.back}
-          className={`absolute top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1a1a1a] shadow-[0_4px_12px_rgba(0,0,0,0.15)] ${dir === 'rtl' ? 'right-4' : 'left-4'}`}
+          className={`absolute top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#2E1065] shadow-[0_4px_12px_rgba(0,0,0,0.15)] ${dir === 'rtl' ? 'right-4' : 'left-4'}`}
         >
           <svg
             width="17"
@@ -123,28 +123,28 @@ export default function OfferPageView({
 
       <div className="mx-auto max-w-[720px] px-6 pt-6 sm:px-8">
         {!isActive && (
-          <div className="mb-6 rounded-xl border border-[#ececec] bg-white px-5 py-4 text-sm text-[#5a5a5a]">
+          <div className="mb-6 rounded-xl border border-[#EDE3F7] bg-white px-5 py-4 text-sm text-[#6B5A8C]">
             {copy.inactiveNotice(businessName)}
           </div>
         )}
 
-        <p className="mb-2 text-xs font-medium tracking-wide text-[#6b6b6b] uppercase">{categoryLabel}</p>
+        <p className="mb-2 text-xs font-medium tracking-wide text-[#6B5A8C] uppercase">{categoryLabel}</p>
         {/* title is locale-driven (shop translation > auto-translation cache
             > original — see the server page.tsx), unlike businessName above,
             so it needs the real Arabic display face, not plain ARCHIVO. */}
         <h1 className={`${displayFont(locale)} mb-2 text-[28px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[34px]`}>
           {title}
         </h1>
-        <p className="mb-6 text-[15px] font-medium text-[#1E3A8A]">{copy.atBusiness(businessName)}</p>
+        <p className="mb-6 text-[15px] font-medium text-[#2E1065]">{copy.atBusiness(businessName)}</p>
 
         {description && (
-          <p className="mb-8 max-w-[560px] text-[17px] leading-[1.6] text-[#5a5a5a]">{description}</p>
+          <p className="mb-8 max-w-[560px] text-[17px] leading-[1.6] text-[#6B5A8C]">{description}</p>
         )}
 
-        <div className="rounded-2xl border border-[#FF6B4A]/25 bg-[#FFF7F3] px-6 py-5">
-          <div className="mb-1 h-1.5 w-10 rounded-full bg-[#FF6B4A]" />
-          <p className="text-[15px] font-semibold text-[#1a1a1a]">{copy.howToRedeem}</p>
-          <p className="text-sm leading-relaxed text-[#5a5a5a]">{copy.redeemBody(businessName)}</p>
+        <div className="rounded-2xl border border-[#FF5A79]/25 bg-[#FFF7F3] px-6 py-5">
+          <div className="mb-1 h-1.5 w-10 rounded-full bg-[#FF5A79]" />
+          <p className="text-[15px] font-semibold text-[#2E1065]">{copy.howToRedeem}</p>
+          <p className="text-sm leading-relaxed text-[#6B5A8C]">{copy.redeemBody(businessName)}</p>
         </div>
       </div>
 
@@ -154,7 +154,7 @@ export default function OfferPageView({
           keeps these one thumb-reach away regardless of scroll position. */}
       {(directionsUrl || whatsappUrl || callUrl) && (
         <div
-          className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t border-[#ececec] bg-white px-4 py-3"
+          className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t border-[#EDE3F7] bg-white px-4 py-3"
           style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
         >
           {directionsUrl && (
@@ -162,7 +162,7 @@ export default function OfferPageView({
               href={directionsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#1E3A8A] py-2.5 text-white transition-colors hover:bg-[#16306e]"
+              className="flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#2E1065] py-2.5 text-white transition-colors hover:bg-[#16306e]"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M3 11l18-8-8 18-2-8-8-2Z" />
@@ -186,7 +186,7 @@ export default function OfferPageView({
           {callUrl && (
             <a
               href={callUrl}
-              className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-[#ececec] bg-white py-2.5 text-[#1a1a1a] transition-colors hover:bg-neutral-50"
+              className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-[#EDE3F7] bg-white py-2.5 text-[#2E1065] transition-colors hover:bg-neutral-50"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" />

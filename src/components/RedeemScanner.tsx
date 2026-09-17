@@ -275,12 +275,12 @@ export default function RedeemScanner() {
       {!result && scanning && (
         <>
           <div className="relative z-10 mx-auto mt-[9vh] h-[250px] w-[250px]">
-            <div className="absolute top-0 left-0 h-[46px] w-[46px] rounded-tl-[16px] border-t-4 border-l-4 border-[#FF6B4A]" />
-            <div className="absolute top-0 right-0 h-[46px] w-[46px] rounded-tr-[16px] border-t-4 border-r-4 border-[#FF6B4A]" />
-            <div className="absolute bottom-0 left-0 h-[46px] w-[46px] rounded-bl-[16px] border-b-4 border-l-4 border-[#FF6B4A]" />
-            <div className="absolute bottom-0 right-0 h-[46px] w-[46px] rounded-br-[16px] border-b-4 border-r-4 border-[#FF6B4A]" />
+            <div className="absolute top-0 left-0 h-[46px] w-[46px] rounded-tl-[16px] border-t-4 border-l-4 border-[#FF5A79]" />
+            <div className="absolute top-0 right-0 h-[46px] w-[46px] rounded-tr-[16px] border-t-4 border-r-4 border-[#FF5A79]" />
+            <div className="absolute bottom-0 left-0 h-[46px] w-[46px] rounded-bl-[16px] border-b-4 border-l-4 border-[#FF5A79]" />
+            <div className="absolute bottom-0 right-0 h-[46px] w-[46px] rounded-br-[16px] border-b-4 border-r-4 border-[#FF5A79]" />
             <div
-              className="motion-safe:animate-[scan-line-move_1.6s_ease-in-out_infinite_alternate] absolute top-1/2 right-[10px] left-[10px] h-[2px] rounded-full bg-[#FF6B4A] shadow-[0_0_14px_3px_rgba(255,107,74,0.75)]"
+              className="motion-safe:animate-[scan-line-move_1.6s_ease-in-out_infinite_alternate] absolute top-1/2 right-[10px] left-[10px] h-[2px] rounded-full bg-[#FF5A79] shadow-[0_0_14px_3px_rgba(255,90,121,0.75)]"
             />
           </div>
           <p className="relative z-10 mt-[22px] px-8 text-center text-[15px] font-medium text-white/90">{copy.aimHint}</p>
@@ -295,7 +295,7 @@ export default function RedeemScanner() {
               setCameraError('')
               setScanning(true)
             }}
-            className="w-full max-w-xs rounded-2xl bg-[#FF6B4A] py-3 text-[15px] font-semibold text-white"
+            className="w-full max-w-xs rounded-2xl bg-[#FF5A79] py-3 text-[15px] font-semibold text-white"
           >
             {copy.startScan}
           </button>
@@ -329,7 +329,7 @@ export default function RedeemScanner() {
               <button
                 type="submit"
                 disabled={checking || !manualValue.trim()}
-                className="shrink-0 rounded-[13px] bg-white px-[18px] py-[13px] text-[14px] font-semibold text-[#1a1a1a] disabled:opacity-50"
+                className="shrink-0 rounded-[13px] bg-white px-[18px] py-[13px] text-[14px] font-semibold text-[#2E1065] disabled:opacity-50"
               >
                 {checking ? copy.checking : copy.manualSubmit}
               </button>
@@ -340,7 +340,7 @@ export default function RedeemScanner() {
 
       {/* Result bottom sheet */}
       {result && (
-        <div className="fixed inset-x-0 bottom-0 z-20 rounded-[28px_28px_0_0] bg-white px-[22px] pt-[26px] pb-[30px] text-[#1a1a1a] shadow-[0_16px_32px_-18px_rgba(0,0,0,0.5)]">
+        <div className="fixed inset-x-0 bottom-0 z-20 rounded-[28px_28px_0_0] bg-white px-[22px] pt-[26px] pb-[30px] text-[#2E1065] shadow-[0_16px_32px_-18px_rgba(0,0,0,0.5)]">
           <div
             className={`mx-auto mb-4 flex h-[60px] w-[60px] items-center justify-center rounded-full ${
               result.kind === 'success' ? 'bg-[#dcfce7]' : 'bg-[#fee2e2]'
@@ -370,10 +370,10 @@ export default function RedeemScanner() {
               <p className="mb-[22px] text-center text-[23px] font-black leading-[1.25]">{result.title}</p>
 
               {(result.isNewCustomer !== null || result.redemptionsToday !== null) && (
-                <div className="mb-5 overflow-hidden rounded-[16px] border border-[#ececec] bg-[#FBFCFD]">
+                <div className="mb-5 overflow-hidden rounded-[16px] border border-[#EDE3F7] bg-[#FFF8EC]">
                   {result.isNewCustomer !== null && (
                     <div className="flex items-center justify-between border-b border-[#f2f2f2] px-4 py-3 last:border-b-0">
-                      <span className="text-[13px] text-[#8a8a8a]">{copy.customerLabel}</span>
+                      <span className="text-[13px] text-[#8A76BE]">{copy.customerLabel}</span>
                       <span className="text-[13.5px] font-semibold">
                         {result.isNewCustomer ? copy.newCustomerFirstVisit : copy.returningCustomer}
                       </span>
@@ -381,7 +381,7 @@ export default function RedeemScanner() {
                   )}
                   {result.redemptionsToday !== null && (
                     <div className="flex items-center justify-between px-4 py-3">
-                      <span className="text-[13px] text-[#8a8a8a]">{copy.redemptionsTodayLabel}</span>
+                      <span className="text-[13px] text-[#8A76BE]">{copy.redemptionsTodayLabel}</span>
                       <span className="text-[13.5px] font-semibold">{result.redemptionsToday}</span>
                     </div>
                   )}
@@ -393,7 +393,7 @@ export default function RedeemScanner() {
           {result.kind === 'error' && result.message === 'no active offer for this shop' ? (
             <a
               href="/dashboard/owner#campaign-manager"
-              className="mb-2.5 flex items-center justify-center gap-2.5 rounded-2xl bg-[#FF6B4A] py-[17px] text-[16px] font-semibold text-white"
+              className="mb-2.5 flex items-center justify-center gap-2.5 rounded-2xl bg-[#FF5A79] py-[17px] text-[16px] font-semibold text-white"
             >
               {DASHBOARD_COPY[locale].campaigns.createButton}
             </a>
@@ -404,7 +404,7 @@ export default function RedeemScanner() {
                 reset()
                 setScanning(true)
               }}
-              className="mb-2.5 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#FF6B4A] py-[17px] text-[16px] font-semibold text-white"
+              className="mb-2.5 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#FF5A79] py-[17px] text-[16px] font-semibold text-white"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M4 8V5a1 1 0 0 1 1-1h3M20 8V5a1 1 0 0 0-1-1h-3M4 16v3a1 1 0 0 0 1 1h3M20 16v3a1 1 0 0 1-1 1h-3" />
@@ -413,7 +413,7 @@ export default function RedeemScanner() {
               {copy.scanAnother}
             </button>
           )}
-          <a href="/dashboard/owner" className="block text-center text-[14.5px] font-medium text-[#8a8a8a]">
+          <a href="/dashboard/owner" className="block text-center text-[14.5px] font-medium text-[#8A76BE]">
             {copy.finish}
           </a>
         </div>

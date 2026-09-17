@@ -97,14 +97,14 @@ export default function BillingView({
   const dayGroups = groupLedgerByDay(ledger, copy)
 
   return (
-    <main dir={dir} className="min-h-screen bg-[#FBFCFD] pb-24 md:pb-10">
+    <main dir={dir} className="min-h-screen bg-[#FFF8EC] pb-24 md:pb-10">
       <OwnerAppBar variant="subpage" dir={dir} title={copy.heading} backHref="/dashboard/owner" backLabel={DASHBOARD_COPY[locale].common.back} />
 
       <div className="px-[18px] pt-5">
         {/* Status hero */}
         <div
           className="mb-[22px] rounded-[22px] p-5 text-white"
-          style={{ background: 'linear-gradient(135deg,#1E3A8A,#3B5BC4)' }}
+          style={{ background: 'linear-gradient(135deg,#2E1065,#4C2A98)' }}
         >
           <div className="mb-4 flex items-start justify-between">
             <div>
@@ -136,14 +136,14 @@ export default function BillingView({
         />
 
         <section className="mt-[22px]">
-          <h2 className="mb-3 text-[13px] font-semibold tracking-[0.06em] text-[#8a8a8a]">{copy.history}</h2>
+          <h2 className="mb-3 text-[13px] font-semibold tracking-[0.06em] text-[#8A76BE]">{copy.history}</h2>
           {ledger.length === 0 ? (
             <p className="text-[14px] text-[#a3a3a3]">{copy.noActivity}</p>
           ) : (
             dayGroups.map((group) => (
               <div key={group.label} className="mb-4">
                 <div className="mb-2 text-[11.5px] font-semibold text-[#a3a3a3]">{group.label}</div>
-                <div className="overflow-hidden rounded-[16px] border border-[#ececec] bg-white">
+                <div className="overflow-hidden rounded-[16px] border border-[#EDE3F7] bg-white">
                   {group.rows.map((row) => (
                     <div
                       key={row.id}
@@ -155,7 +155,7 @@ export default function BillingView({
                           {new Date(row.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
                         </div>
                       </div>
-                      <div className={`shrink-0 text-[14px] font-semibold ${row.amount >= 0 ? 'text-[#15803d]' : 'text-[#8a8a8a]'}`}>
+                      <div className={`shrink-0 text-[14px] font-semibold ${row.amount >= 0 ? 'text-[#15803d]' : 'text-[#8A76BE]'}`}>
                         {Math.abs(row.amount)}
                         {row.amount >= 0 ? '+' : '−'}
                       </div>

@@ -22,7 +22,7 @@ const BASE_URL = 'https://walletobjects.googleapis.com/walletobjects/v1'
 // the wallet code (the legacy one-off flow in google.ts hardcodes its own,
 // different hexBackgroundColor inline), so these live here rather than in a
 // shared module that doesn't otherwise exist yet.
-const BRAND_NAVY = '#1E3A8A'
+const BRAND_PLUM = '#2E1065'
 const LOGO_URL = 'https://jeeran.vercel.app/wallet-logo-square.png'
 const HERO_IMAGE_URL = 'https://jeeran.vercel.app/wallet-hero-banner.png'
 
@@ -475,7 +475,7 @@ export async function createMembershipObject(
       merchantLocations: offersToMerchantLocations(initialOffers),
       imageModulesData: offersToImageModules(initialOffers),
       linksModuleData: offersToLinksModule(memberId, initialOffers, preferredLanguage),
-      hexBackgroundColor: BRAND_NAVY,
+      hexBackgroundColor: BRAND_PLUM,
       logo: { sourceUri: { uri: LOGO_URL } },
       heroImage: { sourceUri: { uri: HERO_IMAGE_URL } },
       // Persistent identity barcode — shop staff scan THIS to redeem

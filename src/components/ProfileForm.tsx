@@ -70,7 +70,7 @@ function SelectSheet({
         onClick={(e) => e.stopPropagation()}
         className="max-h-[70vh] w-full overflow-y-auto rounded-[28px_28px_0_0] bg-white p-5 pb-8"
       >
-        <div className="mx-auto mb-4 h-1 w-[38px] rounded-full bg-[#e5e5e5]" />
+        <div className="mx-auto mb-4 h-1 w-[38px] rounded-full bg-[#EDE3F7]" />
         <h2 className="mb-3 text-[16px] font-semibold">{title}</h2>
         <div className="flex flex-col">
           {options.map((opt) => (
@@ -83,7 +83,7 @@ function SelectSheet({
               {opt.label}
               {opt.value === selected && (
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path d="M3 8.5l3 3 7-7" stroke="#FF6B4A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M3 8.5l3 3 7-7" stroke="#FF5A79" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
             </button>
@@ -203,18 +203,18 @@ export default function ProfileForm({
       <form onSubmit={handleSubmit} className="px-[18px] pt-[22px]">
         {/* Identity block */}
         <div className="mb-[26px] flex items-center gap-[14px]">
-          <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full bg-[#1E3A8A] text-[22px] font-bold text-white">
+          <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full bg-[#2E1065] text-[22px] font-bold text-white">
             {(fullName || businessName || email).trim().charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
             <div className="truncate text-[17px] font-semibold">{fullName}</div>
-            <div className="mt-[3px] truncate text-[13px] text-[#8a8a8a]">{email}</div>
+            <div className="mt-[3px] truncate text-[13px] text-[#8A76BE]">{email}</div>
           </div>
         </div>
 
         {/* Shop group */}
-        <h2 className="mb-[9px] text-[12px] font-semibold tracking-[0.06em] text-[#8a8a8a]">{copy.shopSectionLabel}</h2>
-        <div className="mb-[22px] overflow-hidden rounded-[18px] border border-[#ececec] bg-white">
+        <h2 className="mb-[9px] text-[12px] font-semibold tracking-[0.06em] text-[#8A76BE]">{copy.shopSectionLabel}</h2>
+        <div className="mb-[22px] overflow-hidden rounded-[18px] border border-[#EDE3F7] bg-white">
           <div className="border-b border-[#f4f4f4] px-4 py-3">
             <label className="mb-[3px] block text-[11.5px] text-[#a3a3a3]">{copy.yourName}</label>
             <input
@@ -247,7 +247,7 @@ export default function ProfileForm({
           <div className="px-4 py-3">
             <div className="mb-[9px] flex items-center justify-between">
               <span className="text-[11.5px] text-[#a3a3a3]">{copy.location}</span>
-              <button type="button" onClick={useMyLocation} disabled={locating} className="text-[12px] font-semibold text-[#1E3A8A] disabled:opacity-50">
+              <button type="button" onClick={useMyLocation} disabled={locating} className="text-[12px] font-semibold text-[#2E1065] disabled:opacity-50">
                 {locating ? copy.findingYou : copy.useMyLocation}
               </button>
             </div>
@@ -261,8 +261,8 @@ export default function ProfileForm({
         </div>
 
         {/* Contact group */}
-        <h2 className="mb-[9px] text-[12px] font-semibold tracking-[0.06em] text-[#8a8a8a]">{copy.contactSectionLabel}</h2>
-        <div className="overflow-hidden rounded-[18px] border border-[#ececec] bg-white">
+        <h2 className="mb-[9px] text-[12px] font-semibold tracking-[0.06em] text-[#8A76BE]">{copy.contactSectionLabel}</h2>
+        <div className="overflow-hidden rounded-[18px] border border-[#EDE3F7] bg-white">
           <div className="border-b border-[#f4f4f4] px-4 py-3">
             <label className="mb-[3px] block text-[11.5px] text-[#a3a3a3]">{copy.phone}</label>
             <input
@@ -292,10 +292,10 @@ export default function ProfileForm({
         <button
           type="button"
           onClick={() => setShowLanguageSheet(true)}
-          className="mb-[22px] flex w-full items-center justify-between rounded-[18px] border border-[#ececec] bg-white px-4 py-[15px]"
+          className="mb-[22px] flex w-full items-center justify-between rounded-[18px] border border-[#EDE3F7] bg-white px-4 py-[15px]"
         >
           <span className="text-[14.5px] font-medium">{copy.language}</span>
-          <span className="flex items-center gap-2 text-[13px] text-[#8a8a8a]">
+          <span className="flex items-center gap-2 text-[13px] text-[#8A76BE]">
             {LOCALES.find((l) => l.code === locale)?.label}
             <ChevronIcon dir={dir} />
           </span>
@@ -305,7 +305,7 @@ export default function ProfileForm({
         {saved && <p className="mb-3 text-sm text-emerald-600">{copy.saved}</p>}
 
         {/* Sign out */}
-        <div className="mb-8 rounded-[18px] border border-[#ececec] bg-white p-[14px] text-center">
+        <div className="mb-8 rounded-[18px] border border-[#EDE3F7] bg-white p-[14px] text-center">
           <SignOutButton className="text-[14.5px] font-semibold text-[#dc2626]" />
         </div>
       </form>

@@ -3,8 +3,8 @@
 import { useLocale } from '@/lib/i18n/useLocale'
 import { WALLET_TAB_BAR_COPY } from '@/lib/i18n/walletTabBar'
 
-const ORANGE = '#FF6B4A'
-const TERTIARY = '#9ca3af'
+const ACTIVE_ICON = '#FFC93C'
+const TERTIARY = '#C6B8E8'
 
 // Fixed bottom nav shared by every top-level wallet page (Home, Offers,
 // Shops, Language) — replaces the old top header (logo + labeled "Home" +
@@ -77,40 +77,48 @@ export default function WalletTabBar({
   ]
 
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-20 flex border-t border-neutral-200 bg-white"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    <div
+      className="fixed inset-x-0 bottom-0 z-20 px-4"
+      style={{ paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))' }}
     >
-      {items.map((item) => {
-        const isActive = item.key === active
-        const color = isActive ? ORANGE : TERTIARY
-        return (
-          <a
-            key={item.key}
-            href={item.href}
-            aria-current={isActive ? 'page' : undefined}
-            className="flex flex-1 flex-col items-center gap-1 py-2.5"
-            style={{ color }}
-          >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={isActive ? 1.9 : 1.75}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+      <nav className="mx-auto flex max-w-[420px] items-center justify-around rounded-full bg-white p-1.5 shadow-[0_10px_26px_-14px_rgba(46,16,101,0.45)]">
+        {items.map((item) => {
+          const isActive = item.key === active
+          return (
+            <a
+              key={item.key}
+              href={item.href}
+              aria-current={isActive ? 'page' : undefined}
+              className="flex flex-1 flex-col items-center gap-1 py-1.5"
             >
-              {item.icon}
-            </svg>
-            <span className="text-[11px]" style={{ fontWeight: isActive ? 600 : 500 }}>
-              {item.label}
-            </span>
-          </a>
-        )
-      })}
-    </nav>
+              <span
+                className="flex h-9 w-9 items-center justify-center rounded-full"
+                style={{ backgroundColor: isActive ? '#2E1065' : 'transparent' }}
+              >
+                <svg
+                  width="19"
+                  height="19"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={isActive ? ACTIVE_ICON : TERTIARY}
+                  strokeWidth={isActive ? 2 : 1.75}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  {item.icon}
+                </svg>
+              </span>
+              <span
+                className="text-[10px]"
+                style={{ color: isActive ? '#2E1065' : TERTIARY, fontWeight: isActive ? 700 : 500 }}
+              >
+                {item.label}
+              </span>
+            </a>
+          )
+        })}
+      </nav>
+    </div>
   )
 }

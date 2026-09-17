@@ -42,7 +42,7 @@ function LoginForm() {
   }
 
   return (
-    <div dir={dir} className="min-h-screen bg-[#FBFCFD] text-[#1a1a1a]">
+    <div dir={dir} className="min-h-screen bg-[#FFF8EC] text-[#2E1065]">
       {/* Mobile-native layout (<640px): a plain full-screen centered form —
           no decorative backdrop, no side-by-side logo+switcher row. Less
           chrome reads as more "app," matching the approved mobile redesign
@@ -52,13 +52,13 @@ function LoginForm() {
           <a href="/" className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/design/jeeran-mark.svg" alt="" aria-hidden="true" className="h-6 w-6" />
-            <span className="font-[family-name:var(--font-archivo)] text-[15px] font-black text-[#1E3A8A]">Jeeran</span>
+            <span className="font-[family-name:var(--font-baloo)] text-[15px] font-black text-[#2E1065]">Jeeran</span>
           </a>
           <LanguageSwitcher locale={locale} onChange={setLocale} />
         </div>
 
         <div className="flex flex-1 flex-col justify-center px-7">
-          <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1E3A8A] to-[#3B5BC4] shadow-[0_10px_20px_-10px_rgba(30,58,138,0.5)]">
+          <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2E1065] to-[#4C2A98] shadow-[0_10px_20px_-10px_rgba(46,16,101,0.5)]">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M4 9l1-5h14l1 5" />
               <path d="M4 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0" />
@@ -66,10 +66,10 @@ function LoginForm() {
             </svg>
           </div>
 
-          <h1 className="mb-1 font-[family-name:var(--font-archivo)] text-[28px] font-black tracking-[-0.01em]">
+          <h1 className="mb-1 font-[family-name:var(--font-baloo)] text-[28px] font-black tracking-[-0.01em]">
             {copy.title}
           </h1>
-          <p className="mb-7 text-sm text-[#5a5a5a]">{copy.subtitle}</p>
+          <p className="mb-7 text-sm text-[#6B5A8C]">{copy.subtitle}</p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <input
@@ -78,7 +78,7 @@ function LoginForm() {
               placeholder={copy.emailPlaceholder}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-2xl border border-[#e5e5e5] px-4 py-3.5 text-[15px] focus:border-[#1E3A8A] focus:outline-none"
+              className="rounded-2xl border border-[#EDE3F7] px-4 py-3.5 text-[15px] focus:border-[#2E1065] focus:outline-none"
             />
             <input
               type="password"
@@ -86,19 +86,19 @@ function LoginForm() {
               placeholder={copy.passwordPlaceholder}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="rounded-2xl border border-[#e5e5e5] px-4 py-3.5 text-[15px] focus:border-[#1E3A8A] focus:outline-none"
+              className="rounded-2xl border border-[#EDE3F7] px-4 py-3.5 text-[15px] focus:border-[#2E1065] focus:outline-none"
             />
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button
               type="submit"
               disabled={loading}
-              className="rounded-2xl bg-[#FF6B4A] py-3.5 text-[15px] font-semibold text-white shadow-[0_12px_24px_-8px_rgba(255,107,74,0.5)] transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
+              className="rounded-2xl bg-[#FF5A79] py-3.5 text-[15px] font-semibold text-white shadow-[0_12px_24px_-8px_rgba(255,90,121,0.5)] transition-colors hover:bg-[#E8425F] disabled:opacity-50"
             >
               {loading ? copy.submitting : copy.submit}
             </button>
-            <p className="text-center text-sm text-[#5a5a5a]">
+            <p className="text-center text-sm text-[#6B5A8C]">
               {copy.noAccount}{' '}
-              <a href="/signup" className="text-[#1E3A8A] underline">
+              <a href="/signup" className="text-[#2E1065] underline">
                 {copy.signUpLink}
               </a>
             </p>
@@ -119,7 +119,7 @@ function LoginForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="relative z-10 mx-auto mt-16 flex max-w-sm flex-col gap-3 px-4">
-          <h1 className="mb-2 font-[family-name:var(--font-archivo)] text-2xl font-black tracking-[-0.01em]">
+          <h1 className="mb-2 font-[family-name:var(--font-baloo)] text-2xl font-black tracking-[-0.01em]">
             {copy.title}
           </h1>
           <input
@@ -128,7 +128,7 @@ function LoginForm() {
             placeholder={copy.emailPlaceholder}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded-[10px] border border-[#e5e5e5] px-3 py-2 text-sm focus:border-[#1E3A8A] focus:outline-none"
+            className="rounded-[10px] border border-[#EDE3F7] px-3 py-2 text-sm focus:border-[#2E1065] focus:outline-none"
           />
           <input
             type="password"
@@ -136,19 +136,19 @@ function LoginForm() {
             placeholder={copy.passwordPlaceholder}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-[10px] border border-[#e5e5e5] px-3 py-2 text-sm focus:border-[#1E3A8A] focus:outline-none"
+            className="rounded-[10px] border border-[#EDE3F7] px-3 py-2 text-sm focus:border-[#2E1065] focus:outline-none"
           />
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="rounded-[10px] bg-[#FF6B4A] py-2.5 text-sm font-semibold text-white shadow-[0_12px_24px_-8px_rgba(255,107,74,0.5)] transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
+            className="rounded-[10px] bg-[#FF5A79] py-2.5 text-sm font-semibold text-white shadow-[0_12px_24px_-8px_rgba(255,90,121,0.5)] transition-colors hover:bg-[#E8425F] disabled:opacity-50"
           >
             {loading ? copy.submitting : copy.submit}
           </button>
-          <p className="text-center text-sm text-[#5a5a5a]">
+          <p className="text-center text-sm text-[#6B5A8C]">
             {copy.noAccount}{' '}
-            <a href="/signup" className="text-[#1E3A8A] underline">
+            <a href="/signup" className="text-[#2E1065] underline">
               {copy.signUpLink}
             </a>
           </p>

@@ -29,12 +29,12 @@ export default function FrozenView({
       </div>
 
       <h1 className="mb-2.5 text-[27px] font-black leading-[1.2] tracking-[-0.01em]">{copy.heading}</h1>
-      <p className="mb-5 max-w-xs text-[15px] leading-[1.65] text-[#5a5a5a]">{copy.body}</p>
+      <p className="mb-5 max-w-xs text-[15px] leading-[1.65] text-[#6B5A8C]">{copy.body}</p>
 
       {reason && (
-        <div className="mb-[26px] w-full max-w-xs rounded-2xl border border-[#ececec] bg-white p-[15px_16px] text-start">
+        <div className="mb-[26px] w-full max-w-xs rounded-2xl border border-[#EDE3F7] bg-white p-[15px_16px] text-start">
           <p className="mb-1.5 text-[11.5px] font-semibold tracking-[0.06em] text-[#a3a3a3]">{copy.reasonLabel}</p>
-          <p className="text-[14px] leading-[1.6] text-[#1a1a1a]">{reason}</p>
+          <p className="text-[14px] leading-[1.6] text-[#2E1065]">{reason}</p>
         </div>
       )}
 
@@ -54,10 +54,10 @@ export default function FrozenView({
           {copy.whatsappCta}
         </a>
       ) : (
-        <p className="mb-8 text-[14px] text-[#8a8a8a]">{copy.contactSupport}</p>
+        <p className="mb-8 text-[14px] text-[#8A76BE]">{copy.contactSupport}</p>
       )}
 
-      <SignOutButton className="py-[13px] text-[14.5px] font-medium text-[#8a8a8a]" />
+      <SignOutButton className="py-[13px] text-[14.5px] font-medium text-[#8A76BE]" />
     </main>
   )
 }

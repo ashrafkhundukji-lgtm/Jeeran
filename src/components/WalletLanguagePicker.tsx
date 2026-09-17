@@ -59,13 +59,13 @@ export default function WalletLanguagePicker({
   ]
 
   return (
-    <main dir={dir} className="min-h-screen bg-[#FBFCFD] pb-24 text-[#1a1a1a]">
+    <main dir={dir} className="min-h-screen bg-[#FFF8EC] pb-24 text-[#2E1065]">
       <WalletAppBar token={token} />
       <div className="mx-auto max-w-[480px] px-6 pt-6 sm:px-8">
         <h1 className={`${displayFont(pageLocale)} mb-1 text-[24px] font-bold tracking-[-0.01em]`}>{copy.heading}</h1>
-        <p className="mb-6 text-sm text-[#5a5a5a]">{copy.body}</p>
+        <p className="mb-6 text-sm text-[#6B5A8C]">{copy.body}</p>
 
-        <div className="overflow-hidden rounded-[18px] border border-[#ececec] bg-white">
+        <div className="overflow-hidden rounded-[18px] border border-[#EDE3F7] bg-white">
           {rows.map((row, i) => (
             <button
               key={row.key}
@@ -74,16 +74,16 @@ export default function WalletLanguagePicker({
               aria-pressed={row.selected}
               className={`flex w-full items-center justify-between px-4 py-4 text-start transition-colors ${
                 i > 0 ? 'border-t border-[#f4f4f4]' : ''
-              } ${row.selected ? 'bg-[#FF6B4A]/5' : 'hover:bg-neutral-50'}`}
+              } ${row.selected ? 'bg-[#FF5A79]/5' : 'hover:bg-neutral-50'}`}
             >
               <div>
-                <div className={`text-[15px] ${row.selected ? 'font-semibold text-[#FF6B4A]' : 'font-medium'}`}>
+                <div className={`text-[15px] ${row.selected ? 'font-semibold text-[#FF5A79]' : 'font-medium'}`}>
                   {row.label}
                 </div>
                 {row.hint && <div className="mt-0.5 text-xs text-neutral-400">{row.hint}</div>}
               </div>
               {row.selected && (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5A79" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M5 13l4 4L19 7" />
                 </svg>
               )}

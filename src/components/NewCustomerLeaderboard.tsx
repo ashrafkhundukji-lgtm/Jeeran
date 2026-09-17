@@ -41,13 +41,13 @@ export default function NewCustomerLeaderboard({ businessId }: { businessId: str
     <section className="border border-neutral-200 rounded-xl p-4 mb-10">
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-sm font-semibold">{copy.heading}</h2>
-        <div className="flex items-center gap-1 bg-[#1E3A8A]/5 rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-[#2E1065]/5 rounded-lg p-1">
           {(['week', 'month'] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
               className={`text-xs font-medium rounded-md px-2.5 py-1 transition-colors ${
-                period === p ? 'bg-[#1E3A8A] text-white shadow-sm' : 'text-[#5a5a5a] hover:text-[#1a1a1a]'
+                period === p ? 'bg-[#2E1065] text-white shadow-sm' : 'text-[#6B5A8C] hover:text-[#2E1065]'
               }`}
             >
               {p === 'week' ? copy.weekTab : copy.monthTab}
@@ -69,14 +69,14 @@ export default function NewCustomerLeaderboard({ businessId }: { businessId: str
               <li
                 key={entry.businessId}
                 className={`flex items-center justify-between text-sm rounded-lg px-2.5 py-1.5 ${
-                  isYou ? 'bg-[#FF6B4A]/10' : ''
+                  isYou ? 'bg-[#FF5A79]/10' : ''
                 }`}
               >
                 <span className="flex items-center gap-2">
                   <span className="text-xs text-neutral-400 w-4 text-right">{i + 1}</span>
-                  <span className={isYou ? 'font-medium text-[#1a1a1a]' : 'text-neutral-700'}>
+                  <span className={isYou ? 'font-medium text-[#2E1065]' : 'text-neutral-700'}>
                     {entry.businessName}
-                    {isYou && <span className="text-xs text-[#FF6B4A] ms-1.5">({copy.you})</span>}
+                    {isYou && <span className="text-xs text-[#FF5A79] ms-1.5">({copy.you})</span>}
                   </span>
                 </span>
                 <span className="text-xs text-neutral-500">{copy.newCustomers.replace('{n}', String(entry.newCustomers))}</span>

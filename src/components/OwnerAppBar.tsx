@@ -32,7 +32,7 @@ export default function OwnerAppBar(props: OwnerAppBarProps) {
   return (
     <header
       dir={props.dir}
-      className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-[#ececec] bg-white px-5 pt-2 pb-3"
+      className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-[#EDE3F7] bg-white px-5 pt-2 pb-3"
     >
       {props.variant === 'home' ? (
         <>
@@ -41,14 +41,14 @@ export default function OwnerAppBar(props: OwnerAppBarProps) {
           <div className="flex items-center gap-2.5">
             <a
               href={props.creditsHref ?? '/dashboard/billing'}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#FFF7F3] px-3 py-1.5 text-[13px] font-semibold text-[#1a1a1a]"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#FFF7F3] px-3 py-1.5 text-[13px] font-semibold text-[#2E1065]"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-[#FF6B4A]" aria-hidden="true" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#FF5A79]" aria-hidden="true" />
               {props.creditsLabel}
             </a>
             <a
               href={props.avatarHref ?? '/dashboard/profile'}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1E3A8A] text-[14px] font-semibold text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2E1065] text-[14px] font-semibold text-white"
             >
               {props.avatarInitial}
             </a>
@@ -59,7 +59,7 @@ export default function OwnerAppBar(props: OwnerAppBarProps) {
           <a
             href={props.backHref}
             aria-label={props.backLabel}
-            className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#f4f4f4] text-[#1a1a1a]"
+            className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#f4f4f4] text-[#2E1065]"
           >
             <svg
               width="19"
@@ -78,13 +78,13 @@ export default function OwnerAppBar(props: OwnerAppBarProps) {
               />
             </svg>
           </a>
-          <h1 className="flex-1 truncate text-center text-[16px] font-semibold text-[#1a1a1a]">{props.title}</h1>
+          <h1 className="flex-1 truncate text-center text-[16px] font-semibold text-[#2E1065]">{props.title}</h1>
           {props.trailingAction ? (
             <button
               type="button"
               onClick={props.trailingAction.onClick}
               disabled={props.trailingAction.disabled}
-              className="shrink-0 text-[14px] font-semibold text-[#FF6B4A] disabled:opacity-40"
+              className="shrink-0 text-[14px] font-semibold text-[#FF5A79] disabled:opacity-40"
             >
               {props.trailingAction.label}
             </button>

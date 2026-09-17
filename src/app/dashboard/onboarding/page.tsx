@@ -111,15 +111,15 @@ export default function OnboardingPage() {
           className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#f4f4f4]"
         >
           <svg width="19" height="19" viewBox="0 0 16 16" fill="none" aria-hidden="true" className={dir === 'rtl' ? 'scale-x-[-1]' : ''}>
-            <path d="M10 3.5L5.5 8L10 12.5" stroke="#1a1a1a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M10 3.5L5.5 8L10 12.5" stroke="#2E1065" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
         <div className="flex flex-1 gap-[5px]">
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-            <div key={i} className={`h-1 flex-1 rounded-full ${i < step ? 'bg-[#FF6B4A]' : 'bg-[#ececec]'}`} />
+            <div key={i} className={`h-1 flex-1 rounded-full ${i < step ? 'bg-[#FF5A79]' : 'bg-[#EDE3F7]'}`} />
           ))}
         </div>
-        <span className="shrink-0 text-[12px] font-semibold text-[#8a8a8a]">{copy.stepCounter.replace('{n}', String(step))}</span>
+        <span className="shrink-0 text-[12px] font-semibold text-[#8A76BE]">{copy.stepCounter.replace('{n}', String(step))}</span>
       </div>
 
       {/* Body */}
@@ -127,7 +127,7 @@ export default function OnboardingPage() {
         {step === 1 && (
           <>
             <h1 className="mb-2 text-[29px] font-black leading-[1.2] tracking-[-0.01em]">{copy.step1Heading}</h1>
-            <p className="mb-6 text-[14.5px] leading-[1.6] text-[#5a5a5a]">{copy.step1Subtitle}</p>
+            <p className="mb-6 text-[14.5px] leading-[1.6] text-[#6B5A8C]">{copy.step1Subtitle}</p>
             <div className="flex flex-col gap-4">
               <div>
                 <label className={labelClass}>{copy.yourName}</label>
@@ -144,8 +144,8 @@ export default function OnboardingPage() {
         {step === 2 && (
           <>
             <h1 className="mb-2 text-[29px] font-black leading-[1.2] tracking-[-0.01em]">{copy.step2Heading}</h1>
-            <p className="mb-6 text-[14.5px] leading-[1.6] text-[#5a5a5a]">{copy.step2Subtitle}</p>
-            <div className="rounded-[16px] border border-[#ececec] p-3.5">
+            <p className="mb-6 text-[14.5px] leading-[1.6] text-[#6B5A8C]">{copy.step2Subtitle}</p>
+            <div className="rounded-[16px] border border-[#EDE3F7] p-3.5">
               <div className="h-[210px] overflow-hidden rounded-[14px]">
                 <LocationPicker latitude={latitude} longitude={longitude} onChange={setLocation} />
               </div>
@@ -153,7 +153,7 @@ export default function OnboardingPage() {
                 <span className={`text-[12.5px] font-semibold ${latitude != null ? 'text-[#15803d]' : 'text-transparent'}`}>
                   {copy.locationSet}
                 </span>
-                <button type="button" onClick={useMyLocation} disabled={locating} className="text-[13px] font-semibold text-[#1E3A8A] disabled:opacity-50">
+                <button type="button" onClick={useMyLocation} disabled={locating} className="text-[13px] font-semibold text-[#2E1065] disabled:opacity-50">
                   {locating ? copy.findingYou : copy.useMyLocation}
                 </button>
               </div>
@@ -165,7 +165,7 @@ export default function OnboardingPage() {
         {step === 3 && (
           <>
             <h1 className="mb-2 text-[29px] font-black leading-[1.2] tracking-[-0.01em]">{copy.step3Heading}</h1>
-            <p className="mb-6 text-[14.5px] leading-[1.6] text-[#5a5a5a]">{copy.step3Subtitle}</p>
+            <p className="mb-6 text-[14.5px] leading-[1.6] text-[#6B5A8C]">{copy.step3Subtitle}</p>
             <div className="grid grid-cols-2 gap-3">
               {CATEGORIES.map((c) => (
                 <button
@@ -173,7 +173,7 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={() => setCategory(c)}
                   className={`rounded-[16px] border p-4 text-center transition-colors ${
-                    category === c ? 'border-2 border-[#FF6B4A] bg-[#FFF7F3]' : 'border-[#ececec]'
+                    category === c ? 'border-2 border-[#FF5A79] bg-[#FFF7F3]' : 'border-[#EDE3F7]'
                   }`}
                 >
                   <div className="mb-1.5 text-2xl">{CATEGORY_EMOJI[c]}</div>
@@ -188,12 +188,12 @@ export default function OnboardingPage() {
       </div>
 
       {/* Sticky footer */}
-      <div className="border-t border-[#ececec] px-[22px] pt-3.5 pb-[26px]">
+      <div className="border-t border-[#EDE3F7] px-[22px] pt-3.5 pb-[26px]">
         <button
           type="button"
           onClick={handleContinue}
           disabled={!canContinue || loading}
-          className="w-full rounded-[15px] bg-[#FF6B4A] py-4 text-[16px] font-semibold text-white transition-colors hover:bg-[#e85a3b] disabled:opacity-40"
+          className="w-full rounded-[15px] bg-[#FF5A79] py-4 text-[16px] font-semibold text-white transition-colors hover:bg-[#E8425F] disabled:opacity-40"
         >
           {step < TOTAL_STEPS ? copy.continueButton : loading ? copy.savingSetup : copy.finishSetup}
         </button>
