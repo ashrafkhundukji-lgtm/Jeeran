@@ -6,6 +6,16 @@ import { WALLET_TAB_BAR_COPY } from '@/lib/i18n/walletTabBar'
 const ACTIVE_ICON = '#FFC93C'
 const TERTIARY = '#C6B8E8'
 
+// Each button is its own 3D "keycap": a flat-color bottom edge (no blur, so
+// it reads as a solid step rather than a soft shadow) that disappears when
+// the button is pressed, so tapping it visually sinks it down onto that
+// edge. The currently-active tab renders permanently in that sunken state
+// — same physical metaphor as "this one's already pressed in" — instead of
+// a separate highlight style, so "where am I" and "what happens if I tap
+// this" use one consistent visual language.
+const RAISED = 'shadow-[0_3px_0_#C6B8E8,0_8px_16px_-10px_rgba(46,16,101,0.35)]'
+const PRESSED = 'translate-y-[3px] shadow-[inset_0_2px_4px_rgba(0,0,0,0.35)]'
+
 // Fixed bottom nav shared by every wallet-linked page (Home, Offers, Shops,
 // Language, and now the offer detail drill-in) — replaces the old top
 // header (logo + labeled "Home" + a referrer-conditional Back button). A
@@ -88,7 +98,7 @@ export default function WalletTabBar({
       style={{ paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))' }}
     >
       {children && <div className="mx-auto mb-2 max-w-[420px]">{children}</div>}
-      <nav className="mx-auto flex max-w-[420px] items-center justify-around rounded-full bg-white p-1.5 shadow-[0_10px_26px_-14px_rgba(46,16,101,0.45)]">
+      <nav className="mx-auto flex max-w-[420px] items-stretch justify-between gap-2">
         {items.map((item) => {
           const isActive = item.key === active
           return (
@@ -96,29 +106,29 @@ export default function WalletTabBar({
               key={item.key}
               href={item.href}
               aria-current={isActive ? 'page' : undefined}
-              className="flex flex-1 flex-col items-center gap-1 py-1.5"
+              className={`flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 transition-[transform,box-shadow] duration-100 ${
+                isActive
+                  ? PRESSED
+                  : `${RAISED} active:translate-y-[3px] active:!shadow-[inset_0_2px_4px_rgba(0,0,0,0.15)]`
+              }`}
+              style={{ backgroundColor: isActive ? '#2E1065' : '#fff' }}
             >
-              <span
-                className="flex h-9 w-9 items-center justify-center rounded-full"
-                style={{ backgroundColor: isActive ? '#2E1065' : 'transparent' }}
+              <svg
+                width="19"
+                height="19"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={isActive ? ACTIVE_ICON : TERTIARY}
+                strokeWidth={isActive ? 2 : 1.75}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
               >
-                <svg
-                  width="19"
-                  height="19"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke={isActive ? ACTIVE_ICON : TERTIARY}
-                  strokeWidth={isActive ? 2 : 1.75}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  {item.icon}
-                </svg>
-              </span>
+                {item.icon}
+              </svg>
               <span
                 className="text-[10px]"
-                style={{ color: isActive ? '#2E1065' : TERTIARY, fontWeight: isActive ? 700 : 500 }}
+                style={{ color: isActive ? '#fff' : TERTIARY, fontWeight: isActive ? 700 : 500 }}
               >
                 {item.label}
               </span>
