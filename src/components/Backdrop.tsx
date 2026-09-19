@@ -14,7 +14,7 @@ export default function Backdrop() {
         preserveAspectRatio="xMidYMid slice"
         className="absolute inset-0 h-full w-full"
       >
-        <g stroke="#1E3A8A" strokeWidth="1.4" opacity="0.16" fill="none">
+        <g stroke="#2E1065" strokeWidth="1.4" opacity="0.16" fill="none">
           <line x1="120" y1="90" x2="300" y2="180" />
           <line x1="300" y1="180" x2="260" y2="340" />
           <line x1="300" y1="180" x2="480" y2="140" />
@@ -33,7 +33,7 @@ export default function Backdrop() {
           <line x1="260" y1="340" x2="140" y2="500" />
           <line x1="140" y1="500" x2="220" y2="680" />
         </g>
-        <g fill="#FF6B4A" opacity="0.55">
+        <g fill="#FF5A79" opacity="0.55">
           <circle cx="120" cy="90" r="5" />
           <circle cx="480" cy="140" r="4" />
           <circle cx="820" cy="150" r="6" />
@@ -42,7 +42,7 @@ export default function Backdrop() {
           <circle cx="420" cy="720" r="5" />
           <circle cx="140" cy="500" r="4" />
         </g>
-        <g fill="#1E3A8A" opacity="0.45">
+        <g fill="#2E1065" opacity="0.45">
           <circle cx="300" cy="180" r="6" />
           <circle cx="260" cy="340" r="5" />
           <circle cx="620" cy="240" r="7" />
@@ -55,8 +55,8 @@ export default function Backdrop() {
           <circle cx="220" cy="680" r="4" />
         </g>
       </svg>
-      <div className="absolute -top-[120px] -right-[160px] h-[520px] w-[520px] rounded-full bg-[#FF6B4A] opacity-[0.16] blur-[60px]" />
-      <div className="absolute -bottom-[140px] -left-[140px] h-[460px] w-[460px] rounded-full bg-[#1E3A8A] opacity-[0.14] blur-[70px]" />
+      <div className="absolute -top-[120px] -right-[160px] h-[520px] w-[520px] rounded-full bg-[#FF5A79] opacity-[0.16] blur-[60px]" />
+      <div className="absolute -bottom-[140px] -left-[140px] h-[460px] w-[460px] rounded-full bg-[#2E1065] opacity-[0.14] blur-[70px]" />
     </div>
   )
 }

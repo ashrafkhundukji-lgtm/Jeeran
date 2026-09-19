@@ -21,52 +21,54 @@ export default async function ScanPage({
 
   if (host.isFrozen) {
     return (
-      <main className="min-h-full flex flex-col items-center justify-center bg-neutral-50 px-4 py-8 text-center">
+      <main className="min-h-full flex flex-col items-center justify-center bg-[#FFF8EC] px-4 py-8 text-center">
         <div className="max-w-sm w-full">
           <div className="flex justify-center mb-6">
             <SiteLogo className="h-20" />
           </div>
-          <p className="text-sm text-neutral-500">This shop is temporarily unavailable.</p>
+          <p className="text-sm text-[#6B5A8C]">This shop is temporarily unavailable.</p>
         </div>
       </main>
     )
   }
 
   const ads = await getTopAdsForBusiness(host.id, 3)
+  const ROW_TINTS = ['#FFE3E8', '#FFF3D1']
 
   return (
-    <main className="min-h-full flex flex-col bg-neutral-50 px-4 py-8">
+    <main className="min-h-full flex flex-col bg-[#FFF8EC] px-4 py-8">
       <div className="max-w-sm mx-auto w-full">
         <div className="flex justify-center mb-6">
           <SiteLogo className="h-20" />
         </div>
 
         <div className="text-center mb-6">
-          <p className="text-xs uppercase tracking-wide text-neutral-400 mb-1">
+          <p className="text-xs uppercase tracking-wide text-[#8A76BE] font-semibold mb-1">
             You&apos;re at
           </p>
-          <h1 className="text-xl font-semibold text-neutral-900">{host.name}</h1>
+          <h1 className="font-[family-name:var(--font-baloo)] text-2xl font-bold text-[#2E1065]">{host.name}</h1>
         </div>
 
         <AddToWalletMembershipButton businessId={host.id} />
 
         {ads.length === 0 ? (
-          <p className="text-sm text-neutral-500 text-center py-12">
+          <p className="text-sm text-[#6B5A8C] text-center py-12">
             No offers nearby right now — check back later.
           </p>
         ) : (
           <div className="flex flex-col gap-3">
-            {ads.map((ad) => (
+            {ads.map((ad, i) => (
               <div
                 key={ad.campaignId}
-                className="rounded-xl bg-white border border-neutral-200 p-4 shadow-sm"
+                className="rounded-2xl p-4"
+                style={{ background: ROW_TINTS[i % ROW_TINTS.length] }}
               >
                 {ad.creatorName && (
-                  <p className="text-xs text-neutral-400 mb-1">{ad.creatorName}</p>
+                  <p className="text-xs text-[#6B5A8C] font-medium mb-1">{ad.creatorName}</p>
                 )}
-                <h2 className="font-medium text-neutral-900 mb-1">{ad.title}</h2>
+                <h2 className="font-semibold text-[#2E1065] mb-1">{ad.title}</h2>
                 {ad.description && (
-                  <p className="text-sm text-neutral-500 mb-3">{ad.description}</p>
+                  <p className="text-sm text-[#6B5A8C] mb-3">{ad.description}</p>
                 )}
               </div>
             ))}

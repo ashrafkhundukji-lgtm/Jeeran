@@ -40,7 +40,7 @@ export default function BrowseView({ shops }: { shops: RankedBusiness[] }) {
   }, [shops, query, selectedCategory, locale])
 
   return (
-    <main dir={dir} className="min-h-screen bg-[#FBFCFD] px-6 py-8 text-[#1a1a1a] sm:px-8">
+    <main dir={dir} className="min-h-screen bg-[#FFF8EC] px-6 py-8 text-[#2E1065] sm:px-8">
       <div className="mx-auto max-w-[720px]">
         <div className="mb-5 flex justify-center">
           <SiteLogo className="h-14 sm:h-16" />
@@ -48,7 +48,7 @@ export default function BrowseView({ shops }: { shops: RankedBusiness[] }) {
         <h1 className={`${displayFont(locale)} mb-2 text-[28px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[34px]`}>
           {copy.title}
         </h1>
-        <p className="mb-6 text-[15px] text-[#5a5a5a]">{copy.subtitle}</p>
+        <p className="mb-6 text-[15px] text-[#6B5A8C]">{copy.subtitle}</p>
 
         {shops.length > 0 && (
           <>
@@ -69,7 +69,7 @@ export default function BrowseView({ shops }: { shops: RankedBusiness[] }) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={copy.searchPlaceholder}
-                className={`w-full rounded-xl border border-[#ececec] bg-white py-3 text-[15px] text-[#1a1a1a] placeholder:text-neutral-400 focus:border-[#FF6B4A]/50 focus:outline-none ${dir === 'rtl' ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
+                className={`w-full rounded-xl border border-[#EDE3F7] bg-white py-3 text-[15px] text-[#2E1065] placeholder:text-neutral-400 focus:border-[#FF5A79]/50 focus:outline-none ${dir === 'rtl' ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
               />
             </div>
 
@@ -81,7 +81,7 @@ export default function BrowseView({ shops }: { shops: RankedBusiness[] }) {
                 type="button"
                 onClick={() => setSelectedCategory(null)}
                 className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${
-                  selectedCategory === null ? 'bg-[#1E3A8A] text-white' : 'border border-[#ececec] bg-white text-[#1a1a1a]'
+                  selectedCategory === null ? 'bg-[#2E1065] text-white' : 'border border-[#EDE3F7] bg-white text-[#2E1065]'
                 }`}
               >
                 {copy.allCategories}
@@ -92,7 +92,7 @@ export default function BrowseView({ shops }: { shops: RankedBusiness[] }) {
                   type="button"
                   onClick={() => setSelectedCategory(c)}
                   className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition-colors ${
-                    selectedCategory === c ? 'bg-[#1E3A8A] text-white' : 'border border-[#ececec] bg-white text-[#1a1a1a]'
+                    selectedCategory === c ? 'bg-[#2E1065] text-white' : 'border border-[#EDE3F7] bg-white text-[#2E1065]'
                   }`}
                 >
                   <span aria-hidden="true">{CATEGORY_EMOJI[c] ?? CATEGORY_EMOJI.other}</span>
@@ -104,9 +104,9 @@ export default function BrowseView({ shops }: { shops: RankedBusiness[] }) {
         )}
 
         {shops.length === 0 ? (
-          <p className="text-sm text-[#8a8a8a]">{copy.empty}</p>
+          <p className="text-sm text-[#8A76BE]">{copy.empty}</p>
         ) : visibleShops.length === 0 ? (
-          <p className="text-sm text-[#8a8a8a]">{copy.emptySearch}</p>
+          <p className="text-sm text-[#8A76BE]">{copy.emptySearch}</p>
         ) : (
           <div className="flex flex-col gap-3">
             {visibleShops.map((s) => {
@@ -125,16 +125,16 @@ export default function BrowseView({ shops }: { shops: RankedBusiness[] }) {
                     {CATEGORY_EMOJI[s.category] ?? CATEGORY_EMOJI.other}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h2 className="mb-1 font-medium text-[#1a1a1a]">{s.businessName}</h2>
+                    <h2 className="mb-1 font-medium text-[#2E1065]">{s.businessName}</h2>
                     <LevelBadge level={s.level} locale={locale} />
                     {s.hasActiveOffer && (
-                      <span className="ms-2 inline-block rounded-full bg-[#FF6B4A]/10 px-2 py-0.5 text-xs font-medium text-[#FF6B4A]">
+                      <span className="ms-2 inline-block rounded-full bg-[#FF5A79]/10 px-2 py-0.5 text-xs font-medium text-[#FF5A79]">
                         {copy.hasOffer}
                       </span>
                     )}
                   </div>
                   {href && (
-                    <div className="flex shrink-0 items-center gap-1.5 text-[#FF6B4A]">
+                    <div className="flex shrink-0 items-center gap-1.5 text-[#FF5A79]">
                       <span className="text-sm font-semibold whitespace-nowrap">
                         {s.hasActiveOffer ? copy.viewOffer : copy.getDirections}
                       </span>
@@ -160,10 +160,10 @@ export default function BrowseView({ shops }: { shops: RankedBusiness[] }) {
               )
 
               const rowClass =
-                'flex items-center gap-3 rounded-[18px] border border-[#ececec] bg-white p-4 shadow-sm transition-colors'
+                'flex items-center gap-3 rounded-[18px] border border-[#EDE3F7] bg-white p-4 shadow-sm transition-colors'
 
               return href ? (
-                <a key={s.businessId} href={href} className={`${rowClass} active:border-[#FF6B4A]/50 active:bg-[#FFF7F3]`}>
+                <a key={s.businessId} href={href} className={`${rowClass} active:border-[#FF5A79]/50 active:bg-[#FFF7F3]`}>
                   {Row}
                 </a>
               ) : (

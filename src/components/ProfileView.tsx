@@ -32,7 +32,7 @@ export default function ProfileView({
   const dir = getDir(locale)
 
   return (
-    <main dir={dir} className="min-h-screen bg-[#FBFCFD] pb-24 md:pb-10">
+    <main dir={dir} className="min-h-screen bg-[#FFF8EC] pb-24 md:pb-10">
       <ProfileForm
         email={email}
         fullName={fullName}

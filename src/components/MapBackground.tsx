@@ -47,7 +47,7 @@ function Pin({ x, y }: { x: number; y: number }) {
     <g transform={`translate(${x}, ${y})`}>
       <path
         d="M 0 0 C -8 -8, -12 -16, -12 -24 C -12 -33, -5 -39, 0 -39 C 5 -39, 12 -33, 12 -24 C 12 -16, 8 -8, 0 0 Z"
-        fill="#FF6B4A"
+        fill="#FF5A79"
       />
       <circle cx="0" cy="-24" r="4" fill="#FFFFFF" />
     </g>
@@ -79,13 +79,13 @@ function Connection({
       <path
         d={d}
         fill="none"
-        stroke="#1E3A8A"
+        stroke="#2E1065"
         strokeWidth="1.5"
         strokeDasharray="6 6"
         opacity="0.12"
         markerEnd="url(#arrowhead)"
       />
-      <circle r="3.5" fill="#FF6B4A" opacity="0.65">
+      <circle r="3.5" fill="#FF5A79" opacity="0.65">
         <animateMotion dur={`${duration}s`} begin={`${delay}s`} repeatCount="indefinite" path={d} />
       </circle>
     </>
@@ -109,11 +109,11 @@ export default function MapBackground() {
             markerHeight="5"
             orient="auto-start-reverse"
           >
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1E3A8A" opacity="0.4" />
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2E1065" opacity="0.4" />
           </marker>
         </defs>
 
-        <rect width="100%" height="100%" fill="#FBFCFD" />
+        <rect width="100%" height="100%" fill="#FFF8EC" />
         <rect width="100%" height="100%" fill="url(#street-grid)" opacity="0.35" />
 
         {CONNECTIONS.map(([a, b], i) => {

@@ -47,7 +47,7 @@ export default function PromotionSettingsForm({ initialThresholds }: { initialTh
   }
 
   const inputClass = 'w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm'
-  const labelClass = 'text-xs text-[#5a5a5a] font-medium block mb-1'
+  const labelClass = 'text-xs text-[#6B5A8C] font-medium block mb-1'
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -101,7 +101,7 @@ export default function PromotionSettingsForm({ initialThresholds }: { initialTh
       </div>
 
       <div className="pt-2 border-t border-neutral-200">
-        <p className="text-xs font-semibold text-[#5a5a5a] mb-3">One-time milestone bonus, paid on first crossing into each tier</p>
+        <p className="text-xs font-semibold text-[#6B5A8C] mb-3">One-time milestone bonus, paid on first crossing into each tier</p>
         <div className="flex flex-col gap-3">
           <div>
             <label className={labelClass}>Silver milestone bonus (credits)</label>
@@ -145,7 +145,7 @@ export default function PromotionSettingsForm({ initialThresholds }: { initialTh
       <button
         type="submit"
         disabled={saving}
-        className="bg-[#FF6B4A] text-white rounded-lg py-2.5 text-sm font-medium transition-colors hover:bg-[#e85a3b] disabled:opacity-50"
+        className="bg-[#FF5A79] text-white rounded-lg py-2.5 text-sm font-medium transition-colors hover:bg-[#E8425F] disabled:opacity-50"
       >
         {saving ? 'Saving…' : 'Save changes'}
       </button>

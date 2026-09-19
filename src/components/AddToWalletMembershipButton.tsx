@@ -102,7 +102,7 @@ export default function AddToWalletMembershipButton({ businessId }: { businessId
           onClick={() => {
             window.location.href = saveUrl
           }}
-          className="w-full rounded-lg bg-[#FF6B4A] text-white text-sm font-medium py-3 transition-colors hover:bg-[#e85a3b] active:opacity-80"
+          className="w-full rounded-full bg-[#FF5A79] text-white text-sm font-medium py-3 transition-colors hover:bg-[#E8425F] active:opacity-80"
         >
           Continue to Google Wallet
         </button>
@@ -114,16 +114,16 @@ export default function AddToWalletMembershipButton({ businessId }: { businessId
             every new member since there's no reliable way to detect whether
             they already have the app. */}
         {showAppNudge && (
-          <div className="relative mt-3 rounded-lg border border-blue-100 bg-blue-50 p-3 text-left">
+          <div className="relative mt-3 rounded-2xl border border-[#EDE3F7] bg-[#F6F0FF] p-3 text-left">
             <button
               type="button"
               onClick={() => setShowAppNudge(false)}
               aria-label="Dismiss"
-              className="absolute top-2 right-2 text-blue-400 hover:text-blue-600 leading-none text-base px-1"
+              className="absolute top-2 right-2 text-[#8A76BE] hover:text-[#2E1065] leading-none text-base px-1"
             >
               ×
             </button>
-            <p className="text-xs text-blue-800 pr-5">
+            <p className="text-xs text-[#4A3970] pr-5">
               <strong>One more thing:</strong> get the free Google Wallet app (about 30 seconds) — it&apos;s
               what actually delivers new-offer alerts to your lock screen. Your pass works without it,
               you just won&apos;t be notified when new deals appear nearby.
@@ -132,7 +132,7 @@ export default function AddToWalletMembershipButton({ businessId }: { businessId
               href={GOOGLE_WALLET_PLAY_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block mt-2 text-xs font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900"
+              className="inline-block mt-2 text-xs font-medium text-[#2E1065] underline underline-offset-2 hover:text-[#4C2A98]"
             >
               Get Google Wallet
             </a>
@@ -148,7 +148,7 @@ export default function AddToWalletMembershipButton({ businessId }: { businessId
         type="button"
         onClick={handleClick}
         disabled={status === 'working'}
-        className="w-full rounded-lg bg-[#FF6B4A] text-white text-sm font-medium py-3 transition-colors hover:bg-[#e85a3b] active:opacity-80 disabled:opacity-50"
+        className="w-full rounded-full bg-[#FF5A79] text-white text-sm font-medium py-3 transition-colors hover:bg-[#E8425F] active:opacity-80 disabled:opacity-50"
       >
         {status === 'working' ? 'Saving…' : 'Add to Google Wallet'}
       </button>

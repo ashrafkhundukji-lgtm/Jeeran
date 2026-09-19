@@ -42,13 +42,13 @@ export default function NearbyShopsView({ shops, token }: { shops: NearbyBusines
   }, [shops, query, selectedCategory, locale])
 
   return (
-    <main dir={dir} className="min-h-screen bg-[#FBFCFD] pb-24 text-[#1a1a1a]">
+    <main dir={dir} className="min-h-screen bg-[#FFF8EC] pb-24 text-[#2E1065]">
       {token && <WalletAppBar token={token} />}
       <div className="mx-auto max-w-[720px] px-6 pt-6 sm:px-8">
         <h1 className={`${displayFont(locale)} mb-2 text-[28px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[34px]`}>
           {copy.heading}
         </h1>
-        <p className="mb-6 text-[15px] text-[#5a5a5a]">{copy.subheading}</p>
+        <p className="mb-6 text-[15px] text-[#6B5A8C]">{copy.subheading}</p>
 
         {shops.length > 0 && (
           <>
@@ -69,7 +69,7 @@ export default function NearbyShopsView({ shops, token }: { shops: NearbyBusines
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={copy.searchPlaceholder}
-                className={`w-full rounded-xl border border-[#ececec] bg-white py-3 text-[15px] text-[#1a1a1a] placeholder:text-neutral-400 focus:border-[#FF6B4A]/50 focus:outline-none ${dir === 'rtl' ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
+                className={`w-full rounded-xl border border-[#EDE3F7] bg-white py-3 text-[15px] text-[#2E1065] placeholder:text-neutral-400 focus:border-[#FF5A79]/50 focus:outline-none ${dir === 'rtl' ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
               />
             </div>
 
@@ -81,7 +81,7 @@ export default function NearbyShopsView({ shops, token }: { shops: NearbyBusines
                 type="button"
                 onClick={() => setSelectedCategory(null)}
                 className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${
-                  selectedCategory === null ? 'bg-[#1E3A8A] text-white' : 'border border-[#ececec] bg-white text-[#1a1a1a]'
+                  selectedCategory === null ? 'bg-[#2E1065] text-white' : 'border border-[#EDE3F7] bg-white text-[#2E1065]'
                 }`}
               >
                 {copy.allCategories}
@@ -92,7 +92,7 @@ export default function NearbyShopsView({ shops, token }: { shops: NearbyBusines
                   type="button"
                   onClick={() => setSelectedCategory(c)}
                   className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition-colors ${
-                    selectedCategory === c ? 'bg-[#1E3A8A] text-white' : 'border border-[#ececec] bg-white text-[#1a1a1a]'
+                    selectedCategory === c ? 'bg-[#2E1065] text-white' : 'border border-[#EDE3F7] bg-white text-[#2E1065]'
                   }`}
                 >
                   <span aria-hidden="true">{CATEGORY_EMOJI[c] ?? CATEGORY_EMOJI.other}</span>
@@ -104,9 +104,9 @@ export default function NearbyShopsView({ shops, token }: { shops: NearbyBusines
         )}
 
         {shops.length === 0 ? (
-          <p className="text-sm text-[#8a8a8a]">{copy.empty}</p>
+          <p className="text-sm text-[#8A76BE]">{copy.empty}</p>
         ) : visibleShops.length === 0 ? (
-          <p className="text-sm text-[#8a8a8a]">{copy.emptySearch}</p>
+          <p className="text-sm text-[#8A76BE]">{copy.emptySearch}</p>
         ) : (
           <div className="flex flex-col gap-3">
             {visibleShops.map((s) => {
@@ -120,7 +120,7 @@ export default function NearbyShopsView({ shops, token }: { shops: NearbyBusines
                 <a
                   key={s.business_id}
                   href={href}
-                  className="flex items-center gap-3 rounded-[18px] border border-[#ececec] bg-white p-4 shadow-sm transition-colors active:border-[#FF6B4A]/50 active:bg-[#FFF7F3]"
+                  className="flex items-center gap-3 rounded-[18px] border border-[#EDE3F7] bg-white p-4 shadow-sm transition-colors active:border-[#FF5A79]/50 active:bg-[#FFF7F3]"
                 >
                   <div
                     className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-[#FFF7F3] text-xl"
@@ -129,15 +129,15 @@ export default function NearbyShopsView({ shops, token }: { shops: NearbyBusines
                     {CATEGORY_EMOJI[s.category] ?? CATEGORY_EMOJI.other}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h2 className="mb-1 font-medium text-[#1a1a1a]">{s.business_name}</h2>
-                    <p className="text-sm text-[#8a8a8a]">{copy.kmAway(s.distance_km.toFixed(1))}</p>
+                    <h2 className="mb-1 font-medium text-[#2E1065]">{s.business_name}</h2>
+                    <p className="text-sm text-[#8A76BE]">{copy.kmAway(s.distance_km.toFixed(1))}</p>
                     {s.has_active_offer && (
-                      <span className="mt-1 inline-block rounded-full bg-[#FF6B4A]/10 px-2 py-0.5 text-xs font-medium text-[#FF6B4A]">
+                      <span className="mt-1 inline-block rounded-full bg-[#FF5A79]/10 px-2 py-0.5 text-xs font-medium text-[#FF5A79]">
                         {copy.hasOffer}
                       </span>
                     )}
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5 text-[#FF6B4A]">
+                  <div className="flex shrink-0 items-center gap-1.5 text-[#FF5A79]">
                     <span className="text-sm font-semibold whitespace-nowrap">
                       {s.has_active_offer ? copy.viewOffer : copy.getDirections}
                     </span>

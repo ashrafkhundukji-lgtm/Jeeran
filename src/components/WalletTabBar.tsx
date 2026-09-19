@@ -3,18 +3,22 @@
 import { useLocale } from '@/lib/i18n/useLocale'
 import { WALLET_TAB_BAR_COPY } from '@/lib/i18n/walletTabBar'
 
-const ORANGE = '#FF6B4A'
-const TERTIARY = '#9ca3af'
+const ACTIVE_ICON = '#FFC93C'
+const TERTIARY = '#C6B8E8'
 
-// Fixed bottom nav shared by every top-level wallet page (Home, Offers,
-// Shops, Language) — replaces the old top header (logo + labeled "Home" +
-// a referrer-conditional Back button). A real customer flagged that
-// arrangement as confusing and asked for the site to feel like a mobile
-// app instead; a persistent, always-identical bottom tab bar is the actual
-// mobile-app answer — see the design mockup this was built from. The offer
-// detail page (a genuine drill-in from any of these four, not a
-// destination of its own) deliberately has NO tab bar — see its own
-// floating back button instead.
+// Fixed bottom nav shared by every wallet-linked page (Home, Offers, Shops,
+// Language, and now the offer detail drill-in) — replaces the old top
+// header (logo + labeled "Home" + a referrer-conditional Back button). A
+// real customer flagged that arrangement as confusing and asked for the
+// site to feel like a mobile app instead; a persistent, always-identical
+// bottom tab bar is the actual mobile-app answer — see the design mockup
+// this was built from. A second real customer then got stuck on the offer
+// detail page specifically (a Google Wallet "View offer" tap goes straight
+// there, often with no in-app history to fall back on) because it was the
+// one screen with no way back to the rest of the site — see OfferPageView's
+// own header comment. `children`, rendered above the pill nav inside the
+// same fixed/safe-area-aware wrapper, is how that page adds its
+// Directions/WhatsApp/Call row without a second competing fixed footer.
 //
 // Plain <a> tags, not next/link: every hop between these pages is meant to
 // be a full navigation (same convention already used everywhere else in
@@ -23,9 +27,11 @@ const TERTIARY = '#9ca3af'
 export default function WalletTabBar({
   token,
   active,
+  children,
 }: {
   token: string
   active: 'home' | 'offers' | 'shops' | 'language'
+  children?: React.ReactNode
 }) {
   const [locale] = useLocale()
   const copy = WALLET_TAB_BAR_COPY[locale]
@@ -77,40 +83,49 @@ export default function WalletTabBar({
   ]
 
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-20 flex border-t border-neutral-200 bg-white"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    <div
+      className="fixed inset-x-0 bottom-0 z-20 px-4"
+      style={{ paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))' }}
     >
-      {items.map((item) => {
-        const isActive = item.key === active
-        const color = isActive ? ORANGE : TERTIARY
-        return (
-          <a
-            key={item.key}
-            href={item.href}
-            aria-current={isActive ? 'page' : undefined}
-            className="flex flex-1 flex-col items-center gap-1 py-2.5"
-            style={{ color }}
-          >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={isActive ? 1.9 : 1.75}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+      {children && <div className="mx-auto mb-2 max-w-[420px]">{children}</div>}
+      <nav className="mx-auto flex max-w-[420px] items-center justify-around rounded-full bg-white p-1.5 shadow-[0_10px_26px_-14px_rgba(46,16,101,0.45)]">
+        {items.map((item) => {
+          const isActive = item.key === active
+          return (
+            <a
+              key={item.key}
+              href={item.href}
+              aria-current={isActive ? 'page' : undefined}
+              className="flex flex-1 flex-col items-center gap-1 py-1.5"
             >
-              {item.icon}
-            </svg>
-            <span className="text-[11px]" style={{ fontWeight: isActive ? 600 : 500 }}>
-              {item.label}
-            </span>
-          </a>
-        )
-      })}
-    </nav>
+              <span
+                className="flex h-9 w-9 items-center justify-center rounded-full"
+                style={{ backgroundColor: isActive ? '#2E1065' : 'transparent' }}
+              >
+                <svg
+                  width="19"
+                  height="19"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={isActive ? ACTIVE_ICON : TERTIARY}
+                  strokeWidth={isActive ? 2 : 1.75}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  {item.icon}
+                </svg>
+              </span>
+              <span
+                className="text-[10px]"
+                style={{ color: isActive ? '#2E1065' : TERTIARY, fontWeight: isActive ? 700 : 500 }}
+              >
+                {item.label}
+              </span>
+            </a>
+          )
+        })}
+      </nav>
+    </div>
   )
 }

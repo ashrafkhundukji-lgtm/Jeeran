@@ -11,7 +11,7 @@ import 'leaflet/dist/leaflet.css'
 const pinIcon = L.divIcon({
   className: '',
   html: `<svg viewBox="0 0 24 30" width="30" height="30" style="display:block">
-    <path d="M12 0C6 0 1 5 1 11c0 8 11 19 11 19s11-11 11-19c0-6-5-11-11-11z" fill="#FF6B4A"/>
+    <path d="M12 0C6 0 1 5 1 11c0 8 11 19 11 19s11-11 11-19c0-6-5-11-11-11z" fill="#FF5A79"/>
     <circle cx="12" cy="11" r="4" fill="#FFFFFF"/>
   </svg>`,
   iconSize: [30, 30],

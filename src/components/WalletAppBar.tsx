@@ -10,7 +10,7 @@
 // component's header comment).
 export default function WalletAppBar({ token }: { token: string }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-[#ececec] bg-white px-6 py-3 sm:px-8">
+    <header className="sticky top-0 z-20 border-b border-[#EDE3F7] bg-white px-6 py-3 sm:px-8">
       <a href={`/wallet/home?token=${encodeURIComponent(token)}`} className="inline-flex">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/design/jeeran-mark.svg" alt="Jeeran" className="h-7 w-7" />
