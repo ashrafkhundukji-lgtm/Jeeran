@@ -5,6 +5,7 @@ import { getDir, type Locale } from '@/lib/i18n/locale'
 import { displayFont } from '@/lib/i18n/displayFont'
 import { OFFER_PAGE_COPY } from '@/lib/i18n/offers'
 import { CATEGORY_LABELS } from '@/lib/categories'
+import WalletTabBar from '@/components/WalletTabBar'
 
 // Same brand tokens as LandingPage.tsx: #FFF8EC canvas, #2E1065 ink,
 // Archivo for display type, #FF5A79 accent. This one constant stays plain
@@ -22,12 +23,17 @@ const ARCHIVO = 'font-[family-name:var(--font-baloo)]'
 // reasoning already established for the Wallet card and everywhere else in
 // this app.
 //
-// Deliberately the one wallet-linked screen with NO WalletTabBar — this is
-// a drill-in from Home/Offers/Shops (or the Wallet card's own "View offer"
-// links), not a top-level destination of its own. A floating back button
-// over the hero (native app convention: Instagram/Airbnb-style) replaces
-// it instead — see handleBack() below for why it isn't a plain
-// history.back().
+// This IS now on WalletTabBar (a real customer got stuck here with no way
+// back to the rest of the site — a Wallet card's "View offer" tap lands
+// here directly, often with no in-app history behind it, and this used to
+// be the one wallet-linked screen with no tab bar of its own). Kept the
+// floating back button over the hero too (native app convention:
+// Instagram/Airbnb-style) since it's still the fastest way back to
+// whichever list this was opened from — see handleBack() below for why it
+// isn't a plain history.back(). Tab bar (and its "offers" highlight) only
+// renders when a token is present, same conditional as every other
+// wallet-linked page — a shared/forwarded link, or a preview from
+// BrowseView/OwnerDashboardView, has no member to scope it to.
 export default function OfferPageView({
   isActive,
   imageUrl,
@@ -68,11 +74,11 @@ export default function OfferPageView({
   // or a search result) → go back to it, same as anywhere else in the app.
   // No such history (opened fresh from the Wallet card's own link, a
   // different browser tab, or a forwarded URL) → history.back() would be a
-  // silent no-op, stranding the customer on a screen with no other way
-  // out now that this page has no tab bar. Falling back to the Home tab
-  // (when a token is present) is the same "return to the app's root
-  // instead of doing nothing" convention native apps use for an empty back
-  // stack.
+  // silent no-op. WalletTabBar below now covers the no-token-mismatch case
+  // where that would otherwise strand the customer, but falling back to the
+  // Home tab here (when a token is present) still gets them there in one
+  // tap instead of two, the same "return to the app's root instead of doing
+  // nothing" convention native apps use for an empty back stack.
   function handleBack() {
     try {
       if (document.referrer && new URL(document.referrer).origin === window.location.origin) {
@@ -89,8 +95,52 @@ export default function OfferPageView({
     }
   }
 
+  const actionRow = (directionsUrl || whatsappUrl || callUrl) ? (
+    <>
+      {directionsUrl && (
+        <a
+          href={directionsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#2E1065] py-2.5 text-white transition-colors hover:bg-[#16306e]"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 11l18-8-8 18-2-8-8-2Z" />
+          </svg>
+          <span className="text-xs font-semibold">{copy.getDirections}</span>
+        </a>
+      )}
+      {whatsappUrl && (
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-[#25D366]/40 bg-[#25D366]/10 py-2.5 text-[#128C4A] transition-colors hover:bg-[#25D366]/20"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 11.5a8.38 8.38 0 0 1-3.8 7 8.5 8.5 0 0 1-8.9.3L3 20l1.2-5.3a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 12.3-7.6 8.4 8.4 0 0 1 5.4 8.2Z" />
+          </svg>
+          <span className="text-xs font-semibold">{copy.whatsapp}</span>
+        </a>
+      )}
+      {callUrl && (
+        <a
+          href={callUrl}
+          className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-[#EDE3F7] bg-white py-2.5 text-[#2E1065] transition-colors hover:bg-neutral-50"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" />
+          </svg>
+          <span className="text-xs font-semibold">{copy.call}</span>
+        </a>
+      )}
+    </>
+  ) : null
+
+  const bottomPad = token ? (actionRow ? 'pb-44' : 'pb-24') : 'pb-28'
+
   return (
-    <main dir={dir} className="min-h-screen bg-[#FFF8EC] pb-28 text-[#2E1065]">
+    <main dir={dir} className={`min-h-screen bg-[#FFF8EC] ${bottomPad} text-[#2E1065]`}>
       {/* Hero — floating back button sits over it, native app style, rather
           than a separate top header row this page no longer has. */}
       <div className="relative aspect-[16/10] w-full">
@@ -148,53 +198,31 @@ export default function OfferPageView({
         </div>
       </div>
 
-      {/* Sticky bottom action bar — was inline flex-wrap buttons in the
-          content flow; a fixed row is the native pattern (matches the
-          Redeem/Directions/Call action bar in the mobile redesign), and
-          keeps these one thumb-reach away regardless of scroll position. */}
-      {(directionsUrl || whatsappUrl || callUrl) && (
-        <div
-          className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t border-[#EDE3F7] bg-white px-4 py-3"
-          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
-        >
-          {directionsUrl && (
-            <a
-              href={directionsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#2E1065] py-2.5 text-white transition-colors hover:bg-[#16306e]"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M3 11l18-8-8 18-2-8-8-2Z" />
-              </svg>
-              <span className="text-xs font-semibold">{copy.getDirections}</span>
-            </a>
+      {/* Directions/WhatsApp/Call: one thumb-reach away regardless of scroll
+          position, same as the rest of the mobile redesign. With a token
+          (came from the wallet mini-site) it rides inside WalletTabBar as a
+          floating card above the pill nav, so this page doesn't fight the
+          tab bar for the same fixed footer. Without one (a shared link, or
+          a preview from BrowseView/OwnerDashboardView with no member to tie
+          a tab bar to) it's its own edge-to-edge sticky bar, same as
+          before. */}
+      {token ? (
+        <WalletTabBar token={token} active="offers">
+          {actionRow && (
+            <div className="flex gap-2 rounded-2xl border border-[#EDE3F7] bg-white p-2 shadow-[0_10px_26px_-14px_rgba(46,16,101,0.45)]">
+              {actionRow}
+            </div>
           )}
-          {whatsappUrl && (
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-[#25D366]/40 bg-[#25D366]/10 py-2.5 text-[#128C4A] transition-colors hover:bg-[#25D366]/20"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M21 11.5a8.38 8.38 0 0 1-3.8 7 8.5 8.5 0 0 1-8.9.3L3 20l1.2-5.3a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 12.3-7.6 8.4 8.4 0 0 1 5.4 8.2Z" />
-              </svg>
-              <span className="text-xs font-semibold">{copy.whatsapp}</span>
-            </a>
-          )}
-          {callUrl && (
-            <a
-              href={callUrl}
-              className="flex flex-1 flex-col items-center gap-1 rounded-2xl border border-[#EDE3F7] bg-white py-2.5 text-[#2E1065] transition-colors hover:bg-neutral-50"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" />
-              </svg>
-              <span className="text-xs font-semibold">{copy.call}</span>
-            </a>
-          )}
-        </div>
+        </WalletTabBar>
+      ) : (
+        actionRow && (
+          <div
+            className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t border-[#EDE3F7] bg-white px-4 py-3"
+            style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+          >
+            {actionRow}
+          </div>
+        )
       )}
     </main>
   )
