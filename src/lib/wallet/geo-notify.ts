@@ -35,6 +35,16 @@
  *    Capped at promotion_settings.max_daily_wallet_notifications (default
  *    3 — Google's own hard per-object/24h limit, not an arbitrary choice;
  *    see that column's comment for why it's configurable down to 1 later).
+ *  - Daily floor: a member with nothing genuinely new/changed that day used
+ *    to get silence, by design. Confirmed with the user this reads as the
+ *    app going quiet rather than as "nothing to report," so
+ *    notifyMemberBatch() now falls back to notifyReminder() — re-surfacing
+ *    whatever offer is currently top-ranked for that member, even if
+ *    they've seen it before — whenever the real-content loop sends nothing.
+ *    A member with zero active offers in range still gets nothing; there's
+ *    no useful content to repeat. Shares the exact same per-day slot ledger
+ *    as everything else here, so it can never push the object past Google's
+ *    3/24h cap.
  *  - Instant Notify add-on: a paid subscription (business_addons, addon_key
  *    'instant_notify' — see supabase/migrations/20260823_instant_notify_addon.sql)
  *    lets a business's own campaign skip the once-daily wait and fire its
@@ -53,7 +63,7 @@
  */
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { patchMembershipObject, notifyNewOffer, type NearbyOffer } from './google-membership-pass'
+import { patchMembershipObject, notifyNewOffer, notifyReminder, type NearbyOffer } from './google-membership-pass'
 import { resolveOfferContent } from './offer-locale'
 import { INSTANT_NOTIFY_ADDON_KEY } from '@/lib/billing/catalog'
 import type { Locale } from '@/lib/i18n/locale'
@@ -381,6 +391,10 @@ export async function sendDailyNotificationBatch() {
 
 async function notifyMemberBatch(member: NotifiableMember, cap: number) {
   if (!member.google_object_id) return
+  // Narrowed local, not member.google_object_id — so the daily-floor
+  // fallback below (defined after this point, still closing over `member`)
+  // keeps TypeScript's null-check without re-deriving it.
+  const objectId = member.google_object_id
 
   // Deliberately platform-wide, same as refreshMember() — ranks ANY
   // registered business's active campaigns within radius, not just wherever
@@ -403,8 +417,55 @@ async function notifyMemberBatch(member: NotifiableMember, cap: number) {
   // only earns a slot if we've never sent a push for this exact version of
   // it before, so a re-edited offer can earn a fresh ping but an unchanged
   // one won't re-consume a slot on a later day.
+  // Daily floor: nothing genuinely new this run — fall back to re-surfacing
+  // the current top offer rather than letting the day pass in silence. A
+  // member with zero active offers in range (nearbyOffers empty) still gets
+  // nothing from this closure; see its own early-out.
+  const sendReminderFallback = async () => {
+    const top = nearbyOffers[0]
+    if (!top) return
+
+    const { data: claimed, error: claimError } = await supabaseAdmin.rpc('claim_notification_slot', {
+      p_member_id: member.id,
+      p_cap: cap,
+    })
+    if (claimError) throw claimError
+    if (!claimed) return // today's shared budget is already spent
+
+    try {
+      const resolvedTitle = member.preferred_language
+        ? (await resolveOfferContent([top], member.preferred_language)).get(top.offer_id)?.title
+        : undefined
+      await notifyReminder(objectId, top, member.preferred_language, resolvedTitle)
+    } catch (err) {
+      console.error('notifyReminder failed in daily batch', { memberId: member.id, offerId: top.offer_id, err })
+      try {
+        await supabaseAdmin.rpc('release_notification_slot', { p_member_id: member.id })
+      } catch {
+        // best-effort
+      }
+      return
+    }
+
+    // top.offer_updated_at already matches what's in alreadyNotified (it's
+    // excluded from `candidates` precisely because it does) — this write is
+    // idempotent on notified_offer_versions and only actually moves
+    // last_notification_batch_at forward, which is the point: record that
+    // this member's daily floor was served today.
+    await supabaseAdmin
+      .from('wallet_members')
+      .update({
+        notified_offer_versions: { ...alreadyNotified, [top.offer_id]: top.offer_updated_at },
+        last_notification_batch_at: new Date().toISOString(),
+      })
+      .eq('id', member.id)
+  }
+
   const candidates = nearbyOffers.filter((o) => alreadyNotified[o.offer_id] !== o.offer_updated_at)
-  if (!candidates.length) return
+  if (!candidates.length) {
+    await sendReminderFallback()
+    return
+  }
 
   // nearby_active_offers() already returns its rows in ranked order
   // (bid-bucket -> tier tiebreak -> exact bid -> distance — see
@@ -462,7 +523,15 @@ async function notifyMemberBatch(member: NotifiableMember, cap: number) {
       }
     }
   }
-  if (!Object.keys(sentVersions).length) return
+  if (!Object.keys(sentVersions).length) {
+    // Every real candidate this run failed to send (transient errors, or
+    // today's shared budget ran out before any of them claimed a slot) —
+    // same "don't let the day go silent" floor as the no-candidates path
+    // above. sendReminderFallback does its own claim_notification_slot
+    // check, so this correctly no-ops if the budget really is exhausted.
+    await sendReminderFallback()
+    return
+  }
 
   await supabaseAdmin
     .from('wallet_members')

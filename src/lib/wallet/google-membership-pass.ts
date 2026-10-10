@@ -592,6 +592,59 @@ export async function notifyNewOffer(
   })
 }
 
+/**
+ * Fires a daily-floor "reminder" push when a member had nothing genuinely
+ * new/changed to hear about that day (geo-notify.ts's sendDailyNotificationBatch
+ * falls back to this instead of sending nothing). Re-surfaces whatever offer
+ * is CURRENTLY top-ranked for this member — real content the member may have
+ * already seen before, not a content-free "come back" ping — on the product
+ * decision that a useful repeat beats silence, but an empty platitude doesn't
+ * (confirmed with the user rather than assumed). Caller is responsible for
+ * only reaching this when nearbyOffers is non-empty; a member with zero
+ * active offers in range gets no push at all, same as before this existed.
+ *
+ * Deliberately a separate function from notifyNewOffer() rather than a
+ * shared one with a `kind` flag — the header text is the only difference,
+ * and keeping them separate makes every call site say in plain English
+ * which of the two it's sending, which matters here since this one
+ * reverses the original card/notification-decoupling rationale (see this
+ * file's header comment and 20260820_notification_batching.sql) for the
+ * specific, explicit case of "otherwise today would be silent."
+ *
+ * Same mechanics as notifyNewOffer(): addMessage, TEXT_AND_NOTIFY, Google's
+ * 3/object/24h cap applies identically (and is the same shared
+ * claim_notification_slot() ledger — see notifyMemberBatch()'s caller-side
+ * comment), best-effort on failure.
+ */
+export async function notifyReminder(
+  objectId: string,
+  offer: NearbyOffer,
+  preferredLanguage: Locale | null = null,
+  resolvedTitle?: string,
+) {
+  const authClient = await client()
+  const title = resolvedTitle ?? offer.offer_title
+
+  await authClient.request({
+    url: `${BASE_URL}/genericObject/${objectId}/addMessage`,
+    method: 'POST',
+    data: {
+      message: {
+        header: pick("Don't miss nearby deals", 'لا تفوت العروض القريبة', 'قریبی آفرز مت چھوڑیں', preferredLanguage),
+        localizedHeader: localized(
+          "Don't miss nearby deals",
+          'لا تفوت العروض القريبة',
+          'قریبی آفرز مت چھوڑیں',
+          preferredLanguage,
+        ),
+        body: `${offer.business_name}: ${title}`,
+        id: `reminder-${offer.offer_id}-${Date.now()}`,
+        messageType: 'TEXT_AND_NOTIFY',
+      },
+    },
+  })
+}
+
 function offersToTextModules(offers: NearbyOffer[], resolvedContent?: Map<string, ResolvedOfferContent>) {
   return offers.slice(0, MAX_OFFERS_SHOWN).map((o, i) => {
     const title = resolvedContent?.get(o.offer_id)?.title ?? o.offer_title
