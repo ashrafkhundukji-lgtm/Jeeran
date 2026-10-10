@@ -4,7 +4,9 @@ import { useLocale } from '@/lib/i18n/useLocale'
 import { WALLET_TAB_BAR_COPY } from '@/lib/i18n/walletTabBar'
 
 const ACTIVE_ICON = '#FFC93C'
-const TERTIARY = '#C6B8E8'
+// Inactive icon + label: palette ink-secondary. Was #C6B8E8, which read as
+// washed-out on the white keycaps.
+const INACTIVE = '#6B5A8C'
 
 // Each button is its own 3D "keycap": a flat-color bottom edge (no blur, so
 // it reads as a solid step rather than a soft shadow) that disappears when
@@ -118,7 +120,7 @@ export default function WalletTabBar({
                 height="19"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke={isActive ? ACTIVE_ICON : TERTIARY}
+                stroke={isActive ? ACTIVE_ICON : INACTIVE}
                 strokeWidth={isActive ? 2 : 1.75}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -128,7 +130,7 @@ export default function WalletTabBar({
               </svg>
               <span
                 className="text-[10px]"
-                style={{ color: isActive ? '#fff' : TERTIARY, fontWeight: isActive ? 700 : 500 }}
+                style={{ color: isActive ? '#fff' : INACTIVE, fontWeight: isActive ? 700 : 500 }}
               >
                 {item.label}
               </span>
