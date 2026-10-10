@@ -14,14 +14,16 @@ export const dynamic = 'force-dynamic'
 // left a customer on a dead-end screen with nothing to do next — same
 // signed-member-token scheme as every other page reached from the pass, so
 // no login is needed here either.
+// `q` is the query typed into Home's search bar (WalletHomeView), handed
+// straight to the search box here, which searches beyond the radius.
 const SHOPS_PAGE_LIMIT = 50
 
 export default async function NearbyShopsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>
+  searchParams: Promise<{ token?: string; q?: string }>
 }) {
-  const { token } = await searchParams
+  const { token, q } = await searchParams
   if (!token) notFound()
 
   const decoded = verifyMemberToken(token)
@@ -41,5 +43,5 @@ export default async function NearbyShopsPage({
     p_limit: SHOPS_PAGE_LIMIT,
   })
 
-  return <NearbyShopsView shops={(shops ?? []) as NearbyBusiness[]} token={token} />
+  return <NearbyShopsView shops={(shops ?? []) as NearbyBusiness[]} token={token} initialQuery={q ?? ''} />
 }
