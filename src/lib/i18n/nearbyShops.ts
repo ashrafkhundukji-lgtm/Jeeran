@@ -16,6 +16,10 @@ export interface NearbyShopsCopy {
   hasOffer: string
   kmAway: (km: string) => string
   allCategories: string
+  searchEverywherePlaceholder: string
+  searching: string
+  nearbySection: string
+  fartherSection: string
 }
 
 export const NEARBY_SHOPS_COPY: Record<Locale, NearbyShopsCopy> = {
@@ -30,6 +34,10 @@ export const NEARBY_SHOPS_COPY: Record<Locale, NearbyShopsCopy> = {
     hasOffer: 'يوجد عرض',
     kmAway: (km) => `${km} كم`,
     allCategories: 'الكل',
+    searchEverywherePlaceholder: 'ابحث عن محل أو عرض في أي مكان…',
+    searching: 'جارٍ البحث…',
+    nearbySection: 'قريب منك',
+    fartherSection: 'أبعد قليلاً',
   },
   en: {
     heading: 'Shops near you',
@@ -42,6 +50,10 @@ export const NEARBY_SHOPS_COPY: Record<Locale, NearbyShopsCopy> = {
     hasOffer: 'Has an offer',
     kmAway: (km) => `${km} km away`,
     allCategories: 'All',
+    searchEverywherePlaceholder: 'Search any shop or offer, near or far…',
+    searching: 'Searching…',
+    nearbySection: 'Nearby',
+    fartherSection: 'Farther away',
   },
   ur: {
     heading: 'آپ کے قریب دکانیں',
@@ -54,5 +66,9 @@ export const NEARBY_SHOPS_COPY: Record<Locale, NearbyShopsCopy> = {
     hasOffer: 'آفر موجود ہے',
     kmAway: (km) => `${km} کلومیٹر دور`,
     allCategories: 'تمام',
+    searchEverywherePlaceholder: 'کوئی بھی دکان یا آفر تلاش کریں، قریب یا دور…',
+    searching: 'تلاش ہو رہی ہے…',
+    nearbySection: 'قریب',
+    fartherSection: 'زیادہ دور',
   },
 }

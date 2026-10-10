@@ -35,7 +35,37 @@ export default function WalletHomeView({
     <main dir={dir} className="min-h-screen bg-[#FFF8EC] pb-24 text-[#2E1065]">
       <WalletAppBar token={token} />
       <div className="mx-auto max-w-[480px] px-6 pt-6">
-        <h1 className={`${displayFont(locale)} mb-6 text-[30px] font-black leading-[1.05] tracking-[-0.01em]`}>{copy.heading}</h1>
+        <h1 className={`${displayFont(locale)} mb-5 text-[30px] font-black leading-[1.05] tracking-[-0.01em]`}>{copy.heading}</h1>
+
+        {/* Plain GET form, not a client-side search: submitting lands on the
+            Shops tab with ?q= filled in, and that page's own search box
+            (NearbyShopsView) does the actual searching — including shops
+            beyond the member's radius. One search implementation, two
+            entry points. */}
+        <form action="/wallet/shops" method="get" role="search" className="relative mb-6">
+          <input type="hidden" name="token" value={token} />
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            aria-hidden="true"
+            className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-[#8A76BE] ${dir === 'rtl' ? 'right-4' : 'left-4'}`}
+          >
+            <circle cx="7" cy="7" r="5.25" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <input
+            type="search"
+            name="q"
+            enterKeyHint="search"
+            required
+            minLength={2}
+            placeholder={copy.searchPlaceholder}
+            aria-label={copy.searchPlaceholder}
+            className={`w-full rounded-2xl border border-[#EDE3F7] bg-white py-3.5 text-[15px] text-[#2E1065] shadow-sm placeholder:text-[#8A76BE] focus:border-[#FF5A79]/50 focus:outline-none ${dir === 'rtl' ? 'pr-11 pl-4' : 'pl-11 pr-4'}`}
+          />
+        </form>
 
         <div className="mb-3 text-xs font-semibold tracking-wide text-[#8A76BE] uppercase">
           {copy.cardSectionLabel}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir } from '@/lib/i18n/locale'
 import { displayFont } from '@/lib/i18n/displayFont'
@@ -19,27 +19,144 @@ import type { NearbyBusiness } from '@/lib/wallet/nearby-businesses'
 // destination the Wallet card's own "View offer" links use; otherwise it's
 // a plain Directions link — still a useful tap, just not an offer page
 // that doesn't exist for that shop.
-export default function NearbyShopsView({ shops, token }: { shops: NearbyBusiness[]; token?: string }) {
+//
+// Typing in the search box (with a member token) searches EVERY shop on
+// Jeeran, not just the nearby list above — see /api/wallet/search. Results
+// are split into "Nearby" (within the member's own radius) and "Farther
+// away" so a far match is clearly labeled as such. Until the server answers
+// (or with no token) the box falls back to filtering the nearby list
+// locally, so typing never shows a blank screen. `initialQuery` is how the
+// search bar on Home hands its query over (?q= on this page's URL).
+const SEARCH_MIN_LENGTH = 2
+const SEARCH_DEBOUNCE_MS = 300
+
+type RemoteSearch = { query: string; results: NearbyBusiness[]; radiusKm: number }
+
+export default function NearbyShopsView({
+  shops,
+  token,
+  initialQuery = '',
+}: {
+  shops: NearbyBusiness[]
+  token?: string
+  initialQuery?: string
+}) {
   const [locale] = useLocale()
   const copy = NEARBY_SHOPS_COPY[locale]
   const dir = getDir(locale)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(initialQuery)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null) // null = "All"
-
-  const presentCategories = useMemo(() => {
-    const present = new Set(shops.map((s) => s.category))
-    return CATEGORIES.filter((c) => present.has(c))
-  }, [shops])
+  const [remote, setRemote] = useState<RemoteSearch | null>(null)
 
   const query = search.trim().toLowerCase()
+  const searchEverywhere = !!token && query.length >= SEARCH_MIN_LENGTH
+
+  useEffect(() => {
+    if (!token || !searchEverywhere) return
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/wallet/search?token=${encodeURIComponent(token)}&q=${encodeURIComponent(query)}`,
+          { signal: controller.signal },
+        )
+        if (!res.ok) return
+        const body = (await res.json()) as { results: NearbyBusiness[]; radiusKm: number }
+        setRemote({ query, results: body.results, radiusKm: body.radiusKm })
+      } catch {
+        // Aborted (customer kept typing) or offline — the local filter below
+        // is still showing, which is the best fallback available.
+      }
+    }, SEARCH_DEBOUNCE_MS)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [searchEverywhere, token, query])
+
+  // Only trust server results for the query currently in the box — a stale
+  // answer for "piz" shouldn't linger once the customer has typed "pizza".
+  const remoteResults = searchEverywhere && remote?.query === query ? remote : null
+
+  const presentCategories = useMemo(() => {
+    const present = new Set((remoteResults?.results ?? shops).map((s) => s.category))
+    return CATEGORIES.filter((c) => present.has(c))
+  }, [shops, remoteResults])
+
   const visibleShops = useMemo(() => {
+    if (remoteResults) {
+      return remoteResults.results.filter((s) => !selectedCategory || s.category === selectedCategory)
+    }
     return shops.filter((s) => {
       if (selectedCategory && s.category !== selectedCategory) return false
       if (!query) return true
       const categoryLabel = CATEGORY_LABELS[locale][s.category] ?? s.category
       return s.business_name.toLowerCase().includes(query) || categoryLabel.toLowerCase().includes(query)
     })
-  }, [shops, query, selectedCategory, locale])
+  }, [shops, remoteResults, query, selectedCategory, locale])
+
+  const nearbyResults = remoteResults ? visibleShops.filter((s) => s.distance_km <= remoteResults.radiusKm) : []
+  const fartherResults = remoteResults ? visibleShops.filter((s) => s.distance_km > remoteResults.radiusKm) : []
+
+  const renderShop = (s: NearbyBusiness) => {
+    const href = s.has_active_offer
+      ? token
+        ? `/offers/${s.top_offer_id}?token=${encodeURIComponent(token)}`
+        : `/offers/${s.top_offer_id}`
+      : `https://www.google.com/maps/dir/?api=1&destination=${s.business_lat},${s.business_lng}`
+
+    return (
+      <a
+        key={s.business_id}
+        href={href}
+        className="flex items-center gap-3 rounded-[18px] border border-[#EDE3F7] bg-white p-4 shadow-sm transition-colors active:border-[#FF5A79]/50 active:bg-[#FFF7F3]"
+      >
+        <div
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-[#FFF7F3] text-xl"
+          aria-hidden="true"
+        >
+          {CATEGORY_EMOJI[s.category] ?? CATEGORY_EMOJI.other}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="mb-1 font-medium text-[#2E1065]">{s.business_name}</h2>
+          {remoteResults && s.top_offer_title && (
+            <p className="mb-0.5 truncate text-sm text-[#2E1065]/80">{s.top_offer_title}</p>
+          )}
+          <p className="text-sm text-[#8A76BE]">{copy.kmAway(s.distance_km.toFixed(1))}</p>
+          {s.has_active_offer && (
+            <span className="mt-1 inline-block rounded-full bg-[#FF5A79]/10 px-2 py-0.5 text-xs font-medium text-[#FF5A79]">
+              {copy.hasOffer}
+            </span>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5 text-[#FF5A79]">
+          <span className="text-sm font-semibold whitespace-nowrap">
+            {s.has_active_offer ? copy.viewOffer : copy.getDirections}
+          </span>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            aria-hidden="true"
+            className={`shrink-0 ${dir === 'rtl' ? 'scale-x-[-1]' : ''}`}
+          >
+            <path
+              d="M6 3.5L10.5 8L6 12.5"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+      </a>
+    )
+  }
+
+  const sectionLabel = (label: string) => (
+    <div className="mt-2 mb-1 text-xs font-semibold tracking-wide text-[#8A76BE] uppercase">{label}</div>
+  )
 
   return (
     <main dir={dir} className="min-h-screen bg-[#FFF8EC] pb-24 text-[#2E1065]">
@@ -50,7 +167,7 @@ export default function NearbyShopsView({ shops, token }: { shops: NearbyBusines
         </h1>
         <p className="mb-6 text-[15px] text-[#6B5A8C]">{copy.subheading}</p>
 
-        {shops.length > 0 && (
+        {(shops.length > 0 || token) && (
           <>
             <div className="relative mb-4">
               <svg
@@ -65,10 +182,11 @@ export default function NearbyShopsView({ shops, token }: { shops: NearbyBusines
                 <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               <input
-                type="text"
+                type="search"
+                enterKeyHint="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={copy.searchPlaceholder}
+                placeholder={token ? copy.searchEverywherePlaceholder : copy.searchPlaceholder}
                 className={`w-full rounded-xl border border-[#EDE3F7] bg-white py-3 text-[15px] text-[#2E1065] placeholder:text-neutral-400 focus:border-[#FF5A79]/50 focus:outline-none ${dir === 'rtl' ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
               />
             </div>
@@ -103,65 +221,21 @@ export default function NearbyShopsView({ shops, token }: { shops: NearbyBusines
           </>
         )}
 
-        {shops.length === 0 ? (
+        {shops.length === 0 && !query ? (
           <p className="text-sm text-[#8A76BE]">{copy.empty}</p>
-        ) : visibleShops.length === 0 ? (
-          <p className="text-sm text-[#8A76BE]">{copy.emptySearch}</p>
-        ) : (
+        ) : remoteResults && visibleShops.length > 0 ? (
           <div className="flex flex-col gap-3">
-            {visibleShops.map((s) => {
-              const href = s.has_active_offer
-                ? token
-                  ? `/offers/${s.top_offer_id}?token=${encodeURIComponent(token)}`
-                  : `/offers/${s.top_offer_id}`
-                : `https://www.google.com/maps/dir/?api=1&destination=${s.business_lat},${s.business_lng}`
-
-              return (
-                <a
-                  key={s.business_id}
-                  href={href}
-                  className="flex items-center gap-3 rounded-[18px] border border-[#EDE3F7] bg-white p-4 shadow-sm transition-colors active:border-[#FF5A79]/50 active:bg-[#FFF7F3]"
-                >
-                  <div
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-[#FFF7F3] text-xl"
-                    aria-hidden="true"
-                  >
-                    {CATEGORY_EMOJI[s.category] ?? CATEGORY_EMOJI.other}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="mb-1 font-medium text-[#2E1065]">{s.business_name}</h2>
-                    <p className="text-sm text-[#8A76BE]">{copy.kmAway(s.distance_km.toFixed(1))}</p>
-                    {s.has_active_offer && (
-                      <span className="mt-1 inline-block rounded-full bg-[#FF5A79]/10 px-2 py-0.5 text-xs font-medium text-[#FF5A79]">
-                        {copy.hasOffer}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1.5 text-[#FF5A79]">
-                    <span className="text-sm font-semibold whitespace-nowrap">
-                      {s.has_active_offer ? copy.viewOffer : copy.getDirections}
-                    </span>
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      aria-hidden="true"
-                      className={`shrink-0 ${dir === 'rtl' ? 'scale-x-[-1]' : ''}`}
-                    >
-                      <path
-                        d="M6 3.5L10.5 8L6 12.5"
-                        stroke="currentColor"
-                        strokeWidth="1.75"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </a>
-              )
-            })}
+            {nearbyResults.length > 0 && sectionLabel(copy.nearbySection)}
+            {nearbyResults.map(renderShop)}
+            {fartherResults.length > 0 && sectionLabel(copy.fartherSection)}
+            {fartherResults.map(renderShop)}
           </div>
+        ) : visibleShops.length > 0 ? (
+          <div className="flex flex-col gap-3">{visibleShops.map(renderShop)}</div>
+        ) : (
+          <p className="text-sm text-[#8A76BE]">
+            {searchEverywhere && !remoteResults ? copy.searching : copy.emptySearch}
+          </p>
         )}
       </div>
 

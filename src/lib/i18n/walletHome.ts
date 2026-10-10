@@ -15,6 +15,7 @@ export interface WalletHomeCopy {
   offersSubtitle: string
   shopsTitle: string
   shopsSubtitle: string
+  searchPlaceholder: string
 }
 
 export const WALLET_HOME_COPY: Record<Locale, WalletHomeCopy> = {
@@ -28,6 +29,7 @@ export const WALLET_HOME_COPY: Record<Locale, WalletHomeCopy> = {
     offersSubtitle: 'قريبة منك',
     shopsTitle: 'المحلات',
     shopsSubtitle: 'قريبة منك',
+    searchPlaceholder: 'ابحث عن محل أو عرض…',
   },
   en: {
     brand: 'Jeeran',
@@ -39,6 +41,7 @@ export const WALLET_HOME_COPY: Record<Locale, WalletHomeCopy> = {
     offersSubtitle: 'nearby',
     shopsTitle: 'Shops',
     shopsSubtitle: 'nearby',
+    searchPlaceholder: 'Search shops or offers…',
   },
   ur: {
     brand: 'جیران',
@@ -50,5 +53,6 @@ export const WALLET_HOME_COPY: Record<Locale, WalletHomeCopy> = {
     offersSubtitle: 'قریب',
     shopsTitle: 'دکانیں',
     shopsSubtitle: 'قریب',
+    searchPlaceholder: 'دکان یا آفر تلاش کریں…',
   },
 }
