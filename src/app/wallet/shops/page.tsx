@@ -21,9 +21,9 @@ const SHOPS_PAGE_LIMIT = 50
 export default async function NearbyShopsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string; q?: string }>
+  searchParams: Promise<{ token?: string; q?: string; scope?: string }>
 }) {
-  const { token, q } = await searchParams
+  const { token, q, scope } = await searchParams
   if (!token) notFound()
 
   const decoded = verifyMemberToken(token)
@@ -43,5 +43,7 @@ export default async function NearbyShopsPage({
     p_limit: SHOPS_PAGE_LIMIT,
   })
 
-  return <NearbyShopsView shops={(shops ?? []) as NearbyBusiness[]} token={token} initialQuery={q ?? ''} />
+  return <NearbyShopsView shops={(shops ?? []) as NearbyBusiness[]} token={token} initialQuery={q ?? ''}
+      initialScope={scope === 'all' ? 'all' : 'near'}
+    />
 }

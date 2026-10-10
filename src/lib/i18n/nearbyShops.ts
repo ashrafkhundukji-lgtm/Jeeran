@@ -20,6 +20,10 @@ export interface NearbyShopsCopy {
   searching: string
   nearbySection: string
   fartherSection: string
+  scopeLabel: string
+  scopeNear: string
+  scopeAll: string
+  loadingAll: string
 }
 
 export const NEARBY_SHOPS_COPY: Record<Locale, NearbyShopsCopy> = {
@@ -38,6 +42,10 @@ export const NEARBY_SHOPS_COPY: Record<Locale, NearbyShopsCopy> = {
     searching: 'جارٍ البحث…',
     nearbySection: 'قريب منك',
     fartherSection: 'أبعد قليلاً',
+    scopeLabel: 'نطاق البحث',
+    scopeNear: 'بالقرب مني',
+    scopeAll: 'في كل مكان',
+    loadingAll: 'جارٍ تحميل كل المحلات…',
   },
   en: {
     heading: 'Shops near you',
@@ -54,6 +62,10 @@ export const NEARBY_SHOPS_COPY: Record<Locale, NearbyShopsCopy> = {
     searching: 'Searching…',
     nearbySection: 'Nearby',
     fartherSection: 'Farther away',
+    scopeLabel: 'Which shops to show',
+    scopeNear: 'Near me',
+    scopeAll: 'Everywhere',
+    loadingAll: 'Loading all shops…',
   },
   ur: {
     heading: 'آپ کے قریب دکانیں',
@@ -70,5 +82,9 @@ export const NEARBY_SHOPS_COPY: Record<Locale, NearbyShopsCopy> = {
     searching: 'تلاش ہو رہی ہے…',
     nearbySection: 'قریب',
     fartherSection: 'زیادہ دور',
+    scopeLabel: 'کون سی دکانیں دکھائیں',
+    scopeNear: 'میرے قریب',
+    scopeAll: 'ہر جگہ',
+    loadingAll: 'تمام دکانیں لوڈ ہو رہی ہیں…',
   },
 }
