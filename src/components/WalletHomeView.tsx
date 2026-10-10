@@ -127,6 +127,27 @@ export default function WalletHomeView({
             </div>
           </a>
         </div>
+
+        {/* Browse beyond the member's radius without having to type a
+            search — opens the Shops tab with its "Everywhere" switch on. */}
+        <a
+          href={`/wallet/shops${q}&scope=all`}
+          className="mt-3 flex items-center gap-3 rounded-[20px] border border-[#EDE3F7] bg-white p-4 transition-colors active:border-[#FF5A79]/50 active:bg-[#FFE3E8]"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FFE3E8]" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF5A79" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5L9 4Z" />
+              <path d="M9 4v13.5M15 6.5V20" />
+            </svg>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold">{copy.allShopsTitle}</div>
+            <div className="text-xs text-[#8A76BE]">{copy.allShopsSubtitle}</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" className={`shrink-0 text-[#FF5A79] ${dir === 'rtl' ? 'scale-x-[-1]' : ''}`}>
+            <path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </a>
       </div>
 
       <WalletTabBar token={token} active="home" />

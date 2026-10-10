@@ -16,6 +16,8 @@ export interface WalletHomeCopy {
   shopsTitle: string
   shopsSubtitle: string
   searchPlaceholder: string
+  allShopsTitle: string
+  allShopsSubtitle: string
 }
 
 export const WALLET_HOME_COPY: Record<Locale, WalletHomeCopy> = {
@@ -30,6 +32,8 @@ export const WALLET_HOME_COPY: Record<Locale, WalletHomeCopy> = {
     shopsTitle: 'المحلات',
     shopsSubtitle: 'قريبة منك',
     searchPlaceholder: 'ابحث عن محل أو عرض…',
+    allShopsTitle: 'كل المحلات',
+    allShopsSubtitle: 'القريبة والبعيدة',
   },
   en: {
     brand: 'Jeeran',
@@ -42,6 +46,8 @@ export const WALLET_HOME_COPY: Record<Locale, WalletHomeCopy> = {
     shopsTitle: 'Shops',
     shopsSubtitle: 'nearby',
     searchPlaceholder: 'Search shops or offers…',
+    allShopsTitle: 'All shops',
+    allShopsSubtitle: 'near & far',
   },
   ur: {
     brand: 'جیران',
@@ -54,5 +60,7 @@ export const WALLET_HOME_COPY: Record<Locale, WalletHomeCopy> = {
     shopsTitle: 'دکانیں',
     shopsSubtitle: 'قریب',
     searchPlaceholder: 'دکان یا آفر تلاش کریں…',
+    allShopsTitle: 'تمام دکانیں',
+    allShopsSubtitle: 'قریب اور دور',
   },
 }

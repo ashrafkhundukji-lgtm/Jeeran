@@ -27,6 +27,12 @@ import type { NearbyBusiness } from '@/lib/wallet/nearby-businesses'
 // (or with no token) the box falls back to filtering the nearby list
 // locally, so typing never shows a blank screen. `initialQuery` is how the
 // search bar on Home hands its query over (?q= on this page's URL).
+//
+// The "Near me | Everywhere" switch is for browsing without typing anything:
+// "Everywhere" loads every shop on Jeeran (same endpoint, `all=1`), nearest
+// first, split into the same Nearby / Farther away sections. Home's
+// "All shops · near & far" card opens this page with it pre-set
+// (`initialScope`, from ?scope=all).
 const SEARCH_MIN_LENGTH = 2
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -36,10 +42,12 @@ export default function NearbyShopsView({
   shops,
   token,
   initialQuery = '',
+  initialScope = 'near',
 }: {
   shops: NearbyBusiness[]
   token?: string
   initialQuery?: string
+  initialScope?: 'near' | 'all'
 }) {
   const [locale] = useLocale()
   const copy = NEARBY_SHOPS_COPY[locale]
@@ -47,6 +55,26 @@ export default function NearbyShopsView({
   const [search, setSearch] = useState(initialQuery)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null) // null = "All"
   const [remote, setRemote] = useState<RemoteSearch | null>(null)
+  const [scope, setScope] = useState<'near' | 'all'>(token ? initialScope : 'near')
+  const [allShops, setAllShops] = useState<Omit<RemoteSearch, 'query'> | null>(null)
+
+  useEffect(() => {
+    if (!token || scope !== 'all' || allShops) return
+    const controller = new AbortController()
+    fetch(`/api/wallet/search?token=${encodeURIComponent(token)}&all=1`, { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body: { results: NearbyBusiness[]; radiusKm: number } | null) => {
+        if (body) setAllShops({ results: body.results, radiusKm: body.radiusKm })
+      })
+      .catch(() => {
+        // Aborted or offline — the nearby list stays on screen meanwhile.
+      })
+    return () => controller.abort()
+  }, [token, scope, allShops])
+
+  const everywhere = scope === 'all' ? allShops : null
+  const loadingEverywhere = scope === 'all' && !allShops
+  const baseShops = everywhere?.results ?? shops
 
   const query = search.trim().toLowerCase()
   const searchEverywhere = !!token && query.length >= SEARCH_MIN_LENGTH
@@ -77,26 +105,29 @@ export default function NearbyShopsView({
   // Only trust server results for the query currently in the box — a stale
   // answer for "piz" shouldn't linger once the customer has typed "pizza".
   const remoteResults = searchEverywhere && remote?.query === query ? remote : null
+  // Whichever server list is on screen carries the member's radius, which is
+  // what the Nearby / Farther away split needs.
+  const sectioned = remoteResults ?? everywhere
 
   const presentCategories = useMemo(() => {
-    const present = new Set((remoteResults?.results ?? shops).map((s) => s.category))
+    const present = new Set((remoteResults?.results ?? baseShops).map((s) => s.category))
     return CATEGORIES.filter((c) => present.has(c))
-  }, [shops, remoteResults])
+  }, [baseShops, remoteResults])
 
   const visibleShops = useMemo(() => {
     if (remoteResults) {
       return remoteResults.results.filter((s) => !selectedCategory || s.category === selectedCategory)
     }
-    return shops.filter((s) => {
+    return baseShops.filter((s) => {
       if (selectedCategory && s.category !== selectedCategory) return false
       if (!query) return true
       const categoryLabel = CATEGORY_LABELS[locale][s.category] ?? s.category
       return s.business_name.toLowerCase().includes(query) || categoryLabel.toLowerCase().includes(query)
     })
-  }, [shops, remoteResults, query, selectedCategory, locale])
+  }, [baseShops, remoteResults, query, selectedCategory, locale])
 
-  const nearbyResults = remoteResults ? visibleShops.filter((s) => s.distance_km <= remoteResults.radiusKm) : []
-  const fartherResults = remoteResults ? visibleShops.filter((s) => s.distance_km > remoteResults.radiusKm) : []
+  const nearbyResults = sectioned ? visibleShops.filter((s) => s.distance_km <= sectioned.radiusKm) : []
+  const fartherResults = sectioned ? visibleShops.filter((s) => s.distance_km > sectioned.radiusKm) : []
 
   const renderShop = (s: NearbyBusiness) => {
     const href = s.has_active_offer
@@ -119,7 +150,7 @@ export default function NearbyShopsView({
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="mb-1 font-medium text-[#2E1065]">{s.business_name}</h2>
-          {remoteResults && s.top_offer_title && (
+          {sectioned && s.top_offer_title && (
             <p className="mb-0.5 truncate text-sm text-[#2E1065]/80">{s.top_offer_title}</p>
           )}
           <p className="text-sm text-[#8A76BE]">{copy.kmAway(s.distance_km.toFixed(1))}</p>
@@ -165,7 +196,33 @@ export default function NearbyShopsView({
         <h1 className={`${displayFont(locale)} mb-2 text-[28px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[34px]`}>
           {copy.heading}
         </h1>
-        <p className="mb-6 text-[15px] text-[#6B5A8C]">{copy.subheading}</p>
+        <p className="mb-5 text-[15px] text-[#6B5A8C]">{copy.subheading}</p>
+
+        {token && (
+          <div
+            role="tablist"
+            aria-label={copy.scopeLabel}
+            className="mb-4 flex rounded-2xl border border-[#EDE3F7] bg-white p-1"
+          >
+            {(['near', 'all'] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                role="tab"
+                aria-selected={scope === s}
+                onClick={() => {
+                  setScope(s)
+                  setSelectedCategory(null)
+                }}
+                className={`flex-1 rounded-xl py-2.5 text-[14px] font-semibold transition-colors ${
+                  scope === s ? 'bg-[#2E1065] text-white' : 'text-[#6B5A8C]'
+                }`}
+              >
+                {s === 'near' ? copy.scopeNear : copy.scopeAll}
+              </button>
+            ))}
+          </div>
+        )}
 
         {(shops.length > 0 || token) && (
           <>
@@ -221,9 +278,11 @@ export default function NearbyShopsView({
           </>
         )}
 
-        {shops.length === 0 && !query ? (
+        {loadingEverywhere && !remoteResults ? (
+          <p className="text-sm text-[#8A76BE]">{copy.loadingAll}</p>
+        ) : baseShops.length === 0 && !query ? (
           <p className="text-sm text-[#8A76BE]">{copy.empty}</p>
-        ) : remoteResults && visibleShops.length > 0 ? (
+        ) : sectioned && visibleShops.length > 0 ? (
           <div className="flex flex-col gap-3">
             {nearbyResults.length > 0 && sectionLabel(copy.nearbySection)}
             {nearbyResults.map(renderShop)}
