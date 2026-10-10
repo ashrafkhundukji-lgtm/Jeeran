@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { verifyMemberToken } from '@/lib/wallet/member-token'
 import type { NearbyOffer } from '@/lib/wallet/google-membership-pass'
 import NearbyOffersView from '@/components/NearbyOffersView'
+import WalletLocaleSync from '@/components/WalletLocaleSync'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +42,7 @@ export default async function NearbyOffersPage({
 
   const { data: member } = await supabaseAdmin
     .from('wallet_members')
-    .select('home_lat, home_lng, push_radius_km')
+    .select('home_lat, home_lng, push_radius_km, preferred_language')
     .eq('id', decoded.memberId)
     .maybeSingle()
   if (!member) notFound()
@@ -55,5 +56,10 @@ export default async function NearbyOffersPage({
 
   const nearbyOffers = (offers ?? []) as NearbyOffer[]
 
-  return <NearbyOffersView offers={nearbyOffers} token={token} />
+  return (
+    <>
+      <WalletLocaleSync preferred={member.preferred_language} />
+      <NearbyOffersView offers={nearbyOffers} token={token} />
+    </>
+  )
 }

@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { verifyMemberToken } from '@/lib/wallet/member-token'
 import type { NearbyBusiness } from '@/lib/wallet/nearby-businesses'
 import NearbyShopsView from '@/components/NearbyShopsView'
+import WalletLocaleSync from '@/components/WalletLocaleSync'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,7 +32,7 @@ export default async function NearbyShopsPage({
 
   const { data: member } = await supabaseAdmin
     .from('wallet_members')
-    .select('home_lat, home_lng, push_radius_km')
+    .select('home_lat, home_lng, push_radius_km, preferred_language')
     .eq('id', decoded.memberId)
     .maybeSingle()
   if (!member) notFound()
@@ -43,7 +44,15 @@ export default async function NearbyShopsPage({
     p_limit: SHOPS_PAGE_LIMIT,
   })
 
-  return <NearbyShopsView shops={(shops ?? []) as NearbyBusiness[]} token={token} initialQuery={q ?? ''}
-      initialScope={scope === 'all' ? 'all' : 'near'}
-    />
+  return (
+    <>
+      <WalletLocaleSync preferred={member.preferred_language} />
+      <NearbyShopsView
+        shops={(shops ?? []) as NearbyBusiness[]}
+        token={token}
+        initialQuery={q ?? ''}
+        initialScope={scope === 'all' ? 'all' : 'near'}
+      />
+    </>
+  )
 }

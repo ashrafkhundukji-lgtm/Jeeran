@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { verifyMemberToken } from '@/lib/wallet/member-token'
 import WalletLanguagePicker from '@/components/WalletLanguagePicker'
+import WalletLocaleSync from '@/components/WalletLocaleSync'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,5 +28,10 @@ export default async function WalletLanguagePage({
     .maybeSingle()
   if (!member) notFound()
 
-  return <WalletLanguagePicker token={token} initialLocale={member.preferred_language} />
+  return (
+    <>
+      <WalletLocaleSync preferred={member.preferred_language} />
+      <WalletLanguagePicker token={token} initialLocale={member.preferred_language} />
+    </>
+  )
 }
