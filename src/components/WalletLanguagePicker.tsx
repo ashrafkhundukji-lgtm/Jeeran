@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useLocale } from '@/lib/i18n/useLocale'
-import { LOCALES, getDir, type Locale } from '@/lib/i18n/locale'
+import { LOCALES, detectDeviceLocale, getDir, type Locale } from '@/lib/i18n/locale'
 import { displayFont } from '@/lib/i18n/displayFont'
 import { WALLET_LANGUAGE_COPY } from '@/lib/i18n/walletLanguage'
 import WalletTabBar from '@/components/WalletTabBar'
@@ -23,7 +23,7 @@ export default function WalletLanguagePicker({
   token: string
   initialLocale: Locale | null
 }) {
-  const [pageLocale] = useLocale()
+  const [pageLocale, setPageLocale] = useLocale()
   const copy = WALLET_LANGUAGE_COPY[pageLocale]
   const dir = getDir(pageLocale)
 
@@ -32,7 +32,11 @@ export default function WalletLanguagePicker({
 
   async function choose(next: Locale | null) {
     const previous = walletLocale
+    const previousPage = pageLocale
     setWalletLocale(next)
+    // The site's own text follows the same choice (see WalletLocaleSync) —
+    // switch it now rather than on the next page load.
+    setPageLocale(next ?? detectDeviceLocale())
     setStatus('saving')
     try {
       const res = await fetch('/api/wallet/membership/language', {
@@ -44,6 +48,7 @@ export default function WalletLanguagePicker({
       setStatus('saved')
     } catch {
       setWalletLocale(previous) // failed save shouldn't leave the UI claiming a choice that never persisted
+      setPageLocale(previousPage)
       setStatus('error')
     }
   }
