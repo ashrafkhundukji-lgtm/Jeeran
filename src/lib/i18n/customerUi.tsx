@@ -167,7 +167,7 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       youreInBody: 'ستبدأ عروض المحلات القريبة بالظهور على بطاقتك قريبًا.',
       continueToWallet: 'تابع إلى Google Wallet',
       appNudge:
-        'نصيحة: ثبّت تطبيق Google Wallet المجاني لتصلك تنبيهات العروض الجديدة على شاشة القفل. بطاقتك تعمل بدونه، لكن بلا تنبيهات.',
+        'نصيحة: ثبّت تطبيق Google Wallet المجاني لتصلك تنبيهات العروض الجديدة على شاشة القفل. بطاقتك تعمل بدونه، لكن قد لا تصلك التنبيهات.',
       getWalletApp: 'تحميل Google Wallet',
       dismiss: 'إغلاق',
       genericError: 'تعذّر تجهيز البطاقة. حاول مرة أخرى.',
@@ -245,7 +245,7 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       youreInBody: 'Offers from shops near you will start showing up on your card soon.',
       continueToWallet: 'Continue to Google Wallet',
       appNudge:
-        "Tip: get the free Google Wallet app to receive new-offer alerts on your lock screen. Your card works without it — you just won't be notified.",
+        "Tip: get the free Google Wallet app to receive new-offer alerts on your lock screen. Your card works without it, but you may not receive notifications.",
       getWalletApp: 'Get Google Wallet',
       dismiss: 'Dismiss',
       genericError: "Couldn't prepare your card. Please try again.",
@@ -324,7 +324,7 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       youreInBody: 'قریبی دکانوں کی آفرز جلد آپ کے کارڈ پر نظر آنا شروع ہو جائیں گی۔',
       continueToWallet: 'Google Wallet پر جاری رکھیں',
       appNudge:
-        'مشورہ: لاک اسکرین پر نئی آفرز کی اطلاع کے لیے مفت Google Wallet ایپ انسٹال کریں۔ کارڈ اس کے بغیر بھی کام کرتا ہے، بس اطلاع نہیں ملے گی۔',
+        'مشورہ: لاک اسکرین پر نئی آفرز کی اطلاع کے لیے مفت Google Wallet ایپ انسٹال کریں۔ کارڈ اس کے بغیر بھی کام کرتا ہے، لیکن ممکن ہے آپ کو اطلاعات نہ ملیں۔',
       getWalletApp: 'Google Wallet حاصل کریں',
       dismiss: 'بند کریں',
       genericError: 'کارڈ تیار نہیں ہو سکا۔ دوبارہ کوشش کریں۔',

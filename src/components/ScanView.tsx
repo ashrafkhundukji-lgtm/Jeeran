@@ -42,7 +42,8 @@ export default function ScanView({
       <header className="bg-brand-hero relative flex flex-col gap-3 overflow-hidden px-6 pt-5 pb-24 text-white">
         <div aria-hidden="true" className="bg-brand-dot-grid absolute inset-0" />
         <div aria-hidden="true" className="absolute -start-[60px] -top-[60px] h-[200px] w-[200px] rounded-full bg-white/7" />
-        <div aria-hidden="true" className="absolute -end-[50px] -bottom-[30px] h-[180px] w-[180px] rounded-full bg-brand-coral-brand/26" />
+        {/* White-alpha circles only on navy — translucent coral reads as mauve. */}
+        <div aria-hidden="true" className="absolute -end-[50px] -bottom-[30px] h-[180px] w-[180px] rounded-full bg-white/6" />
 
         <div className="relative mb-2.5 flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -57,8 +58,8 @@ export default function ScanView({
           </span>
         )}
 
-        <h1 className="relative font-display text-[30px] leading-[1.25] font-bold">{copy.scan.welcome}</h1>
-        {!frozen && <p className="relative text-base leading-normal text-white/88">{copy.scan.atShop(hostName)}</p>}
+        <h1 className="relative font-display text-[30px] leading-[1.25] font-bold text-balance">{copy.scan.welcome}</h1>
+        {!frozen && <p className="relative text-base leading-normal text-pretty text-white/88">{copy.scan.atShop(hostName)}</p>}
       </header>
 
       <div className="relative mx-6 -mt-[62px] rounded-3xl bg-white p-5 shadow-brand-overlap">
@@ -71,7 +72,7 @@ export default function ScanView({
 
       {!frozen && (
         <section className="relative flex flex-col gap-3 px-6 pt-[22px]">
-          <h2 className="font-display text-lg font-semibold text-brand-navy-deep">{copy.scan.offersFrom(hostName)}</h2>
+          <h2 className="font-display text-lg font-semibold text-balance text-brand-navy-deep">{copy.scan.offersFrom(hostName)}</h2>
           {offers.length === 0 ? (
             <NoOffersState locale={locale} />
           ) : (

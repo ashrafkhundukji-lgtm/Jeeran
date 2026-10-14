@@ -138,3 +138,8 @@ export function CategoryCover({
     </div>
   )
 }
+
+// Note on one-line shop-typed text (names, offer titles): the outer span
+// keeps the PAGE direction (so text-start aligns with the page), while the
+// inner <bdi> is an inline-block that truncates in the TEXT's own
+// direction — an English name in an RTL page loses its end, not its start.

@@ -5,7 +5,7 @@ import { regenerateAutoTranslations } from '@/lib/translate'
 import type { Locale } from '@/lib/i18n/locale'
 import OfferPageView from '@/components/OfferPageView'
 import { verifyMemberToken } from '@/lib/wallet/member-token'
-import { haversineKm } from '@/lib/display'
+import { haversineKm, keepOriginalTitle } from '@/lib/display'
 
 export const dynamic = 'force-dynamic'
 
@@ -94,7 +94,9 @@ export default async function OfferPage({
     return {
       locale,
       needsBackfill: !shopTitle && !autoFresh,
-      title: shopTitle ?? (autoFresh ? auto.title : campaign.title),
+      // Short / number-shaped titles skip the auto-translation (display
+      // only — backfill above is unchanged); see keepOriginalTitle().
+      title: shopTitle ?? (autoFresh && !keepOriginalTitle(campaign.title) ? auto.title : campaign.title),
       description: shopDescription ?? (autoFresh ? auto.description : campaign.description),
     }
   })

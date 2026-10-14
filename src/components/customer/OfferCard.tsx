@@ -6,7 +6,8 @@ import { CategoryCover, DiscountBadge, DistanceLabel, DistanceText, ExpiryChip, 
 // One normalized shape for every offer list (Home strip, Offers list, Scan
 // page) — each page maps its own query rows into this, so no list reorders
 // or re-fetches anything. Title/businessName are shop-typed: rendered with
-// dir="auto", never translated here.
+// isolated in <bdi> (never dir="auto" on the block, so text-start
+// follows the page direction), never translated here.
 export interface CardOffer {
   id: string
   href: string
@@ -37,11 +38,11 @@ export default function OfferCard({ offer, variant, locale }: { offer: CardOffer
           <div className="flex items-center gap-3">
             <ShopAvatar name={offer.businessName} size={40} />
             <div className="flex min-w-0 flex-col gap-0.5">
-              <span dir="auto" className="truncate text-start text-[13px] text-brand-muted">
-                {offer.businessName}
+              <span className="min-w-0 text-start text-[13px] text-brand-muted">
+                <bdi className="inline-block max-w-full truncate align-bottom">{offer.businessName}</bdi>
               </span>
-              <span dir="auto" className="text-start text-[17px] leading-[1.35] font-bold text-brand-navy-deep">
-                {offer.title}
+              <span className="text-start text-[17px] leading-[1.35] font-bold text-brand-navy-deep">
+                <bdi>{offer.title}</bdi>
               </span>
             </div>
           </div>
@@ -67,13 +68,13 @@ export default function OfferCard({ offer, variant, locale }: { offer: CardOffer
           <DiscountBadge title={offer.title} locale={locale} className="absolute start-2 top-2" />
         </CategoryCover>
         <div className="flex flex-col gap-1.5 px-3 pt-2.5 pb-3">
-          <span dir="auto" className="line-clamp-2 min-h-[38px] text-start text-sm leading-[1.35] font-semibold text-brand-navy-deep">
-            {offer.title}
+          <span className="line-clamp-2 min-h-[38px] text-start text-sm leading-[1.35] font-semibold text-brand-navy-deep">
+            <bdi>{offer.title}</bdi>
           </span>
           <span className="flex min-w-0 items-center gap-1 text-xs text-brand-muted">
             <PinIcon size={12} strokeWidth={2.4} className="shrink-0" />
             <span className="truncate">
-              <bdi dir="auto">{offer.businessName}</bdi>
+              <bdi>{offer.businessName}</bdi>
               {offer.distanceKm != null && (
                 <>
                   {' · '}
@@ -99,11 +100,11 @@ export default function OfferCard({ offer, variant, locale }: { offer: CardOffer
       </CategoryCover>
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-1.5 py-0.5">
         <div className="flex flex-col gap-0.5">
-          <span dir="auto" className="truncate text-start text-[12.5px] text-brand-muted">
-            {offer.businessName}
+          <span className="min-w-0 text-start text-[12.5px] text-brand-muted">
+            <bdi className="inline-block max-w-full truncate align-bottom">{offer.businessName}</bdi>
           </span>
-          <span dir="auto" className="line-clamp-2 text-start text-[15px] leading-[1.35] font-bold text-brand-navy-deep">
-            {offer.title}
+          <span className="line-clamp-2 text-start text-[15px] leading-[1.35] font-bold text-brand-navy-deep">
+            <bdi>{offer.title}</bdi>
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
