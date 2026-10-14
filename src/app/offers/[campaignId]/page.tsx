@@ -4,6 +4,8 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { regenerateAutoTranslations } from '@/lib/translate'
 import type { Locale } from '@/lib/i18n/locale'
 import OfferPageView from '@/components/OfferPageView'
+import { verifyMemberToken } from '@/lib/wallet/member-token'
+import { haversineKm } from '@/lib/display'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,7 +37,7 @@ export default async function OfferPage({
   const { data: campaign } = await supabaseAdmin
     .from('campaigns')
     .select(
-      'id, title, description, image_url, is_active, creator_type, creator_id, updated_at, title_ar, title_en, title_ur, description_ar, description_en, description_ur',
+      'id, title, description, image_url, is_active, end_date, creator_type, creator_id, updated_at, title_ar, title_en, title_ur, description_ar, description_en, description_ur',
     )
     .eq('id', campaignId)
     .eq('creator_type', 'business') // matches the rest of the geo-push/membership system — business-only for MVP
@@ -111,8 +113,27 @@ export default async function OfferPage({
     after(() => regenerateAutoTranslations(campaign.id, campaign.title, campaign.description, campaign.updated_at))
   }
 
+  // "100 m from you" — only when a valid member token says where "you" is
+  // (the member's saved location, same point every nearby list measures
+  // from). An absent/invalid token just means no distance, never a 404.
+  let distanceKm: number | null = null
+  const decoded = token ? verifyMemberToken(token) : null
+  if (decoded && business.latitude != null && business.longitude != null) {
+    const { data: member } = await supabaseAdmin
+      .from('wallet_members')
+      .select('home_lat, home_lng')
+      .eq('id', decoded.memberId)
+      .maybeSingle()
+    if (member?.home_lat != null && member.home_lng != null) {
+      distanceKm = haversineKm(member.home_lat, member.home_lng, business.latitude, business.longitude)
+    }
+  }
+
   return (
     <OfferPageView
+      offerId={campaign.id}
+      endDate={campaign.end_date}
+      distanceKm={distanceKm}
       isActive={campaign.is_active}
       imageUrl={campaign.image_url}
       businessName={business.name}

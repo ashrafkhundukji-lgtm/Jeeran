@@ -1,4 +1,4 @@
-import { Baloo_2, Inter, Noto_Kufi_Arabic } from 'next/font/google'
+import { Baloo_2, IBM_Plex_Sans_Arabic, Inter, Noto_Kufi_Arabic, Readex_Pro } from 'next/font/google'
 
 // Site-wide type system ("Vibrant Community" direction). Baloo 2 carries
 // display type (600/700/800) — a playful, rounded geometric face — Inter
@@ -31,5 +31,26 @@ export const inter = Inter({
   subsets: ['latin', 'latin-ext', 'vietnamese'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-inter',
+  display: 'swap',
+})
+
+// Customer-facing type pair (wallet mini-site, offer pages, scan page — see
+// docs/design-reference/jeeran-customer-ui-refresh-prompt.md). Readex Pro
+// for display, IBM Plex Sans Arabic for body/UI; both carry Latin and
+// Arabic-script glyphs, so the same pair serves ar, en and ur. Exposed as
+// the `font-display` / `font-body` Tailwind tokens (globals.css); only the
+// customer screens opt in, so dashboard/landing keep Baloo 2 / Inter /
+// Noto Kufi Arabic.
+export const readexPro = Readex_Pro({
+  subsets: ['arabic', 'latin'],
+  weight: ['500', '600', '700'],
+  variable: '--font-readex-pro',
+  display: 'swap',
+})
+
+export const plexSansArabic = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic', 'latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-plex-arabic',
   display: 'swap',
 })
