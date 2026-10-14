@@ -1,12 +1,15 @@
 import { notFound } from 'next/navigation'
 import { getHostBusiness, getTopAdsForBusiness } from '@/lib/matchmaking'
-import AddToWalletMembershipButton from '@/components/AddToWalletMembershipButton'
-import SiteLogo from '@/components/SiteLogo'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import { fetchOfferEndDates } from '@/lib/offerEndDates'
+import { haversineKm } from '@/lib/display'
+import ScanView from '@/components/ScanView'
+import type { CardOffer } from '@/components/customer/OfferCard'
 
 // Apple Wallet (SaveToWalletButton) is intentionally not rendered here — its
 // add-confirmation signal isn't wired up yet (see the component's own
 // comment), so it's not ready for the live scan page. Re-add the import and
-// the <SaveToWalletButton /> render below once that's confirmed working.
+// the <SaveToWalletButton /> render in ScanView once that's confirmed working.
 
 export const dynamic = 'force-dynamic'
 
@@ -20,61 +23,44 @@ export default async function ScanPage({
   if (!host) notFound()
 
   if (host.isFrozen) {
-    return (
-      <main className="min-h-full flex flex-col items-center justify-center bg-[#FFF8EC] px-4 py-8 text-center">
-        <div className="max-w-sm w-full">
-          <div className="flex justify-center mb-6">
-            <SiteLogo className="h-20" />
-          </div>
-          <p className="text-sm text-[#6B5A8C]">This shop is temporarily unavailable.</p>
-        </div>
-      </main>
-    )
+    return <ScanView hostId={host.id} hostName={host.name} frozen offers={[]} />
   }
 
+  // Ranking and selection stay entirely get_top_ads()'s. The lookups below
+  // only decorate those same rows for display (category icon, photo,
+  // expiry chip, distance from this shop) — they never filter or reorder.
   const ads = await getTopAdsForBusiness(host.id, 3)
-  const ROW_TINTS = ['#FFE3E8', '#FFF3D1']
+  const campaignIds = ads.map((a) => a.campaignId)
+  const shopIds = [host.id, ...ads.map((a) => a.creatorId)]
 
-  return (
-    <main className="min-h-full flex flex-col bg-[#FFF8EC] px-4 py-8">
-      <div className="max-w-sm mx-auto w-full">
-        <div className="flex justify-center mb-6">
-          <SiteLogo className="h-20" />
-        </div>
+  const [endDates, { data: campaigns }, { data: shops }] = await Promise.all([
+    fetchOfferEndDates(campaignIds),
+    campaignIds.length
+      ? supabaseAdmin.from('campaigns').select('id, image_url').in('id', campaignIds)
+      : Promise.resolve({ data: [] as { id: string; image_url: string | null }[] }),
+    supabaseAdmin.from('businesses').select('id, category, latitude, longitude').in('id', shopIds),
+  ])
 
-        <div className="text-center mb-6">
-          <p className="text-xs uppercase tracking-wide text-[#8A76BE] font-semibold mb-1">
-            You&apos;re at
-          </p>
-          <h1 className="font-[family-name:var(--font-baloo)] text-2xl font-bold text-[#2E1065]">{host.name}</h1>
-        </div>
-
-        <AddToWalletMembershipButton businessId={host.id} />
-
-        {ads.length === 0 ? (
-          <p className="text-sm text-[#6B5A8C] text-center py-12">
-            No offers nearby right now — check back later.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {ads.map((ad, i) => (
-              <div
-                key={ad.campaignId}
-                className="rounded-2xl p-4"
-                style={{ background: ROW_TINTS[i % ROW_TINTS.length] }}
-              >
-                {ad.creatorName && (
-                  <p className="text-xs text-[#6B5A8C] font-medium mb-1">{ad.creatorName}</p>
-                )}
-                <h2 className="font-semibold text-[#2E1065] mb-1">{ad.title}</h2>
-                {ad.description && (
-                  <p className="text-sm text-[#6B5A8C] mb-3">{ad.description}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </main>
+  const imageById = new Map((campaigns ?? []).map((c) => [c.id, c.image_url as string | null]))
+  const shopById = new Map(
+    (shops ?? []).map((s) => [s.id, s as { id: string; category: string; latitude: number | null; longitude: number | null }]),
   )
+  const hostShop = shopById.get(host.id)
+
+  const offers: CardOffer[] = ads.map((ad) => {
+    const shop = shopById.get(ad.creatorId)
+    const canMeasure = hostShop?.latitude != null && hostShop.longitude != null && shop?.latitude != null && shop.longitude != null
+    return {
+      id: ad.campaignId,
+      href: `/offers/${ad.campaignId}`,
+      title: ad.title,
+      businessName: ad.creatorName ?? '',
+      category: shop?.category ?? 'other',
+      distanceKm: canMeasure ? haversineKm(hostShop.latitude!, hostShop.longitude!, shop.latitude!, shop.longitude!) : null,
+      imageUrl: imageById.get(ad.campaignId) ?? null,
+      endDate: endDates.get(ad.campaignId) ?? null,
+    }
+  })
+
+  return <ScanView hostId={host.id} hostName={host.name} offers={offers} />
 }

@@ -1,6 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { useLocale } from '@/lib/i18n/useLocale'
+import { CUSTOMER_UI_COPY } from '@/lib/i18n/customerUi'
+import { CheckIcon, CloseIcon, SmartphoneIcon, TrashIcon, WalletIcon } from '@/components/customer/icons'
+import { PRESS } from '@/components/customer/primitives'
 
 type Status = 'idle' | 'working' | 'error' | 'confirming'
 
@@ -42,7 +46,21 @@ function getBrowserLocation(): Promise<{ lat: number; lng: number } | null> {
 // this isn't tied to any one offer: it creates (or reuses) the customer's
 // persistent Jeeran Offers membership pass, which then gets pushed nearby
 // offers server-side. See src/app/api/wallet/membership/create/route.ts.
-export default function AddToWalletMembershipButton({ businessId }: { businessId: string }) {
+//
+// Visual refresh only (docs/design-reference/Scan.dc.html): renders the
+// whole body of the scan page's overlapping card — intro, the large coral
+// button and the trust row, or the first-scan confirmation. handleClick()
+// is unchanged. `onConfirmed` just lets the page header show "visit
+// recorded" once the create call has actually succeeded.
+export default function AddToWalletMembershipButton({
+  businessId,
+  onConfirmed,
+}: {
+  businessId: string
+  onConfirmed?: () => void
+}) {
+  const [locale] = useLocale()
+  const copy = CUSTOMER_UI_COPY[locale].scan
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState('')
   const [saveUrl, setSaveUrl] = useState('')
@@ -82,6 +100,7 @@ export default function AddToWalletMembershipButton({ businessId }: { businessId
       } else {
         setSaveUrl(body.saveUrl)
         setStatus('confirming')
+        onConfirmed?.()
       }
     } catch (err) {
       setStatus('error')
@@ -89,52 +108,53 @@ export default function AddToWalletMembershipButton({ businessId }: { businessId
     }
   }
 
+  const bigButton = `flex h-[58px] w-full items-center justify-center gap-2.5 rounded-2xl bg-brand-coral font-display text-[19px] font-bold text-white shadow-brand-coral disabled:opacity-60 ${PRESS}`
+
   if (status === 'confirming') {
     return (
-      <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-center">
-        <p className="text-2xl mb-1">🎉</p>
-        <p className="text-sm font-medium text-emerald-800 mb-1">You&apos;re in!</p>
-        <p className="text-xs text-emerald-700 mb-3">
-          Offers from shops near you will start showing up on your pass soon.
-        </p>
+      <div className="flex flex-col gap-3.5">
+        <div className="flex items-center gap-3">
+          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-brand-tint text-brand-navy">
+            <CheckIcon size={22} strokeWidth={2.4} />
+          </span>
+          <div className="flex flex-col gap-0.5">
+            <span className="font-display text-base font-semibold text-brand-navy-deep">{copy.youreIn}</span>
+            <span className="text-[13.5px] leading-normal text-brand-muted">{copy.youreInBody}</span>
+          </div>
+        </div>
         <button
           type="button"
           onClick={() => {
             window.location.href = saveUrl
           }}
-          className="w-full rounded-full bg-[#FF5A79] text-white text-sm font-medium py-3 transition-colors hover:bg-[#E8425F] active:opacity-80"
+          className={bigButton}
         >
-          Continue to Google Wallet
+          <WalletIcon size={22} />
+          {copy.continueToWallet}
         </button>
 
         {/* Not a blocking requirement — the pass saves and works either way
-            (see GOOGLE_WALLET_PLAY_STORE_URL comment above). This is just
-            honest information at the moment it's actually relevant, same
-            principle as the confirmation panel itself. Dismissible, shown to
-            every new member since there's no reliable way to detect whether
-            they already have the app. */}
+            (see GOOGLE_WALLET_PLAY_STORE_URL comment above). Dismissible,
+            shown to every new member since there's no reliable way to
+            detect whether they already have the app. */}
         {showAppNudge && (
-          <div className="relative mt-3 rounded-2xl border border-[#EDE3F7] bg-[#F6F0FF] p-3 text-left">
+          <div className="relative rounded-2xl bg-brand-tint p-3 pe-10 text-start">
             <button
               type="button"
               onClick={() => setShowAppNudge(false)}
-              aria-label="Dismiss"
-              className="absolute top-2 right-2 text-[#8A76BE] hover:text-[#2E1065] leading-none text-base px-1"
+              aria-label={copy.dismiss}
+              className="absolute end-0 top-0 flex h-11 w-11 items-center justify-center text-brand-muted"
             >
-              ×
+              <CloseIcon size={16} />
             </button>
-            <p className="text-xs text-[#4A3970] pr-5">
-              <strong>One more thing:</strong> get the free Google Wallet app (about 30 seconds) — it&apos;s
-              what actually delivers new-offer alerts to your lock screen. Your pass works without it,
-              you just won&apos;t be notified when new deals appear nearby.
-            </p>
+            <p className="text-xs leading-relaxed text-brand-navy-deep">{copy.appNudge}</p>
             <a
               href={GOOGLE_WALLET_PLAY_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block mt-2 text-xs font-medium text-[#2E1065] underline underline-offset-2 hover:text-[#4C2A98]"
+              className="mt-1 inline-flex min-h-[44px] items-center text-[13px] font-semibold text-brand-coral underline underline-offset-2"
             >
-              Get Google Wallet
+              {copy.getWalletApp}
             </a>
           </div>
         )}
@@ -142,20 +162,49 @@ export default function AddToWalletMembershipButton({ businessId }: { businessId
     )
   }
 
+  const trust = [
+    { Icon: CheckIcon, label: copy.trustFree },
+    { Icon: SmartphoneIcon, label: copy.trustNoApp },
+    { Icon: TrashIcon, label: copy.trustRemove },
+  ]
+
   return (
-    <div className="mb-6">
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={status === 'working'}
-        className="w-full rounded-full bg-[#FF5A79] text-white text-sm font-medium py-3 transition-colors hover:bg-[#E8425F] active:opacity-80 disabled:opacity-50"
-      >
-        {status === 'working' ? 'Saving…' : 'Add to Google Wallet'}
+    <div className="flex flex-col gap-3.5">
+      <div className="flex items-center gap-3">
+        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-brand-coral-tint text-brand-coral">
+          <WalletIcon size={22} />
+        </span>
+        <div className="flex flex-col gap-0.5">
+          <span className="font-display text-base font-semibold text-brand-navy-deep">{copy.cardTitle}</span>
+          <span className="text-[13.5px] leading-normal text-brand-muted">{copy.cardBody}</span>
+        </div>
+      </div>
+
+      <button type="button" onClick={handleClick} disabled={status === 'working'} aria-busy={status === 'working'} className={bigButton}>
+        {status === 'working' ? (
+          <span aria-hidden="true" className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none" />
+        ) : (
+          <WalletIcon size={22} />
+        )}
+        {status === 'working' ? copy.saving : copy.addToWallet}
       </button>
-      {status === 'error' && <p className="text-xs text-red-600 text-center mt-1.5">{error}</p>}
-      <p className="text-xs text-neutral-400 text-center mt-2">
-        Save once to get nearby Jeeran offers pushed to your wallet — no need to scan again.
-      </p>
+
+      {status === 'error' && (
+        <p role="alert" className="rounded-xl bg-brand-coral-tint px-3 py-2 text-center text-[13px] font-medium text-brand-coral">
+          {copy.genericError}
+          {/* Server detail kept for support, visually secondary. */}
+          {error && <span className="sr-only"> ({error})</span>}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between gap-2 text-[12.5px] font-semibold text-brand-muted">
+        {trust.map(({ Icon, label }) => (
+          <span key={label} className="flex items-center gap-1">
+            <Icon size={14} strokeWidth={2.2} className="text-brand-navy" />
+            {label}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
