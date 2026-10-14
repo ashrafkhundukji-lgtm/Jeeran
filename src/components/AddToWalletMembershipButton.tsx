@@ -108,7 +108,9 @@ export default function AddToWalletMembershipButton({
     }
   }
 
-  const bigButton = `flex h-[58px] w-full items-center justify-center gap-2.5 rounded-2xl bg-brand-coral font-display text-[19px] font-bold text-white shadow-brand-coral disabled:opacity-60 ${PRESS}`
+  // min-h, not h: a long label (Urdu) wraps to two balanced lines instead
+  // of overflowing or leaving one orphaned word.
+  const bigButton = `flex min-h-[58px] w-full items-center justify-center gap-2.5 rounded-2xl bg-brand-coral px-4 py-2 text-center font-display text-[19px] leading-tight font-bold text-balance text-white shadow-brand-coral disabled:opacity-60 ${PRESS}`
 
   if (status === 'confirming') {
     return (
@@ -118,7 +120,7 @@ export default function AddToWalletMembershipButton({
             <CheckIcon size={22} strokeWidth={2.4} />
           </span>
           <div className="flex flex-col gap-0.5">
-            <span className="font-display text-base font-semibold text-brand-navy-deep">{copy.youreIn}</span>
+            <span className="font-display text-base font-semibold text-balance text-brand-navy-deep">{copy.youreIn}</span>
             <span className="text-[13.5px] leading-normal text-brand-muted">{copy.youreInBody}</span>
           </div>
         </div>
@@ -175,7 +177,7 @@ export default function AddToWalletMembershipButton({
           <WalletIcon size={22} />
         </span>
         <div className="flex flex-col gap-0.5">
-          <span className="font-display text-base font-semibold text-brand-navy-deep">{copy.cardTitle}</span>
+          <span className="font-display text-base font-semibold text-balance text-brand-navy-deep">{copy.cardTitle}</span>
           <span className="text-[13.5px] leading-normal text-brand-muted">{copy.cardBody}</span>
         </div>
       </div>
@@ -197,9 +199,9 @@ export default function AddToWalletMembershipButton({
         </p>
       )}
 
-      <div className="flex items-center justify-between gap-2 text-[12.5px] font-semibold text-brand-muted">
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[12.5px] font-semibold text-brand-muted">
         {trust.map(({ Icon, label }) => (
-          <span key={label} className="flex items-center gap-1">
+          <span key={label} className="flex items-center gap-1 whitespace-nowrap">
             <Icon size={14} strokeWidth={2.2} className="text-brand-navy" />
             {label}
           </span>

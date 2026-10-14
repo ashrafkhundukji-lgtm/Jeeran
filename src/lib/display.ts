@@ -13,12 +13,13 @@ const DISTANCE_UNITS: Record<Locale, { m: string; km: string }> = {
 }
 
 // Under 1 km → whole meters, rounded to the nearest 10 ("100 m"), so
-// "0.1 km" never shows; otherwise one decimal ("1.2 km").
+// "0.1 km" never shows; otherwise one decimal ("1.2 km"), dropping a
+// trailing ".0" ("1 km", not "1.0 km").
 export function formatDistance(km: number, locale: Locale): { value: string; unit: string } {
   const units = DISTANCE_UNITS[locale]
   const meters = Math.max(10, Math.round((km * 1000) / 10) * 10)
   if (meters < 1000) return { value: String(meters), unit: units.m }
-  return { value: km.toFixed(1), unit: units.km }
+  return { value: km.toFixed(1).replace(/\.0$/, ''), unit: units.km }
 }
 
 // Great-circle distance in km — only for pages that already have both
@@ -109,4 +110,15 @@ export function daysUntilEnd(endDate: string | null | undefined, now: Date = new
   if (Number.isNaN(end)) return null
   const days = Math.round((end - today) / 86_400_000)
   return days >= 0 && days <= 3 ? days : null
+}
+
+// Machine translation mangles very short or number-shaped offer titles
+// ("3 for 2" came back as "3 لـ 2"). For those, show the shop's original
+// wording instead of an auto-translation — a shop-typed translation still
+// wins. Fewer than 4 words, or digits making up the core of the title.
+export function keepOriginalTitle(title: string): boolean {
+  const words = title.trim().split(/\s+/).filter(Boolean)
+  if (words.length < 4) return true
+  const digitWords = words.filter((w) => /\d/.test(w)).length
+  return digitWords >= 2 && words.length <= 5
 }

@@ -159,8 +159,8 @@ export default function NearbyShopsView({
       >
         <ShopAvatar name={s.business_name} size={48} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <span dir="auto" className="truncate text-start text-[15px] font-bold text-brand-navy-deep">
-            {s.business_name}
+          <span className="min-w-0 text-start text-[15px] font-bold text-brand-navy-deep">
+            <bdi className="inline-block max-w-full truncate align-bottom">{s.business_name}</bdi>
           </span>
           <span className="text-[12.5px] text-brand-muted">
             {categoryLabel} · <DistanceText km={s.distance_km} locale={locale} />
@@ -168,8 +168,8 @@ export default function NearbyShopsView({
           {s.has_active_offer && s.top_offer_title ? (
             <span className="flex min-w-0 items-center gap-1.5">
               <DiscountBadge title={s.top_offer_title} locale={locale} className="flex-none" />
-              <span dir="auto" className="truncate text-start text-[13px] font-semibold text-brand-coral">
-                {s.top_offer_title}
+              <span className="min-w-0 text-start text-[13px] font-semibold text-brand-coral">
+                <bdi className="inline-block max-w-full truncate align-bottom">{s.top_offer_title}</bdi>
               </span>
             </span>
           ) : (

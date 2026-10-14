@@ -93,7 +93,7 @@ export default function OfferPageView({
   const outlinedAction = `flex h-[54px] w-[54px] flex-none items-center justify-center rounded-2xl border-[1.5px] border-brand-tint-2 text-brand-navy ${PRESS}`
 
   return (
-    <CustomerPage dir={dir} lang={locale} blob={false} clearance={hasActions ? 'pb-[calc(110px+env(safe-area-inset-bottom,0px))]' : 'pb-10'}>
+    <CustomerPage dir={dir} lang={locale} blob={false}>
       <CategoryCover category={category} imageUrl={imageUrl} iconSize={120} decorated className="h-[262px]">
         <div className="absolute inset-x-5 top-5 flex items-center justify-between">
           <button type="button" onClick={handleBack} aria-label={copy.back} className={roundButton}>
@@ -111,7 +111,14 @@ export default function OfferPageView({
         <DiscountBadge title={title} locale={locale} size="lg" className="absolute start-6 bottom-[46px]" />
       </CategoryCover>
 
-      <div className="relative -mt-7 flex min-h-[60dvh] flex-col gap-4 rounded-t-[28px] bg-white px-6 pt-6 pb-6 shadow-[0_-6px_20px_color-mix(in_srgb,var(--color-brand-navy-deep)_6%,transparent)]">
+      {/* The sheet runs to the bottom of the screen (262px cover − 28px
+          overlap) and carries the action-bar clearance itself, so no cream
+          strip shows between it and the sticky bar. */}
+      <div
+        className={`relative -mt-7 flex min-h-[calc(100dvh-234px)] flex-col gap-4 rounded-t-[28px] bg-white px-6 pt-6 ${
+          hasActions ? 'pb-[calc(110px+env(safe-area-inset-bottom,0px))]' : 'pb-10'
+        } shadow-[0_-6px_20px_color-mix(in_srgb,var(--color-brand-navy-deep)_6%,transparent)]`}
+      >
         {!isActive && (
           <div className="rounded-2xl bg-brand-tint px-4 py-3 text-sm text-brand-navy">
             {pageCopy.inactiveNotice(businessName)}
@@ -121,8 +128,8 @@ export default function OfferPageView({
         <div className="flex items-center gap-3">
           <ShopAvatar name={businessName} size={52} />
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span dir="auto" className="truncate text-start font-display text-lg font-bold text-brand-navy-deep">
-              {businessName}
+            <span className="min-w-0 text-start font-display text-lg font-bold text-brand-navy-deep">
+              <bdi className="inline-block max-w-full truncate align-bottom">{businessName}</bdi>
             </span>
             <span className="flex items-center gap-1 text-[13px] text-brand-muted">
               <PinIcon size={14} strokeWidth={2.2} className="shrink-0" />
@@ -139,13 +146,13 @@ export default function OfferPageView({
           </div>
         </div>
 
-        <h1 dir="auto" className="text-start font-display text-[26px] leading-[1.3] font-bold text-brand-navy-deep">
-          {title}
+        <h1 className="text-start font-display text-[26px] leading-[1.3] font-bold text-brand-navy-deep">
+          <bdi>{title}</bdi>
         </h1>
 
         {description && (
-          <p dir="auto" className="text-start text-[15px] leading-[1.6] text-brand-muted">
-            {description}
+          <p className="text-start text-[15px] leading-[1.6] text-brand-muted">
+            <bdi>{description}</bdi>
           </p>
         )}
 

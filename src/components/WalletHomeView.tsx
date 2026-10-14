@@ -69,7 +69,8 @@ export default function WalletHomeView({
             className={`bg-brand-hero relative block min-h-[188px] overflow-hidden rounded-3xl text-white shadow-brand-hero ${PRESS}`}
           >
             <div aria-hidden="true" className="absolute -start-[46px] -top-[46px] h-40 w-40 rounded-full bg-white/8" />
-            <div aria-hidden="true" className="absolute -end-[34px] -bottom-[60px] h-[150px] w-[150px] rounded-full bg-brand-coral-brand/28" />
+            {/* White-alpha circles only on navy — translucent coral over navy reads as mauve. */}
+            <div aria-hidden="true" className="absolute -end-[34px] -bottom-[60px] h-[150px] w-[150px] rounded-full bg-white/6" />
             <div className="relative flex min-h-[188px] flex-col justify-between gap-3 px-5 py-[18px]">
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 text-[13px] font-semibold text-white/88">
@@ -79,11 +80,11 @@ export default function WalletHomeView({
                 <DiscountBadge title={topOffer.title} locale={locale} size="md" className="text-sm" />
               </div>
               <div className="flex flex-col gap-1.5">
-                <span dir="auto" className="text-start text-sm font-medium text-white/82">
-                  {topOffer.businessName}
+                <span className="text-start text-sm font-medium text-white/82">
+                  <bdi>{topOffer.businessName}</bdi>
                 </span>
-                <span dir="auto" className="line-clamp-2 text-start font-display text-[22px] leading-[1.35] font-bold">
-                  {topOffer.title}
+                <span className="line-clamp-2 text-start font-display text-[22px] leading-[1.35] font-bold">
+                  <bdi>{topOffer.title}</bdi>
                 </span>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 text-[13px] font-semibold">
