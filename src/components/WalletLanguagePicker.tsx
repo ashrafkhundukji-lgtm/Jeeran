@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { LOCALES, detectDeviceLocale, getDir, type Locale } from '@/lib/i18n/locale'
-import { displayFont } from '@/lib/i18n/displayFont'
 import { WALLET_LANGUAGE_COPY } from '@/lib/i18n/walletLanguage'
-import WalletTabBar from '@/components/WalletTabBar'
-import WalletAppBar from '@/components/WalletAppBar'
+import CustomerPage from '@/components/customer/CustomerPage'
+import BottomNav, { NAV_CLEARANCE } from '@/components/customer/BottomNav'
+import { CheckIcon } from '@/components/customer/icons'
 
 // The Language tab — a native settings-list (grouped rows, trailing
 // checkmark on the selected one) rather than the individual bordered
@@ -64,46 +64,47 @@ export default function WalletLanguagePicker({
   ]
 
   return (
-    <main dir={dir} className="min-h-screen bg-[#FFF8EC] pb-24 text-[#2E1065]">
-      <WalletAppBar token={token} />
-      <div className="mx-auto max-w-[480px] px-6 pt-6 sm:px-8">
-        <h1 className={`${displayFont(pageLocale)} mb-1 text-[24px] font-bold tracking-[-0.01em]`}>{copy.heading}</h1>
-        <p className="mb-6 text-sm text-[#6B5A8C]">{copy.body}</p>
+    <CustomerPage dir={dir} lang={pageLocale} clearance={NAV_CLEARANCE}>
+      <div className="flex flex-col gap-4 px-6 pt-6">
+        <div className="flex flex-col gap-1">
+          <h1 className="font-display text-[28px] leading-[1.25] font-bold text-brand-navy-deep">{copy.heading}</h1>
+          <p className="text-[15px] leading-relaxed text-brand-muted">{copy.body}</p>
+        </div>
 
-        <div className="overflow-hidden rounded-[18px] border border-[#EDE3F7] bg-white">
+        <div className="overflow-hidden rounded-[22px] border border-brand-line bg-white">
           {rows.map((row, i) => (
             <button
               key={row.key}
               type="button"
               onClick={row.onSelect}
               aria-pressed={row.selected}
-              className={`flex w-full items-center justify-between px-4 py-4 text-start transition-colors ${
-                i > 0 ? 'border-t border-[#f4f4f4]' : ''
-              } ${row.selected ? 'bg-[#FF5A79]/5' : 'hover:bg-neutral-50'}`}
+              className={`flex min-h-[56px] w-full items-center justify-between gap-3 px-4 py-3.5 text-start transition-colors active:bg-brand-tint ${
+                i > 0 ? 'border-t border-brand-line' : ''
+              } ${row.selected ? 'bg-brand-tint' : ''}`}
             >
               <div>
-                <div className={`text-[15px] ${row.selected ? 'font-semibold text-[#FF5A79]' : 'font-medium'}`}>
+                <div className={`text-[15px] ${row.selected ? 'font-bold text-brand-navy' : 'font-medium text-brand-navy-deep'}`}>
                   {row.label}
                 </div>
-                {row.hint && <div className="mt-0.5 text-xs text-neutral-400">{row.hint}</div>}
+                {row.hint && <div className="mt-0.5 text-xs text-brand-muted">{row.hint}</div>}
               </div>
               {row.selected && (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF5A79" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M5 13l4 4L19 7" />
-                </svg>
+                <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-brand-navy text-white">
+                  <CheckIcon size={16} strokeWidth={2.6} />
+                </span>
               )}
             </button>
           ))}
         </div>
 
-        <div className="h-5 pt-3 text-xs">
-          {status === 'saving' && <span className="text-neutral-400">{copy.saving}</span>}
-          {status === 'saved' && <span className="text-green-600">{copy.saved}</span>}
-          {status === 'error' && <span className="text-red-600">{copy.error}</span>}
+        <div role="status" className="min-h-5 text-[13px] font-medium">
+          {status === 'saving' && <span className="text-brand-muted">{copy.saving}</span>}
+          {status === 'saved' && <span className="text-brand-navy">{copy.saved}</span>}
+          {status === 'error' && <span className="text-brand-coral">{copy.error}</span>}
         </div>
       </div>
 
-      <WalletTabBar token={token} active="language" />
-    </main>
+      <BottomNav token={token} active="language" />
+    </CustomerPage>
   )
 }
