@@ -32,6 +32,29 @@
   --color-ink-tertiary: var(--color-ink-tertiary);
   --color-border: var(--color-border);
   --font-sans: var(--font-inter);
+
+  /* Customer-facing brand system (wallet mini-site, offer pages, scan page —
+     see docs/design-reference/). Three color families only: navy, coral,
+     cream, plus tints of them. Separate `brand-*` names so the owner
+     dashboard/landing (still on the plum palette above) are untouched. */
+  --color-brand-navy: #1E3A8A;
+  --color-brand-navy-deep: #12296B;
+  --color-brand-coral: #CF3B19; /* text-safe coral: white on it passes AA */
+  --color-brand-coral-brand: #FF6B4A; /* decorative only — never text */
+  --color-brand-coral-tint: #FFE9E2;
+  --color-brand-cream: #FFF8F1;
+  --color-brand-line: #EDE3D6;
+  --color-brand-muted: #5A6385; /* passes AA on cream — don't lighten */
+  --color-brand-tint: #EAF0FC;
+  --color-brand-tint-2: #C9D6F4;
+
+  --font-display: var(--font-readex-pro), var(--font-plex-arabic), sans-serif;
+  --font-body: var(--font-plex-arabic), sans-serif;
+
+  --shadow-brand-hero: 0 10px 24px rgba(30, 58, 138, 0.28);
+  --shadow-brand-card: 0 8px 20px rgba(30, 58, 138, 0.08);
+  --shadow-brand-overlap: 0 14px 34px rgba(18, 41, 107, 0.18);
+  --shadow-brand-coral: 0 8px 18px rgba(207, 59, 25, 0.3);
 }
 
 body {
@@ -49,5 +72,32 @@ body {
   }
   to {
     top: 226px;
+  }
+}
+
+/* Customer UI decoration (docs/design-reference/) — kept as utilities so
+   components never carry raw colors. */
+@utility bg-brand-blob {
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-brand-coral-brand) 16%, transparent) 0%, transparent 70%);
+}
+@utility bg-brand-dot-grid {
+  background-image: radial-gradient(color-mix(in srgb, white 8%, transparent) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+@utility bg-brand-hero {
+  background: linear-gradient(135deg, var(--color-brand-navy) 0%, var(--color-brand-navy-deep) 100%);
+}
+
+/* Skeleton shimmer — static under reduced motion. */
+@keyframes brand-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+@utility skeleton {
+  background: linear-gradient(90deg, var(--color-brand-tint) 25%, color-mix(in srgb, var(--color-brand-tint) 40%, white) 50%, var(--color-brand-tint) 75%);
+  background-size: 200% 100%;
+  animation: brand-shimmer 1.4s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
   }
 }

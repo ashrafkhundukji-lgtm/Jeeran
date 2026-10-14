@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { baloo2, inter, notoKufiArabic } from "@/lib/fonts";
+import { baloo2, inter, notoKufiArabic, plexSansArabic, readexPro } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${baloo2.variable} ${notoKufiArabic.variable} ${inter.variable} h-full antialiased`}
+      className={`${baloo2.variable} ${notoKufiArabic.variable} ${inter.variable} ${readexPro.variable} ${plexSansArabic.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
