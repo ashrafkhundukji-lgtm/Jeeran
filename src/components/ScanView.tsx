@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocale } from '@/lib/i18n/useLocale'
-import { getDir } from '@/lib/i18n/locale'
+import { LOCALE_STORAGE_KEY, detectDeviceLocale, getDir, isLocale } from '@/lib/i18n/locale'
 import { CUSTOMER_UI_COPY } from '@/lib/i18n/customerUi'
 import { WALLET_HOME_COPY } from '@/lib/i18n/walletHome'
 import CustomerPage from '@/components/customer/CustomerPage'
@@ -32,7 +32,16 @@ export default function ScanView({
   offers: CardOffer[]
   frozen?: boolean
 }) {
-  const [locale] = useLocale()
+  const [locale, setLocale] = useLocale()
+
+  // The scan page is usually a customer's first contact with Jeeran, so
+  // there's often no saved language yet — and the site-wide default is
+  // Arabic. Follow the phone's language in that case. A language already
+  // chosen on this device (landing page, Language tab) is left alone.
+  useEffect(() => {
+    if (!isLocale(localStorage.getItem(LOCALE_STORAGE_KEY))) setLocale(detectDeviceLocale())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const dir = getDir(locale)
   const copy = CUSTOMER_UI_COPY[locale]
   const [visitRecorded, setVisitRecorded] = useState(false)
