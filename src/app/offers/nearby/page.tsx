@@ -4,10 +4,13 @@ import { verifyMemberToken } from '@/lib/wallet/member-token'
 import type { NearbyOffer } from '@/lib/wallet/google-membership-pass'
 import NearbyOffersView from '@/components/NearbyOffersView'
 import WalletLocaleSync from '@/components/WalletLocaleSync'
+import { CATEGORIES } from '@/lib/categories'
+import { fetchOfferEndDates } from '@/lib/offerEndDates'
+import { nearbyOfferToCard } from '@/lib/cardOffer'
 
 export const dynamic = 'force-dynamic'
 
-// The Offers tab (WalletTabBar) — a top-level destination now, not a
+// The Offers tab (BottomNav) — a top-level destination now, not a
 // "everything else beyond the card" supplement to it. It used to slice off
 // the first MAX_OFFERS_SHOWN results (whatever the card's own front
 // already showed) on the theory that this page only existed as a
@@ -26,9 +29,9 @@ const NEARBY_PAGE_LIMIT = 20
 export default async function NearbyOffersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>
+  searchParams: Promise<{ token?: string; category?: string }>
 }) {
-  const { token } = await searchParams
+  const { token, category } = await searchParams
   if (!token) notFound()
 
   // Identifies the member via the same signed-token scheme already used for
@@ -55,11 +58,17 @@ export default async function NearbyOffersPage({
   })
 
   const nearbyOffers = (offers ?? []) as NearbyOffer[]
+  const endDates = await fetchOfferEndDates(nearbyOffers.map((o) => o.offer_id))
 
+  // `category` comes from Home's category wells — pre-selects that chip.
   return (
     <>
       <WalletLocaleSync preferred={member.preferred_language} />
-      <NearbyOffersView offers={nearbyOffers} token={token} />
+      <NearbyOffersView
+        offers={nearbyOffers.map((o) => nearbyOfferToCard(o, token, endDates))}
+        token={token}
+        initialCategory={category && CATEGORIES.includes(category) ? category : null}
+      />
     </>
   )
 }

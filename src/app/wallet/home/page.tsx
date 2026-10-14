@@ -4,10 +4,12 @@ import { verifyMemberToken } from '@/lib/wallet/member-token'
 import type { NearbyOffer } from '@/lib/wallet/google-membership-pass'
 import WalletHomeView from '@/components/WalletHomeView'
 import WalletLocaleSync from '@/components/WalletLocaleSync'
+import { fetchOfferEndDates } from '@/lib/offerEndDates'
+import { nearbyOfferToCard } from '@/lib/cardOffer'
 
 export const dynamic = 'force-dynamic'
 
-// The Home tab — reached from WalletTabBar on every other wallet page, and
+// The Home tab — reached from BottomNav on every other wallet page, and
 // (via the Wallet card's own links, all of which now carry ?token=) the
 // natural first stop. Resolves the member's top offer via the SAME
 // nearby_active_offers() ranking offersToTextModules (google-membership-pass.ts)
@@ -38,13 +40,16 @@ export default async function WalletHomePage({
     p_limit: 5,
   })
   const nearbyOffers = (offers ?? []) as NearbyOffer[]
+  const endDates = await fetchOfferEndDates(nearbyOffers.map((o) => o.offer_id))
 
+  // The hero is the card's own top offer; the "featured near you" strip is
+  // the same 5 rows in the same order (no extra query, no reorder).
   return (
     <>
       <WalletLocaleSync preferred={member.preferred_language} />
       <WalletHomeView
         token={token}
-        topOffer={nearbyOffers[0] ?? null}
+        offers={nearbyOffers.map((o) => nearbyOfferToCard(o, token, endDates))}
         otherCount={Math.max(nearbyOffers.length - 1, 0)}
       />
     </>
