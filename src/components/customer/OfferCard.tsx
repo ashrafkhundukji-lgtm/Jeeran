@@ -17,6 +17,8 @@ export interface CardOffer {
   distanceKm: number | null
   imageUrl: string | null
   endDate: string | null
+  // businesses.logo_url — optional; ShopAvatar falls back to the letter.
+  businessLogoUrl?: string | null
 }
 
 type Variant = 'featured' | 'row' | 'compact'
@@ -36,7 +38,7 @@ export default function OfferCard({ offer, variant, locale }: { offer: CardOffer
         </CategoryCover>
         <div className="flex flex-col gap-2.5 px-4 pt-3 pb-3.5">
           <div className="flex items-center gap-3">
-            <ShopAvatar name={offer.businessName} size={40} />
+            <ShopAvatar name={offer.businessName} logoUrl={offer.businessLogoUrl} size={40} />
             <div className="flex min-w-0 flex-col gap-0.5">
               <span className="min-w-0 text-start text-[13px] text-brand-muted">
                 <bdi className="inline-block max-w-full truncate align-bottom">{offer.businessName}</bdi>

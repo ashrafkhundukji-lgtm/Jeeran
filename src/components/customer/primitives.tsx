@@ -84,9 +84,28 @@ export function DistanceLabel({ km, locale, className = '' }: { km: number | nul
   )
 }
 
-// First letter of the shop's own name in a tint circle — there is no logo
-// column on `businesses` (see the brief's open decisions).
-export function ShopAvatar({ name, size = 40 }: { name: string; size?: number }) {
+// The shop's own logo (businesses.logo_url — a 512×512 webp written by
+// /api/business/[id]/images) in a circle when it has one, otherwise the first
+// letter of its name in a tint circle. Fixed width/height either way, so the
+// swap never shifts layout. Decorative (aria-hidden): every caller already
+// shows the shop name as text right next to it.
+export function ShopAvatar({ name, logoUrl, size = 40 }: { name: string; logoUrl?: string | null; size?: number }) {
+  if (logoUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={logoUrl}
+        alt=""
+        aria-hidden="true"
+        width={size}
+        height={size}
+        loading="lazy"
+        decoding="async"
+        className="shrink-0 rounded-full border border-brand-line bg-white object-cover"
+        style={{ width: size, height: size }}
+      />
+    )
+  }
   const letter = Array.from(name.trim())[0] ?? '?'
   return (
     <span

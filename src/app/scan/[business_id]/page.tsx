@@ -38,12 +38,15 @@ export default async function ScanPage({
     campaignIds.length
       ? supabaseAdmin.from('campaigns').select('id, image_url').in('id', campaignIds)
       : Promise.resolve({ data: [] as { id: string; image_url: string | null }[] }),
-    supabaseAdmin.from('businesses').select('id, category, latitude, longitude').in('id', shopIds),
+    supabaseAdmin.from('businesses').select('id, category, latitude, longitude, logo_url, cover_url').in('id', shopIds),
   ])
 
   const imageById = new Map((campaigns ?? []).map((c) => [c.id, c.image_url as string | null]))
   const shopById = new Map(
-    (shops ?? []).map((s) => [s.id, s as { id: string; category: string; latitude: number | null; longitude: number | null }]),
+    (shops ?? []).map((s) => [
+      s.id,
+      s as { id: string; category: string; latitude: number | null; longitude: number | null; logo_url: string | null; cover_url: string | null },
+    ]),
   )
   const hostShop = shopById.get(host.id)
 
@@ -57,10 +60,11 @@ export default async function ScanPage({
       businessName: ad.creatorName ?? '',
       category: shop?.category ?? 'other',
       distanceKm: canMeasure ? haversineKm(hostShop.latitude!, hostShop.longitude!, shop.latitude!, shop.longitude!) : null,
-      imageUrl: imageById.get(ad.campaignId) ?? null,
+      imageUrl: imageById.get(ad.campaignId) ?? shop?.cover_url ?? null,
+      businessLogoUrl: shop?.logo_url ?? null,
       endDate: endDates.get(ad.campaignId) ?? null,
     }
   })
 
-  return <ScanView hostId={host.id} hostName={host.name} offers={offers} />
+  return <ScanView hostId={host.id} hostName={host.name} hostLogoUrl={hostShop?.logo_url ?? null} offers={offers} />
 }

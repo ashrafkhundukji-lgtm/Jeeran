@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { fetchBusinessImages } from '@/lib/businessImages'
 import { verifyMemberToken } from '@/lib/wallet/member-token'
 import type { NearbyBusiness } from '@/lib/wallet/nearby-businesses'
 import NearbyShopsView from '@/components/NearbyShopsView'
@@ -44,11 +45,16 @@ export default async function NearbyShopsPage({
     p_limit: SHOPS_PAGE_LIMIT,
   })
 
+  const shopRows = (shops ?? []) as NearbyBusiness[]
+  const images = await fetchBusinessImages(shopRows.map((s) => s.business_id))
+  const logos = Object.fromEntries([...images].filter(([, v]) => v.logoUrl).map(([id, v]) => [id, v.logoUrl as string]))
+
   return (
     <>
       <WalletLocaleSync preferred={member.preferred_language} />
       <NearbyShopsView
-        shops={(shops ?? []) as NearbyBusiness[]}
+        shops={shopRows}
+        logos={logos}
         token={token}
         initialQuery={q ?? ''}
         initialScope={scope === 'all' ? 'all' : 'near'}

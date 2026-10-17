@@ -6,6 +6,7 @@ import { LOCALE_STORAGE_KEY, detectDeviceLocale, getDir, isLocale } from '@/lib/
 import { CUSTOMER_UI_COPY } from '@/lib/i18n/customerUi'
 import { WALLET_HOME_COPY } from '@/lib/i18n/walletHome'
 import CustomerPage from '@/components/customer/CustomerPage'
+import { ShopAvatar } from '@/components/customer/primitives'
 import OfferCard, { type CardOffer } from '@/components/customer/OfferCard'
 import AddToWalletMembershipButton from '@/components/AddToWalletMembershipButton'
 import { CheckIcon, StoreIcon } from '@/components/customer/icons'
@@ -24,11 +25,13 @@ import { EmptyState, NoOffersState } from '@/components/customer/States'
 export default function ScanView({
   hostId,
   hostName,
+  hostLogoUrl = null,
   offers,
   frozen = false,
 }: {
   hostId: string
   hostName: string
+  hostLogoUrl?: string | null
   offers: CardOffer[]
   frozen?: boolean
 }) {
@@ -68,7 +71,17 @@ export default function ScanView({
         )}
 
         <h1 className="relative font-display text-[30px] leading-[1.25] font-bold text-balance">{copy.scan.welcome}</h1>
-        {!frozen && <p className="relative text-base leading-normal text-pretty text-white/88">{copy.scan.atShop(hostName)}</p>}
+        {!frozen &&
+          (hostLogoUrl ? (
+            // Host shop's own logo next to "at <shop>" — only when it has one;
+            // without a logo the line is exactly as before.
+            <p className="relative flex items-center gap-2.5 text-base leading-normal text-pretty text-white/88">
+              <ShopAvatar name={hostName} logoUrl={hostLogoUrl} size={36} />
+              <span className="min-w-0">{copy.scan.atShop(hostName)}</span>
+            </p>
+          ) : (
+            <p className="relative text-base leading-normal text-pretty text-white/88">{copy.scan.atShop(hostName)}</p>
+          ))}
       </header>
 
       <div className="relative mx-6 -mt-[62px] rounded-3xl bg-white p-5 shadow-brand-overlap">

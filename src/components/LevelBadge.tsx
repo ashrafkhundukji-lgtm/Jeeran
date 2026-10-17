@@ -13,7 +13,7 @@ const STYLES: Record<PromotionLevel, string> = {
 // rather than depending on any one feature's copy file. `locale` defaults to
 // 'en' so the admin views (AdminSpreadMap, AdminShopsList), which have no
 // i18n wiring at all, keep working unchanged.
-const LABELS: Record<Locale, Record<PromotionLevel, string>> = {
+export const LEVEL_LABELS: Record<Locale, Record<PromotionLevel, string>> = {
   en: { bronze: 'Bronze', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' },
   ar: { bronze: 'برونزي', silver: 'فضي', gold: 'ذهبي', platinum: 'بلاتيني' },
   ur: { bronze: 'کانسی', silver: 'چاندی', gold: 'سونا', platinum: 'پلاٹینم' },
@@ -35,7 +35,7 @@ export default function LevelBadge({
   variant?: 'pill' | 'medal' | 'chip'
   locale?: Locale
 }) {
-  const label = LABELS[locale][level]
+  const label = LEVEL_LABELS[locale][level]
 
   if (variant === 'medal') {
     return (
@@ -53,8 +53,17 @@ export default function LevelBadge({
   // variant rather than changing `medal` in place, since admin views
   // (AdminShopsList) still use `medal`.
   if (variant === 'chip') {
+    // Restyled to the navy/coral system for the owner dashboard refresh —
+    // one flat tint/navy pair for every tier (tier is told apart by its
+    // label, not a fourth color).
     return (
-      <span className="rounded-full bg-[#FFF1E8] px-[9px] py-1 text-[11px] font-semibold text-[#9A3412]">{label}</span>
+      <span className="inline-flex items-center gap-1 rounded-full bg-brand-tint px-2.5 py-1 text-[13px] font-semibold text-brand-navy">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="9" r="5.5" />
+          <path d="m8.5 13.5-1.5 7 5-2.5 5 2.5-1.5-7" />
+        </svg>
+        {label}
+      </span>
     )
   }
 

@@ -7,6 +7,7 @@ import WalletLocaleSync from '@/components/WalletLocaleSync'
 import { CATEGORIES } from '@/lib/categories'
 import { fetchOfferEndDates } from '@/lib/offerEndDates'
 import { nearbyOfferToCard } from '@/lib/cardOffer'
+import { fetchBusinessImages } from '@/lib/businessImages'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,14 +59,17 @@ export default async function NearbyOffersPage({
   })
 
   const nearbyOffers = (offers ?? []) as NearbyOffer[]
-  const endDates = await fetchOfferEndDates(nearbyOffers.map((o) => o.offer_id))
+  const [endDates, images] = await Promise.all([
+    fetchOfferEndDates(nearbyOffers.map((o) => o.offer_id)),
+    fetchBusinessImages(nearbyOffers.map((o) => o.business_id)),
+  ])
 
   // `category` comes from Home's category wells — pre-selects that chip.
   return (
     <>
       <WalletLocaleSync preferred={member.preferred_language} />
       <NearbyOffersView
-        offers={nearbyOffers.map((o) => nearbyOfferToCard(o, token, endDates))}
+        offers={nearbyOffers.map((o) => nearbyOfferToCard(o, token, endDates, images))}
         token={token}
         initialCategory={category && CATEGORIES.includes(category) ? category : null}
       />

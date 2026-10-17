@@ -2,297 +2,330 @@ import { NextRequest, NextResponse } from 'next/server'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import QRCode from 'qrcode'
-import { PDFDocument, rgb, StandardFonts, LineCapStyle } from 'pdf-lib'
+import { PDFDocument, rgb, LineCapStyle, type PDFFont, type PDFPage, type RGB } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
-import { ArabicShaper } from 'arabic-persian-reshaper'
+import sharp from 'sharp'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-// Arabic, Arabic Supplement, Arabic Extended-A (covers Urdu-only letters
-// like ٹ ڈ ڑ ں), and the Presentation Forms blocks.
-const ARABIC_SCRIPT_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/u
+// ── QR sheet (print) ─────────────────────────────────────────────────────
+// A4 portrait by default; ?size=a5 gives the same layout scaled to A5 (e.g.
+// a table tent) — the QR stays ≥ 6 cm either way. The QR still encodes
+// exactly `${NEXT_PUBLIC_APP_URL}/scan/<business_id>` (unchanged), drawn
+// pure black on white with a 4-module quiet zone.
+//
+// Text: the app's own faces, embedded — Readex Pro (shop name) and IBM
+// Plex Sans Arabic (body). fontkit (via pdf-lib) does Arabic joining and
+// mirrors RTL runs; pdf-lib has no bidi, so drawBidiLine() below splits a
+// line into same-direction runs and lays them out in visual order — this
+// is what makes Arabic-only, English-only and mixed names all render
+// correctly. Readex Pro has no Urdu-only letters (ٹ ڈ ڑ ے …), so each run
+// uses the first face that covers ALL of it (swapping faces mid-word would
+// break Arabic joining): Readex → IBM Plex Sans Arabic (which covers
+// Arabic, Urdu and Latin).
 
-// pdf-lib has no text shaping engine (no glyph joining, no bidi reordering),
-// so raw Arabic/Urdu text draws as disconnected isolated-form letters in the
-// wrong visual order. ArabicShaper.convertArabic() handles both concerns
-// itself — it reshapes into joined presentation-form glyphs *and* already
-// returns them in left-to-right drawing order for exactly this kind of
-// non-RTL-aware renderer, so no extra reversal is needed (confirmed by
-// comparing rendered output against Chrome's native bidi-correct rendering
-// — an added .reverse() here double-flips it back to backwards). Latin-only
-// strings pass through untouched. Mixed script (Arabic name with embedded
-// Latin/digits) isn't handled — the whole string is treated as one RTL run,
-// which is a known simplification.
-function shapeForPdf(text: string): string {
-  if (!ARABIC_SCRIPT_RE.test(text)) return text
-  return ArabicShaper.convertArabic(text)
+const FONT_DIR = path.join(process.cwd(), 'public', 'fonts')
+
+const NAVY = hex('#1E3A8A')
+const NAVY_DEEP = hex('#12296B')
+const CORAL = hex('#CF3B19')
+const CORAL_BRAND = hex('#FF6B4A') // the logo pin only (decorative, never text)
+const CREAM = hex('#FFF8F1')
+const LINE = hex('#EDE3D6')
+const WHITE = rgb(1, 1, 1)
+
+const PAGE_SIZES = {
+  a4: [595.28, 841.89],
+  a5: [419.53, 595.28],
+} as const
+const CM = 72 / 2.54
+
+// Final bilingual explanation (kept to what the scan page actually does:
+// it shows neighbouring shops' offers — not the host's own — and offers the
+// free Jeeran Wallet card, which then carries offers from shops near the
+// customer).
+const EXPLAIN_AR = 'امسح الرمز لتشاهد عروض المحلات المجاورة، واحفظ بطاقة جيران لتصلك العروض القريبة منك. مجانًا، بدون تطبيق.'
+const EXPLAIN_EN = 'Scan to see offers from neighbouring shops, and save the Jeeran card to get nearby offers. Free, no app needed.'
+
+// Jeeran mark path data (public/design/jeeran-mark-navy.svg).
+const MARK_TOP_BAR = 'M 100 110 L 260 110'
+const MARK_CURVE = 'M 230 110 C 230 110, 280 180, 230 250 C 180 320, 90 290, 90 220'
+const MARK_VERTICAL = 'M 230 110 L 230 180'
+const MARK_PIN = 'M 160 205 C 148 193, 142 181, 142 169 C 142 155, 152 147, 160 147 C 168 147, 178 155, 178 169 C 178 181, 172 193, 160 205 Z'
+
+function hex(h: string): RGB {
+  const n = parseInt(h.slice(1), 16)
+  return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255)
 }
 
-// SVG path for a rounded rectangle, sized w x h with corner radius r,
-// starting at local (0,0) top-left going clockwise — for use with
-// drawSvgPath (which takes raw SVG path syntax directly).
-function roundedRectPath(w: number, h: number, r: number): string {
-  return `M ${r} 0 L ${w - r} 0 Q ${w} 0 ${w} ${r} L ${w} ${h - r} Q ${w} ${h} ${w - r} ${h} L ${r} ${h} Q 0 ${h} 0 ${h - r} L 0 ${r} Q 0 0 ${r} 0 Z`
+// ── Fonts with per-character fallback ──
+interface Face {
+  pdf: PDFFont
+  has: (cp: number) => boolean
+}
+type FontkitFont = { hasGlyphForCodePoint(cp: number): boolean }
+
+async function loadFace(doc: PDFDocument, file: string): Promise<Face> {
+  const bytes = readFileSync(path.join(FONT_DIR, file))
+  const fk = fontkit.create(bytes) as unknown as FontkitFont
+  const pdf = await doc.embedFont(bytes, { subset: true })
+  return { pdf, has: (cp) => fk.hasGlyphForCodePoint(cp) }
 }
 
-// Icon mark path data, lifted directly from public/jeeran-logo.svg's
-// <g id="logo-mark"> — drawSvgPath takes raw SVG path syntax, so these are
-// the original `d` strings verbatim. The pin's nested translate(160,205)
-// is baked into its coordinates since drawSvgPath has no nested transforms.
-const ICON_TOP_BAR = 'M 100 110 L 260 110'
-const ICON_CURVE = 'M 230 110 C 230 110, 280 180, 230 250 C 180 320, 90 290, 90 220'
-const ICON_VERTICAL = 'M 230 110 L 230 180'
-const ICON_PIN =
-  'M 160 205 C 148 193, 142 181, 142 169 C 142 155, 152 147, 160 147 C 168 147, 178 155, 178 169 C 178 181, 172 193, 160 205 Z'
+// ── Minimal bidi (enough for one-line shop names / captions) ──
+const RTL_RE = /[֐-ࣿיִ-﷿ﹰ-﻿]/
+const LTR_RE = /[A-Za-z0-9À-ɏ٠-٩۰-۹]/ // digits (incl. Arabic-Indic) read left-to-right
 
-const NAVY = rgb(0x1e / 255, 0x3a / 255, 0x8a / 255)
-const ORANGE = rgb(0xff / 255, 0x6b / 255, 0x4a / 255)
-const GRID_LINE = rgb(0xe2 / 255, 0xe8 / 255, 0xf0 / 255)
-const CARD_BG = rgb(0xfb / 255, 0xfc / 255, 0xfd / 255)
-const INK = rgb(0.08, 0.09, 0.12)
-const INK_SOFT = rgb(0.35, 0.35, 0.35)
+type Dir = 'rtl' | 'ltr'
+const isNeutral = (ch: string) => !RTL_RE.test(ch) && !LTR_RE.test(ch)
 
-// Static scatter of faint background pins + connections — same visual
-// language as the site's animated map background, minus the animation
-// (this is a print artifact).
-const BG_PINS: [number, number][] = [
-  [36, 56],
-  [232, 44],
-  [258, 300],
-  [252, 384],
-  [36, 396],
-  [30, 210],
-]
-const BG_CONNECTIONS: [number, number][] = [
-  [0, 1],
-  [1, 2],
-  [2, 3],
-  [3, 4],
-  [4, 5],
-  [5, 0],
-]
+function baseDir(text: string): Dir {
+  for (const ch of text) {
+    if (RTL_RE.test(ch)) return 'rtl'
+    if (LTR_RE.test(ch)) return 'ltr'
+  }
+  return 'ltr'
+}
+
+// Splits into same-direction runs. Neutrals (spaces, punctuation) take the
+// direction of their neighbours when both sides agree, otherwise the base
+// direction. Returns runs in VISUAL (left-to-right drawing) order.
+function bidiRuns(text: string, base: Dir): { text: string; dir: Dir }[] {
+  const chars = Array.from(text)
+  const strong: (Dir | null)[] = chars.map((c) => (RTL_RE.test(c) ? 'rtl' : LTR_RE.test(c) ? 'ltr' : null))
+  const resolved: Dir[] = chars.map((_, i) => {
+    if (strong[i]) return strong[i]!
+    let before: Dir | null = null
+    for (let j = i - 1; j >= 0 && !before; j--) before = strong[j]
+    let after: Dir | null = null
+    for (let j = i + 1; j < chars.length && !after; j++) after = strong[j]
+    return before && before === after ? before : base
+  })
+  const runs: { text: string; dir: Dir }[] = []
+  chars.forEach((c, i) => {
+    const last = runs[runs.length - 1]
+    if (last && last.dir === resolved[i]) last.text += c
+    else runs.push({ text: c, dir: resolved[i] })
+  })
+  return base === 'rtl' ? runs.reverse() : runs
+}
+
+// Picks one face for the whole run when any face covers every character;
+// only if none does, splits per character (last resort).
+function faceRuns(text: string, faces: Face[]): { text: string; face: Face }[] {
+  const cps = Array.from(text, (ch) => ch.codePointAt(0)!)
+  const whole = faces.find((f) => cps.every((cp) => isNeutral(String.fromCodePoint(cp)) || f.has(cp)))
+  if (whole) return [{ text, face: whole }]
+  const out: { text: string; face: Face }[] = []
+  for (const ch of text) {
+    const cp = ch.codePointAt(0)!
+    const face = isNeutral(ch) && out.length ? out[out.length - 1].face : (faces.find((f) => f.has(cp)) ?? faces[0])
+    const last = out[out.length - 1]
+    if (last && last.face === face) last.text += ch
+    else out.push({ text: ch, face })
+  }
+  return out
+}
+
+function measure(text: string, faces: Face[], size: number): number {
+  return faceRuns(text, faces).reduce((w, r) => w + r.face.pdf.widthOfTextAtSize(r.text, size), 0)
+}
+
+function drawBidiLine(page: PDFPage, text: string, faces: Face[], size: number, centerX: number, y: number, color: RGB, base = baseDir(text)) {
+  const segments: { text: string; face: Face; width: number }[] = []
+  for (const run of bidiRuns(text, base)) {
+    const pieces = faceRuns(run.text, faces)
+    // Font fallback inside an RTL run: pieces are logical order, so draw
+    // them right-to-left as well.
+    if (run.dir === 'rtl') pieces.reverse()
+    for (const p of pieces) segments.push({ ...p, width: p.face.pdf.widthOfTextAtSize(p.text, size) })
+  }
+  const total = segments.reduce((w, s) => w + s.width, 0)
+  let x = centerX - total / 2
+  for (const s of segments) {
+    page.drawText(s.text, { x, y, size, font: s.face.pdf, color })
+    x += s.width
+  }
+}
+
+// Greedy word wrap in logical order (width doesn't depend on visual order).
+function wrap(text: string, faces: Face[], size: number, maxWidth: number): string[] {
+  const words = text.trim().split(/\s+/)
+  const lines: string[] = []
+  let line = ''
+  for (const w of words) {
+    const candidate = line ? `${line} ${w}` : w
+    if (!line || measure(candidate, faces, size) <= maxWidth) line = candidate
+    else {
+      lines.push(line)
+      line = w
+    }
+  }
+  if (line) lines.push(line)
+  // A single word wider than the line (long unbroken name): hard-split.
+  return lines.flatMap((l) => {
+    if (measure(l, faces, size) <= maxWidth) return [l]
+    const parts: string[] = []
+    let cur = ''
+    for (const ch of Array.from(l)) {
+      if (cur && measure(cur + ch, faces, size) > maxWidth) {
+        parts.push(cur)
+        cur = ch
+      } else cur += ch
+    }
+    if (cur) parts.push(cur)
+    return parts
+  })
+}
+
+function ellipsize(text: string, faces: Face[], size: number, maxWidth: number): string {
+  let t = text
+  while (t.length > 1 && measure(`${t}…`, faces, size) > maxWidth) t = Array.from(t).slice(0, -1).join('').trimEnd()
+  // Prefer cutting at a word boundary over mid-word when one is available.
+  const space = t.lastIndexOf(' ')
+  if (space > 0 && t.length < text.length && text[t.length] !== ' ') t = t.slice(0, space).trimEnd()
+  return `${t}…`
+}
+
+// Fit the shop name: largest size (down to `min`) where it fits in ≤ 2
+// lines; still too long at `min` → 2 lines with the second truncated.
+function fitName(name: string, faces: Face[], maxWidth: number, max: number, min: number): { lines: string[]; size: number } {
+  for (let size = max; size >= min; size -= 1) {
+    const lines = wrap(name, faces, size, maxWidth)
+    if (lines.length <= 2) return { lines, size }
+  }
+  const lines = wrap(name, faces, min, maxWidth)
+  return { lines: [lines[0], ellipsize(lines.slice(1).join(' '), faces, min, maxWidth)], size: min }
+}
+
+async function logoPng(url: string | null): Promise<Buffer | null> {
+  if (!url) return null
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
+    if (!res.ok) return null
+    const input = Buffer.from(await res.arrayBuffer())
+    return await sharp(input, { limitInputPixels: 40_000_000 }).resize(512, 512, { fit: 'cover' }).png().toBuffer()
+  } catch {
+    return null // a broken logo must never break the sheet — fall back to the Jeeran mark
+  }
+}
+
+function drawMark(page: PDFPage, cx: number, cy: number, size: number) {
+  // Mark viewBox is 75 95 215 235; scale so its height = size.
+  const scale = size / 235
+  const x = cx - (75 + 215 / 2) * scale
+  const y = cy + (95 + 235 / 2) * scale
+  // drawSvgPath scales the stroke width with the path, so this is in mark units.
+  const stroke = { x, y, scale, borderColor: NAVY, borderWidth: 24, borderLineCap: LineCapStyle.Round }
+  page.drawSvgPath(MARK_TOP_BAR, stroke)
+  page.drawSvgPath(MARK_CURVE, stroke)
+  page.drawSvgPath(MARK_VERTICAL, stroke)
+  page.drawSvgPath(MARK_PIN, { x, y, scale, color: CORAL_BRAND })
+  page.drawCircle({ x: x + 160 * scale, y: y - 169 * scale, size: 6 * scale, color: CREAM })
+}
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ business_id: string }> }) {
   const { business_id } = await params
+  const sizeKey = req.nextUrl.searchParams.get('size') === 'a5' ? 'a5' : 'a4'
 
-  const { data: business } = await supabaseAdmin
-    .from('businesses')
-    .select('id, name')
-    .eq('id', business_id)
-    .maybeSingle()
+  const { data: business } = await supabaseAdmin.from('businesses').select('id, name, logo_url').eq('id', business_id).maybeSingle()
   if (!business) return NextResponse.json({ error: 'Business not found' }, { status: 404 })
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const scanUrl = `${appUrl}/scan/${business_id}`
-  const qrPngBuffer = await QRCode.toBuffer(scanUrl, { type: 'png', width: 600, margin: 1 })
 
-  const pdfDoc = await PDFDocument.create()
-  pdfDoc.registerFontkit(fontkit)
+  const [W, H] = PAGE_SIZES[sizeKey]
+  const s = W / PAGE_SIZES.a4[0] // every measurement below is A4 points × s
 
-  const width = 288
-  const height = 432
-  const page = pdfDoc.addPage([width, height])
+  const doc = await PDFDocument.create()
+  doc.registerFontkit(fontkit)
+  doc.setTitle(`Jeeran QR — ${business.name}`)
+  doc.setCreator('Jeeran')
+  const page = doc.addPage([W, H])
 
-  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-  const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
-  const arabicFontBytes = readFileSync(path.join(process.cwd(), 'public', 'fonts', 'Amiri-Regular.ttf'))
-  // subset: true silently corrupts this font in a way that hangs Chrome's
-  // PDF renderer (confirmed empirically) — full embed costs ~200KB but is
-  // reliable, and this is a one-off manual download, not bandwidth-sensitive.
-  const arabicFont = await pdfDoc.embedFont(arabicFontBytes, { subset: false })
+  const plexSemi = await loadFace(doc, 'IBMPlexSansArabic-SemiBold.ttf')
+  const display = [await loadFace(doc, 'ReadexPro-Bold.ttf'), plexSemi]
+  const bodyBold = [plexSemi]
+  const body = [await loadFace(doc, 'IBMPlexSansArabic-Regular.ttf')]
 
-  // ── Background: faint static map grid + pins, matching the site look ──
-  page.drawRectangle({ x: 0, y: 0, width, height, color: CARD_BG })
+  const margin = 48 * s
+  const contentW = W - margin * 2
+  const cx = W / 2
 
-  const gridStep = 24
-  for (let gx = 0; gx <= width; gx += gridStep) {
-    page.drawLine({
-      start: { x: gx, y: 0 },
-      end: { x: gx, y: height },
-      thickness: 0.5,
-      color: GRID_LINE,
-      opacity: 0.5,
-    })
+  // ── Layout pass: header height depends on logo + how many name lines ──
+  const logo = await logoPng(business.logo_url)
+  const name = fitName(business.name, display, contentW, 40 * s, 24 * s)
+  const nameLead = name.size * 1.25
+  const top = H - 54 * s
+  const logoBox = logo ? 110 * s : 64 * s
+  const nameTop = top - logoBox - 24 * s
+  const bandBottom = nameTop - name.lines.length * nameLead - 30 * s
+
+  // Cream header band + hairline frame — the only decoration (no grids or
+  // dotted patterns; they muddy cheap prints).
+  page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: WHITE })
+  page.drawRectangle({ x: 0, y: bandBottom, width: W, height: H - bandBottom, color: CREAM })
+  page.drawRectangle({ x: 18 * s, y: 18 * s, width: W - 36 * s, height: H - 36 * s, borderColor: LINE, borderWidth: 1.5 * s })
+
+  // ── Header: shop logo (or the Jeeran mark) + shop name ──
+  if (logo) {
+    const img = await doc.embedPng(logo)
+    const d = 104 * s
+    page.drawRectangle({ x: cx - d / 2 - 3 * s, y: top - d - 3 * s, width: d + 6 * s, height: d + 6 * s, color: WHITE, borderColor: LINE, borderWidth: 1.5 * s })
+    page.drawImage(img, { x: cx - d / 2, y: top - d, width: d, height: d })
+  } else {
+    drawMark(page, cx, top - logoBox / 2, logoBox)
   }
-  for (let gy = 0; gy <= height; gy += gridStep) {
-    page.drawLine({
-      start: { x: 0, y: gy },
-      end: { x: width, y: gy },
-      thickness: 0.5,
-      color: GRID_LINE,
-      opacity: 0.5,
-    })
+  let y = nameTop - name.size * 0.85
+  for (const line of name.lines) {
+    drawBidiLine(page, line, display, name.size, cx, y, NAVY_DEEP, baseDir(business.name))
+    y -= nameLead
+  }
+  page.drawLine({ start: { x: cx - 28 * s, y: bandBottom + 16 * s }, end: { x: cx + 28 * s, y: bandBottom + 16 * s }, thickness: 4 * s, color: CORAL, lineCap: LineCapStyle.Round })
+
+  // ── QR: pure black on white, 4-module quiet zone, 9 cm at A4 (≥ 6 cm at A5) ──
+  const qrSide = Math.max(9 * CM * s, 6 * CM)
+  const qrPng = await QRCode.toBuffer(scanUrl, { type: 'png', width: 1200, margin: 4, errorCorrectionLevel: 'M', color: { dark: '#000000', light: '#FFFFFF' } })
+  const qrImg = await doc.embedPng(qrPng)
+  const qrTop = bandBottom - 34 * s
+  const qrX = cx - qrSide / 2
+  const qrY = qrTop - qrSide
+  page.drawRectangle({ x: qrX - 10 * s, y: qrY - 10 * s, width: qrSide + 20 * s, height: qrSide + 20 * s, color: WHITE, borderColor: NAVY, borderWidth: 2 * s })
+  page.drawImage(qrImg, { x: qrX, y: qrY, width: qrSide, height: qrSide })
+
+  // ── Bilingual explanation: Arabic first, then English ──
+  y = qrY - 10 * s - 44 * s
+  const arSize = 19 * s
+  for (const line of wrap(EXPLAIN_AR, bodyBold, arSize, contentW - 20 * s)) {
+    drawBidiLine(page, line, bodyBold, arSize, cx, y, NAVY_DEEP, 'rtl')
+    y -= arSize * 1.6
+  }
+  y -= 6 * s
+  const enSize = 15 * s
+  for (const line of wrap(EXPLAIN_EN, body, enSize, contentW - 20 * s)) {
+    drawBidiLine(page, line, body, enSize, cx, y, NAVY, 'ltr')
+    y -= enSize * 1.5
   }
 
-  for (const [a, b] of BG_CONNECTIONS) {
-    const [x1, y1] = BG_PINS[a]
-    const [x2, y2] = BG_PINS[b]
-    page.drawLine({
-      start: { x: x1, y: y1 },
-      end: { x: x2, y: y2 },
-      thickness: 1,
-      color: NAVY,
-      opacity: 0.06,
-      dashArray: [4, 4],
-    })
-  }
-  for (const [px, py] of BG_PINS) {
-    page.drawCircle({ x: px, y: py, size: 3, color: ORANGE, opacity: 0.15 })
-  }
+  // ── Footer: Jeeran, small ──
+  const footY = 42 * s
+  const footSize = 11 * s
+  const brand = 'Jeeran · جيران'
+  const brandW = measure(brand, bodyBold, footSize)
+  const markSize = 16 * s
+  const gap = 6 * s
+  const totalW = markSize + gap + brandW
+  drawMark(page, cx - totalW / 2 + markSize / 2, footY + footSize * 0.35, markSize)
+  drawBidiLine(page, brand, bodyBold, footSize, cx - totalW / 2 + markSize + gap + brandW / 2, footY, NAVY, 'ltr')
 
-  // ── Outer page frame: layered double line, print-card style ──
-  const outerInset = 10
-  page.drawRectangle({
-    x: outerInset,
-    y: outerInset,
-    width: width - outerInset * 2,
-    height: height - outerInset * 2,
-    borderColor: NAVY,
-    borderWidth: 1.2,
-    borderOpacity: 0.35,
-  })
-  const innerInset = outerInset + 3.5
-  page.drawRectangle({
-    x: innerInset,
-    y: innerInset,
-    width: width - innerInset * 2,
-    height: height - innerInset * 2,
-    borderColor: NAVY,
-    borderWidth: 0.5,
-    borderOpacity: 0.18,
-  })
-
-  // ── Logo mark ──
-  const iconScale = 0.32
-  const iconCenterX = width / 2
-  const iconCenterY = 363
-  const iconX = iconCenterX - 180 * iconScale
-  const iconY = iconCenterY + 180 * iconScale
-  const iconRadius = 140 * iconScale
-
-  page.drawCircle({
-    x: iconCenterX,
-    y: iconCenterY,
-    size: iconRadius,
-    borderColor: NAVY,
-    borderWidth: 1,
-    borderOpacity: 0.15,
-    borderDashArray: [3, 3],
-  })
-
-  const strokeOpts = {
-    x: iconX,
-    y: iconY,
-    scale: iconScale,
-    borderColor: NAVY,
-    borderWidth: 24 * iconScale,
-    borderLineCap: LineCapStyle.Round,
-  }
-  page.drawSvgPath(ICON_TOP_BAR, strokeOpts)
-  page.drawSvgPath(ICON_CURVE, strokeOpts)
-  page.drawSvgPath(ICON_VERTICAL, strokeOpts)
-  page.drawSvgPath(ICON_PIN, { x: iconX, y: iconY, scale: iconScale, color: ORANGE })
-
-  page.drawCircle({
-    x: iconX + 160 * iconScale,
-    y: iconY - 169 * iconScale,
-    size: 6 * iconScale,
-    color: rgb(1, 1, 1),
-  })
-
-  // ── Wordmark ──
-  const jeeranSize = 20
-  const jeeranWidth = boldFont.widthOfTextAtSize('Jeeran', jeeranSize)
-  page.drawText('Jeeran', {
-    x: (width - jeeranWidth) / 2,
-    y: 298,
-    size: jeeranSize,
-    font: boldFont,
-    color: NAVY,
-  })
-
-  const arabicWord = shapeForPdf('جيران')
-  const arabicSize = 15
-  const arabicWidth = arabicFont.widthOfTextAtSize(arabicWord, arabicSize)
-  page.drawText(arabicWord, {
-    x: (width - arabicWidth) / 2,
-    y: 278,
-    size: arabicSize,
-    font: arabicFont,
-    color: ORANGE,
-  })
-
-  // ── Divider ──
-  page.drawLine({
-    start: { x: 64, y: 266 },
-    end: { x: width - 64, y: 266 },
-    thickness: 0.75,
-    color: NAVY,
-    opacity: 0.15,
-  })
-
-  // ── Shop name ──
-  const shopNameRaw = business.name
-  const shopNameShaped = shapeForPdf(shopNameRaw)
-  const nameFont = ARABIC_SCRIPT_RE.test(shopNameRaw) ? arabicFont : boldFont
-  const maxNameWidth = width - 56
-  let nameSize = 17
-  let nameWidth = nameFont.widthOfTextAtSize(shopNameShaped, nameSize)
-  while (nameWidth > maxNameWidth && nameSize > 9) {
-    nameSize -= 1
-    nameWidth = nameFont.widthOfTextAtSize(shopNameShaped, nameSize)
-  }
-  page.drawText(shopNameShaped, {
-    x: (width - nameWidth) / 2,
-    y: 248,
-    size: nameSize,
-    font: nameFont,
-    color: INK,
-  })
-
-  // ── QR code, framed ──
-  const qrImage = await pdfDoc.embedPng(qrPngBuffer)
-  const qrSize = 170
-  const qrY = 50
-  const qrX = (width - qrSize) / 2
-  const qrPadding = 12
-  const qrCornerRadius = 14
-
-  page.drawSvgPath(roundedRectPath(qrSize + qrPadding * 2, qrSize + qrPadding * 2, qrCornerRadius), {
-    x: qrX - qrPadding,
-    y: qrY + qrSize + qrPadding,
-    color: rgb(1, 1, 1),
-    borderColor: NAVY,
-    borderWidth: 1,
-    borderOpacity: 0.3,
-  })
-
-  page.drawImage(qrImage, {
-    x: qrX,
-    y: qrY,
-    width: qrSize,
-    height: qrSize,
-  })
-
-  // ── Caption ──
-  const caption = "Scan for today's neighborhood offers"
-  const captionWidth = regularFont.widthOfTextAtSize(caption, 9)
-  page.drawText(caption, {
-    x: (width - captionWidth) / 2,
-    y: 22,
-    size: 9,
-    font: regularFont,
-    color: INK_SOFT,
-  })
-
-  const pdfBytes = await pdfDoc.save()
-
+  const pdfBytes = await doc.save()
   return new NextResponse(new Blob([Uint8Array.from(pdfBytes)]), {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="jeeran-qr-${business_id}.pdf"`,
+      'Content-Disposition': `attachment; filename="jeeran-qr-${business_id}${sizeKey === 'a5' ? '-a5' : ''}.pdf"`,
+      'Cache-Control': 'no-store',
     },
   })
 }

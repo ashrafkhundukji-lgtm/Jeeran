@@ -1,11 +1,14 @@
 'use client'
 
-import DashboardNav from '@/components/DashboardNav'
-import OwnerAppBar from '@/components/OwnerAppBar'
+import OwnerShell, { OwnerTopBar } from '@/components/owner/OwnerShell'
 import BillingActions from '@/components/BillingActions'
+import { Card } from '@/components/owner/ui'
+import { EmptyState } from '@/components/customer/States'
+import { ClockIcon } from '@/components/customer/icons'
 import { useLocale } from '@/lib/i18n/useLocale'
-import { getDir } from '@/lib/i18n/locale'
+import type { Locale } from '@/lib/i18n/locale'
 import { DASHBOARD_COPY, type DashboardCopy } from '@/lib/i18n/dashboard'
+import { INTL_LOCALE, OWNER_UI_COPY } from '@/lib/i18n/ownerUi'
 import type { CatalogEntry } from '@/lib/billing/catalog'
 import type { ReachTier } from '@/lib/billing/account'
 
@@ -24,25 +27,23 @@ export interface LedgerEntry {
   addonKey: string | null
 }
 
-// Ledger rows are grouped by day (design_handoff_jeeran_mobile/README.md §4)
-// — replaces the old flat list showing a full `toLocaleString()` date+time on
-// every row, unreadable at mobile width. Assumes `ledger` arrives newest-first
-// (it does — see src/app/dashboard/billing/page.tsx's query order), so
-// same-day rows are already contiguous and a single pass suffices.
-function dayLabelFor(dateStr: string, copy: DashboardCopy['billing']): string {
+// Ledger rows grouped by day. Assumes `ledger` arrives newest-first (it does
+// — see src/app/dashboard/billing/page.tsx's sort), so same-day rows are
+// already contiguous and a single pass suffices.
+function dayLabelFor(dateStr: string, copy: DashboardCopy['billing'], locale: Locale): string {
   const d = new Date(dateStr)
   const now = new Date()
   const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
   const diffDays = Math.round((startOfDay(now) - startOfDay(d)) / 86400000)
   if (diffDays === 0) return copy.todayLabel
   if (diffDays === 1) return copy.yesterdayLabel
-  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: 'numeric', month: 'short' }).format(d)
 }
 
-function groupLedgerByDay(ledger: LedgerEntry[], copy: DashboardCopy['billing']) {
+function groupLedgerByDay(ledger: LedgerEntry[], copy: DashboardCopy['billing'], locale: Locale) {
   const groups: { label: string; rows: LedgerEntry[] }[] = []
   for (const row of ledger) {
-    const label = dayLabelFor(row.date, copy)
+    const label = dayLabelFor(row.date, copy, locale)
     const last = groups[groups.length - 1]
     if (last && last.label === label) last.rows.push(row)
     else groups.push({ label, rows: [row] })
@@ -79,9 +80,6 @@ export default function BillingView({
   catalog,
   ledger,
 }: {
-  // accountName was shown as a subtitle under the page heading before the
-  // mobile redesign — OwnerAppBar's subpage variant has no subtitle slot, so
-  // it's no longer displayed. Dropped from the props rather than kept unused.
   isSubscriptionActive: boolean
   isInstantNotifyActive: boolean
   reachTier: ReachTier
@@ -90,43 +88,42 @@ export default function BillingView({
   ledger: LedgerEntry[]
 }) {
   const [locale] = useLocale()
-  const dir = getDir(locale)
   const copy = DASHBOARD_COPY[locale].billing
-
+  const o = OWNER_UI_COPY[locale]
   const subscriptionEntry = catalog.find((c) => c.type === 'subscription')
-  const dayGroups = groupLedgerByDay(ledger, copy)
+  const dayGroups = groupLedgerByDay(ledger, copy, locale)
+  const time = new Intl.DateTimeFormat(INTL_LOCALE[locale], { hour: 'numeric', minute: '2-digit' })
 
   return (
-    <main dir={dir} className="min-h-screen bg-[#FFF8EC] pb-24 md:pb-10">
-      <OwnerAppBar variant="subpage" dir={dir} title={copy.heading} backHref="/dashboard/owner" backLabel={DASHBOARD_COPY[locale].common.back} />
-
-      <div className="px-[18px] pt-5">
-        {/* Status hero */}
-        <div
-          className="mb-[22px] rounded-[22px] p-5 text-white"
-          style={{ background: 'linear-gradient(135deg,#2E1065,#4C2A98)' }}
-        >
-          <div className="mb-4 flex items-start justify-between">
+    <OwnerShell
+      tab="billing"
+      header={<OwnerTopBar variant="subpage" title={copy.heading} backHref="/dashboard/owner" backLabel={DASHBOARD_COPY[locale].common.back} />}
+    >
+      <div className="flex flex-col gap-6">
+        {/* Subscription + balance */}
+        <section className="bg-brand-hero relative overflow-hidden rounded-[24px] p-5 text-white shadow-brand-hero">
+          <div aria-hidden="true" className="bg-brand-dot-grid absolute inset-0 opacity-60" />
+          <div className="relative flex items-start justify-between gap-4">
             <div>
-              <p className="mb-[5px] text-[11.5px] font-semibold tracking-[0.07em] text-white/72">
-                {copy.subscriptionStatus}
+              <p className="text-sm font-semibold text-white/80">{o.billing.subscriptionHeading}</p>
+              <p className="mt-1 flex items-center gap-2 text-[17px] font-bold">
+                <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${isSubscriptionActive ? 'bg-white' : 'bg-brand-coral-brand'}`} />
+                {isSubscriptionActive ? copy.active : copy.inactive}
               </p>
-              <div className="flex items-center gap-[7px]">
-                <span className={`h-[7px] w-[7px] rounded-full ${isSubscriptionActive ? 'bg-[#4ade80]' : 'bg-[#f87171]'}`} />
-                <span className="text-[15px] font-semibold">{isSubscriptionActive ? copy.active : copy.inactive}</span>
-              </div>
+              {subscriptionEntry && (
+                <p className="mt-1 text-sm text-white/80">
+                  <bdi dir="ltr">${subscriptionEntry.amountUsd}</bdi> / {copy.perMonthSuffix}
+                </p>
+              )}
             </div>
             <div className="text-end">
-              <p className="mb-[5px] text-[11.5px] font-semibold tracking-[0.07em] text-white/72">{copy.credits}</p>
-              <div className="text-[28px] font-black">{adCredits}</div>
+              <p className="text-sm font-semibold text-white/80">{o.balance.label}</p>
+              <p className="mt-1 font-display text-[34px] leading-none font-bold">
+                <bdi dir="ltr">{adCredits.toLocaleString('en')}</bdi>
+              </p>
             </div>
           </div>
-          {subscriptionEntry && (
-            <div className="border-t border-white/[0.18] pt-[13px] text-[12.5px] text-white/80">
-              {`$${subscriptionEntry.amountUsd}/${copy.perMonthSuffix}`}
-            </div>
-          )}
-        </div>
+        </section>
 
         <BillingActions
           catalog={catalog}
@@ -135,40 +132,44 @@ export default function BillingView({
           reachTier={reachTier}
         />
 
-        <section className="mt-[22px]">
-          <h2 className="mb-3 text-[13px] font-semibold tracking-[0.06em] text-[#8A76BE]">{copy.history}</h2>
+        {/* History */}
+        <section>
+          <h2 className="mb-2.5 font-display text-[17px] font-semibold">{o.billing.historyHeading}</h2>
           {ledger.length === 0 ? (
-            <p className="text-[14px] text-[#a3a3a3]">{copy.noActivity}</p>
+            <EmptyState icon={<ClockIcon size={28} />} title={o.billing.emptyTitle} body={o.billing.emptyBody} />
           ) : (
-            dayGroups.map((group) => (
-              <div key={group.label} className="mb-4">
-                <div className="mb-2 text-[11.5px] font-semibold text-[#a3a3a3]">{group.label}</div>
-                <div className="overflow-hidden rounded-[16px] border border-[#EDE3F7] bg-white">
-                  {group.rows.map((row) => (
-                    <div
-                      key={row.id}
-                      className="flex items-center justify-between gap-3 border-b border-[#f4f4f4] px-[15px] py-[13px] last:border-b-0"
-                    >
-                      <div>
-                        <div className="text-[13.5px] font-medium">{labelFor(row, copy)}</div>
-                        <div className="mt-0.5 text-[11.5px] text-[#a3a3a3]">
-                          {new Date(row.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
-                        </div>
-                      </div>
-                      <div className={`shrink-0 text-[14px] font-semibold ${row.amount >= 0 ? 'text-[#15803d]' : 'text-[#8A76BE]'}`}>
-                        {Math.abs(row.amount)}
-                        {row.amount >= 0 ? '+' : '−'}
-                      </div>
-                    </div>
-                  ))}
+            <div className="flex flex-col gap-4">
+              {dayGroups.map((group) => (
+                <div key={group.label}>
+                  <p className="mb-1.5 text-[13px] font-semibold text-brand-muted">{group.label}</p>
+                  <Card>
+                    <ul>
+                      {group.rows.map((row) => (
+                        <li key={row.id} className="flex min-h-14 items-center justify-between gap-3 border-b border-brand-line px-4 py-2.5 last:border-b-0">
+                          <div className="min-w-0">
+                            <p className="text-[15px] font-semibold">
+                              <bdi dir="auto" className="line-clamp-2 break-words">
+                                {labelFor(row, copy)}
+                              </bdi>
+                            </p>
+                            <p className="text-[13px] text-brand-muted">{time.format(new Date(row.date))}</p>
+                          </div>
+                          <span className={`shrink-0 font-display text-[16px] font-bold ${row.amount >= 0 ? 'text-brand-navy' : 'text-brand-muted'}`}>
+                            <bdi dir="ltr">
+                              {row.amount >= 0 ? '+' : '−'}
+                              {Math.abs(row.amount).toLocaleString('en')}
+                            </bdi>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </section>
       </div>
-
-      <DashboardNav />
-    </main>
+    </OwnerShell>
   )
 }

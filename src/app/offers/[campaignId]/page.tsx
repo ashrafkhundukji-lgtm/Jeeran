@@ -47,7 +47,7 @@ export default async function OfferPage({
 
   const { data: business } = await supabaseAdmin
     .from('businesses')
-    .select('id, name, category, latitude, longitude, phone, whatsapp')
+    .select('id, name, category, latitude, longitude, phone, whatsapp, logo_url, cover_url')
     .eq('id', campaign.creator_id)
     .maybeSingle()
 
@@ -137,8 +137,9 @@ export default async function OfferPage({
       endDate={campaign.end_date}
       distanceKm={distanceKm}
       isActive={campaign.is_active}
-      imageUrl={campaign.image_url}
+      imageUrl={campaign.image_url ?? business.cover_url ?? null}
       businessName={business.name}
+      businessLogoUrl={business.logo_url ?? null}
       category={business.category}
       content={content}
       directionsUrl={directionsUrl}
