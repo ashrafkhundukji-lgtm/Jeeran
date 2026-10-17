@@ -23,9 +23,9 @@ export default async function AdminPage() {
 
 function StatTile({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="border border-neutral-200 rounded-xl p-4 text-center">
-      <div className="font-[family-name:var(--font-baloo)] text-2xl font-bold">{value}</div>
-      <div className="text-xs text-[#5a5a5a] mt-1">{label}</div>
+    <div className="rounded-[20px] border border-brand-line bg-white p-4 text-center">
+      <div className="font-display text-2xl font-bold">{value}</div>
+      <div className="text-xs text-brand-muted mt-1">{label}</div>
     </div>
   )
 }

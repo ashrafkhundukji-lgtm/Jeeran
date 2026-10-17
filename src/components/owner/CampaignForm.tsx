@@ -414,6 +414,7 @@ export default function CampaignForm({
               describedBy={endBeforeStart ? `${ids}-date-err` : undefined}
             />
           </div>
+          <p className={HINT}>{f.datesHint}</p>
           {endBeforeStart && (
             <p id={`${ids}-date-err`} role="alert" className={ERROR_TEXT}>
               {f.endError}

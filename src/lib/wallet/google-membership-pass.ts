@@ -8,6 +8,7 @@
  * (notifyNewOffer, via Google's dedicated addMessage endpoint).
  */
 
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import { GoogleAuth } from 'google-auth-library'
 import { loadGoogleWalletCredentials, signRS256Jwt } from './google'
 import { signMemberToken } from './member-token'
@@ -448,6 +449,24 @@ function offersToLinksModule(memberId: string, offers: NearbyOffer[], preferredL
   return { uris }
 }
 
+// Persistent identity barcode — shop staff scan THIS to redeem whichever of
+// their own offers this member currently qualifies for (not tied to one
+// offer, since the pass rotates many over time). The text under it is the
+// member's short redeem code (wallet_members.redeem_code, "ABCD-EFGH"), which
+// staff can type into the redeem page's manual entry when the camera fails.
+// Falls back to the old label if the code can't be read.
+async function memberBarcode(memberId: string) {
+  let alternateText = 'Show to redeem'
+  try {
+    const { data } = await supabaseAdmin.from('wallet_members').select('redeem_code').eq('id', memberId).maybeSingle()
+    const code: string | undefined = data?.redeem_code
+    if (code && code.length === 8) alternateText = `${code.slice(0, 4)}-${code.slice(4)}`
+  } catch {
+    // Keep the fallback label — never fail pass creation over this.
+  }
+  return { type: 'QR_CODE', value: signMemberToken(memberId), alternateText }
+}
+
 /**
  * Creates the per-customer OBJECT (the actual pass instance) at save-time.
  * Returns the objectId to store in wallet_members.google_object_id.
@@ -478,14 +497,7 @@ export async function createMembershipObject(
       hexBackgroundColor: BRAND_PLUM,
       logo: { sourceUri: { uri: LOGO_URL } },
       heroImage: { sourceUri: { uri: HERO_IMAGE_URL } },
-      // Persistent identity barcode — shop staff scan THIS to redeem
-      // whichever of their own offers this member currently qualifies for.
-      // Not tied to any single offer, since the pass rotates many over time.
-      barcode: {
-        type: 'QR_CODE',
-        value: signMemberToken(memberId),
-        alternateText: 'Show to redeem',
-      },
+      barcode: await memberBarcode(memberId),
     },
   })
 
@@ -535,6 +547,10 @@ export async function patchMembershipObject(
       merchantLocations: offersToMerchantLocations(offers),
       imageModulesData: offersToImageModules(offers),
       linksModuleData: offersToLinksModule(memberId, offers, preferredLanguage),
+      // Same value as at creation; re-sent so passes created before the
+      // redeem code existed pick up the code under the barcode on their
+      // next refresh.
+      barcode: await memberBarcode(memberId),
     },
   })
 }

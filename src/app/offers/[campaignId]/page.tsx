@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { after } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { offerWindowState } from '@/lib/offerWindow'
 import { regenerateAutoTranslations } from '@/lib/translate'
 import type { Locale } from '@/lib/i18n/locale'
 import OfferPageView from '@/components/OfferPageView'
@@ -37,7 +38,7 @@ export default async function OfferPage({
   const { data: campaign } = await supabaseAdmin
     .from('campaigns')
     .select(
-      'id, title, description, image_url, is_active, end_date, creator_type, creator_id, updated_at, title_ar, title_en, title_ur, description_ar, description_en, description_ur',
+      'id, title, description, image_url, is_active, start_date, end_date, creator_type, creator_id, updated_at, title_ar, title_en, title_ur, description_ar, description_en, description_ur',
     )
     .eq('id', campaignId)
     .eq('creator_type', 'business') // matches the rest of the geo-push/membership system — business-only for MVP
@@ -136,7 +137,9 @@ export default async function OfferPage({
       offerId={campaign.id}
       endDate={campaign.end_date}
       distanceKm={distanceKm}
-      isActive={campaign.is_active}
+      // Outside its start/end dates reads as inactive, same rule as the
+      // ranking functions and /api/redeem (lib/offerWindow.ts).
+      isActive={campaign.is_active && offerWindowState(campaign.start_date, campaign.end_date) === 'live'}
       imageUrl={campaign.image_url ?? business.cover_url ?? null}
       businessName={business.name}
       businessLogoUrl={business.logo_url ?? null}

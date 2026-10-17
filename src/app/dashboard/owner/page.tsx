@@ -6,15 +6,6 @@ import { getBusinessPromotionLevel, getPromotionThresholds } from '@/lib/promoti
 
 export const dynamic = 'force-dynamic'
 
-const DAY_MS = 86_400_000
-
-// Last 7 days vs the 7 before, as ISO bounds. Kept outside the component
-// (request-time clock read, not render state).
-function weekBounds() {
-  const now = Date.now()
-  return { weekAgo: new Date(now - 7 * DAY_MS).toISOString(), twoWeeksAgo: new Date(now - 14 * DAY_MS).toISOString() }
-}
-
 export default async function OwnerDashboardPage() {
   const supabase = await createSupabaseServerClient()
   const {
@@ -51,47 +42,27 @@ export default async function OwnerDashboardPage() {
   const campaignIds = (campaigns ?? []).map((c) => c.id)
 
   // "This week vs last week" for the two headline numbers — same
-  // definitions as get_owner_metrics (hosted = scans_and_claims rows hosted
-  // here; acquired = redeemed claims on this shop's campaigns), just
-  // bucketed by time: the last 7 days vs the 7 before. Read-only counts.
-  const { weekAgo, twoWeeksAgo } = weekBounds()
-  const hosted = (from: string, to?: string) => {
-    let q = supabaseAdmin
-      .from('scans_and_claims')
-      .select('id', { count: 'exact', head: true })
-      .eq('host_business_id', business.id)
-      .gte('created_at', from)
-    if (to) q = q.lt('created_at', to)
-    return q
-  }
-  const acquired = (from: string, to?: string) => {
-    if (!campaignIds.length) return Promise.resolve({ count: 0, error: null })
-    let q = supabaseAdmin
-      .from('scans_and_claims')
-      .select('id', { count: 'exact', head: true })
-      .in('campaign_id', campaignIds)
-      .eq('is_redeemed', true)
-      .gte('redeemed_at', from)
-    if (to) q = q.lt('redeemed_at', to)
-    return q
-  }
-
-  const [hostedNow, hostedPrev, acquiredNow, acquiredPrev, { data: redemptionRows }] = await Promise.all([
-    hosted(weekAgo),
-    hosted(twoWeeksAgo, weekAgo),
-    acquired(weekAgo),
-    acquired(twoWeeksAgo, weekAgo),
+  // definitions as get_owner_metrics (see 20261017d_owner_metrics_touchpoints.sql),
+  // bucketed into the last 7 days vs the 7 before. Spend per offer comes
+  // from the ad_credit_transfers ledger (20261017c), which only has rows
+  // from the day it was introduced onward.
+  const [{ data: weeklyRows, error: weeklyError }, { data: redemptionRows }, { data: transferRows }] = await Promise.all([
+    supabaseAdmin.rpc('get_owner_weekly_metrics', { p_business_id: business.id }),
     campaignIds.length
       ? supabaseAdmin.from('redemptions').select('offer_id').eq('business_id', business.id).in('offer_id', campaignIds)
       : Promise.resolve({ data: [] as { offer_id: string }[] }),
+    campaignIds.length
+      ? supabaseAdmin.from('ad_credit_transfers').select('offer_id, amount').eq('from_business_id', business.id).in('offer_id', campaignIds)
+      : Promise.resolve({ data: [] as { offer_id: string; amount: number }[] }),
   ])
-  const week = (a: { count: number | null; error: unknown }, b: { count: number | null; error: unknown }) =>
-    a.error || b.error || a.count == null || b.count == null ? null : { thisWeek: a.count, lastWeek: b.count }
+  const weekly = weeklyError ? null : weeklyRows?.[0]
 
   // Per-campaign redemptions — the only per-campaign stat the data model
   // records (no per-campaign view/impression or spend log exists today).
   const redemptionsByCampaign: Record<string, number> = {}
   for (const r of redemptionRows ?? []) redemptionsByCampaign[r.offer_id] = (redemptionsByCampaign[r.offer_id] ?? 0) + 1
+  const spentByCampaign: Record<string, number> = {}
+  for (const t of transferRows ?? []) if (t.offer_id) spentByCampaign[t.offer_id] = (spentByCampaign[t.offer_id] ?? 0) + t.amount
 
   return (
     <OwnerDashboardView
@@ -104,10 +75,11 @@ export default async function OwnerDashboardPage() {
       adCredits={metrics?.ad_credits ?? business.ad_credits}
       scansHosted={metrics?.scans_hosted ?? 0}
       customersAcquired={metrics?.customers_acquired ?? 0}
-      scansWeek={week(hostedNow, hostedPrev)}
-      acquiredWeek={week(acquiredNow, acquiredPrev)}
+      scansWeek={weekly ? { thisWeek: Number(weekly.scans_this_week), lastWeek: Number(weekly.scans_last_week) } : null}
+      acquiredWeek={weekly ? { thisWeek: Number(weekly.acquired_this_week), lastWeek: Number(weekly.acquired_last_week) } : null}
       campaigns={campaigns ?? []}
       redemptionsByCampaign={redemptionsByCampaign}
+      spentByCampaign={spentByCampaign}
       promotionScore={promotionLevel.score}
       promotionLevel={promotionLevel.level}
       thresholds={thresholds}

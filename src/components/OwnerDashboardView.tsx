@@ -35,6 +35,7 @@ import { OWNER_UI_COPY, fill, type OwnerUiCopy } from '@/lib/i18n/ownerUi'
 import { WALLET_HOME_COPY } from '@/lib/i18n/walletHome'
 import { CATEGORY_LABELS } from '@/lib/categories'
 import type { PromotionLevel, PromotionThresholds } from '@/lib/promotion'
+import { offerWindowState } from '@/lib/offerWindow'
 
 // Low-balance warning: there is no existing threshold in the codebase
 // (SubscriptionBanner only fires at exactly 0), so per the brief it shows
@@ -57,6 +58,7 @@ export default function OwnerDashboardView({
   acquiredWeek,
   campaigns: initialCampaigns,
   redemptionsByCampaign,
+  spentByCampaign,
   promotionScore,
   promotionLevel,
   thresholds,
@@ -77,6 +79,7 @@ export default function OwnerDashboardView({
   acquiredWeek: WeekStat
   campaigns: OwnerCampaign[]
   redemptionsByCampaign: Record<string, number>
+  spentByCampaign: Record<string, number>
   promotionScore: number
   promotionLevel: PromotionLevel
   thresholds: PromotionThresholds
@@ -200,6 +203,8 @@ export default function OwnerDashboardView({
                     {fill(copy.offer.perView, { n: activeCampaign.bid_per_view })}
                     {' · '}
                     {fill(copy.offer.redemptions, { n: redemptionsByCampaign[activeCampaign.id] ?? 0 })}
+                    {' · '}
+                    {fill(copy.offer.spent, { n: spentByCampaign[activeCampaign.id] ?? 0 })}
                   </p>
                 </div>
                 <Switch
@@ -209,6 +214,7 @@ export default function OwnerDashboardView({
                   label={fill(copy.offer.toggleLabel, { title: activeCampaign.title })}
                 />
               </div>
+              <WindowNotice campaign={activeCampaign} copy={copy} locale={locale} />
               <a
                 href={`/offers/${activeCampaign.id}`}
                 className="flex min-h-12 items-center gap-2 border-t border-brand-line px-4 text-sm font-semibold text-brand-navy active:bg-brand-tint"
@@ -253,6 +259,7 @@ export default function OwnerDashboardView({
                   campaign={c}
                   category={businessCategory}
                   redemptions={redemptionsByCampaign[c.id] ?? 0}
+                  spent={spentByCampaign[c.id] ?? 0}
                   copy={copy}
                   locale={locale}
                   pending={pendingId === c.id}
@@ -289,6 +296,24 @@ export default function OwnerDashboardView({
         thresholds={thresholds}
       />
     </OwnerShell>
+  )
+}
+
+// Active (switched on) but outside its dates: customers don't see it and it
+// can't be redeemed — say so on the card instead of implying it's live.
+function WindowNotice({ campaign, copy, locale }: { campaign: OwnerCampaign; copy: OwnerUiCopy; locale: Locale }) {
+  const state = offerWindowState(campaign.start_date, campaign.end_date)
+  if (state === 'live') return null
+  const date = formatDay((state === 'ended' ? campaign.end_date : campaign.start_date)!, locale, { day: 'numeric', month: 'long', year: 'numeric' })
+  return (
+    <div className="px-4 pb-3">
+      <Notice tone={state === 'ended' ? 'warning' : 'info'} icon={<AlertIcon size={18} />}>
+        {fill(state === 'ended' ? copy.offer.endedNotice : copy.offer.scheduledNotice, { date })}{' '}
+        <a href={`/dashboard/owner/campaigns/${campaign.id}`} className="font-semibold underline underline-offset-4">
+          {copy.offer.edit}
+        </a>
+      </Notice>
+    </div>
   )
 }
 
@@ -359,6 +384,7 @@ function CampaignRow({
   campaign: c,
   category,
   redemptions,
+  spent,
   copy,
   locale,
   pending,
@@ -367,6 +393,7 @@ function CampaignRow({
   campaign: OwnerCampaign
   category: string
   redemptions: number
+  spent: number
   copy: OwnerUiCopy
   locale: Locale
   pending: boolean
@@ -380,6 +407,7 @@ function CampaignRow({
         : c.end_date
           ? fill(copy.offer.until, { end: formatDay(c.end_date, locale) })
           : null
+  const windowState = offerWindowState(c.start_date, c.end_date)
   return (
     <li>
       <Card className="overflow-hidden">
@@ -393,7 +421,8 @@ function CampaignRow({
                 </bdi>
               </span>
               <span className="text-[13px] text-brand-muted">
-                {fill(copy.offer.perView, { n: c.bid_per_view })} · {fill(copy.offer.redemptions, { n: redemptions })}
+                {fill(copy.offer.perView, { n: c.bid_per_view })} · {fill(copy.offer.redemptions, { n: redemptions })} ·{' '}
+                {fill(copy.offer.spent, { n: spent })}
               </span>
               {dates && <span className="text-[13px] text-brand-muted">{dates}</span>}
             </span>
@@ -405,8 +434,14 @@ function CampaignRow({
               onChange={onToggle}
               label={fill(copy.offer.toggleLabel, { title: c.title })}
             />
-            <span className={`text-xs font-semibold ${c.is_active ? 'text-brand-navy' : 'text-brand-muted'}`}>
-              {c.is_active ? copy.offer.active : copy.offer.inactive}
+            <span className={`text-xs font-semibold ${!c.is_active ? 'text-brand-muted' : windowState === 'live' ? 'text-brand-navy' : 'text-brand-coral'}`}>
+              {!c.is_active
+                ? copy.offer.inactive
+                : windowState === 'ended'
+                  ? copy.offer.ended
+                  : windowState === 'scheduled'
+                    ? fill(copy.offer.scheduled, { date: formatDay(c.start_date!, locale) })
+                    : copy.offer.active}
             </span>
           </div>
         </div>

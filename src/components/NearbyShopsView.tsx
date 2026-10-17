@@ -56,8 +56,8 @@ export default function NearbyShopsView({
   logos = {},
 }: {
   shops: NearbyBusiness[]
-  // business_id → businesses.logo_url, for the shops the page fetched
-  // (search results from /api/wallet/search keep the letter avatar).
+  // business_id → businesses.logo_url for the shops the page fetched;
+  // search results carry their own logo_url (/api/wallet/search).
   logos?: Record<string, string>
   token?: string
   initialQuery?: string
@@ -161,7 +161,7 @@ export default function NearbyShopsView({
         href={href}
         className={`flex items-center gap-3 rounded-[18px] border border-brand-line bg-white p-3.5 ${PRESS}`}
       >
-        <ShopAvatar name={s.business_name} logoUrl={logos[s.business_id]} size={48} />
+        <ShopAvatar name={s.business_name} logoUrl={logos[s.business_id] ?? s.logo_url} size={48} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="min-w-0 text-start text-[15px] font-bold text-brand-navy-deep">
             <bdi className="inline-block max-w-full truncate align-bottom">{s.business_name}</bdi>

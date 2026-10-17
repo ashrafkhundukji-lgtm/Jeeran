@@ -22,6 +22,7 @@ import { useLocale } from '@/lib/i18n/useLocale'
 import type { Locale } from '@/lib/i18n/locale'
 import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
 import { INTL_LOCALE, OWNER_UI_COPY, fill, type OwnerUiCopy } from '@/lib/i18n/ownerUi'
+import { formatDay } from '@/components/owner/campaigns'
 
 // BarcodeDetector isn't in TS's default DOM lib (still an experimental Web
 // API). Used when present (cheaper — decodes off the video element
@@ -58,7 +59,7 @@ export interface RecentRedemption {
   at: string
 }
 
-type Outcome = 'success' | 'already' | 'pass' | 'invalid' | 'noOffer' | 'frozen' | 'network' | 'generic'
+type Outcome = 'success' | 'already' | 'pass' | 'invalid' | 'noOffer' | 'ended' | 'scheduled' | 'frozen' | 'network' | 'generic'
 
 type RedeemResult =
   | {
@@ -69,14 +70,15 @@ type RedeemResult =
       isNewCustomer: boolean | null
       redemptionsToday: number | null
     }
-  | { kind: Exclude<Outcome, 'success'>; raw: string }
+  | { kind: Exclude<Outcome, 'success'>; raw: string; date?: string | null }
 
 type CameraState = 'idle' | 'starting' | 'scanning' | 'denied' | 'failed' | 'unsupported'
 
 // /api/redeem's own error strings → result states. The route itself is
 // unchanged; note there is no separate "wrong shop" or "expired offer"
 // response — a valid member card always redeems against the scanning shop's
-// own active offer, and a removed pass is the closest thing to "expired".
+// own active offer. "Expired" = the shop's offer is outside its dates
+// ('ended' / 'scheduled'), or the customer removed the pass ('pass').
 function outcomeFor(rawError: string): Exclude<Outcome, 'success' | 'network'> {
   switch (rawError) {
     case 'already redeemed by this customer':
@@ -88,6 +90,10 @@ function outcomeFor(rawError: string): Exclude<Outcome, 'success' | 'network'> {
       return 'invalid'
     case 'no active offer for this shop':
       return 'noOffer'
+    case 'offer has ended':
+      return 'ended'
+    case 'offer has not started':
+      return 'scheduled'
     case 'This account is frozen':
       return 'frozen'
     default:
@@ -262,7 +268,7 @@ export default function RedeemScanner({ recent: initialRecent }: { recent: Recen
         setRecent((prev) => [{ id: `local-${Date.now()}`, title, at: new Date().toISOString() }, ...prev].slice(0, 8))
       } else {
         vibrate([80, 60, 80])
-        setResult({ kind: outcomeFor(body.error ?? ''), raw: body.error ?? '' })
+        setResult({ kind: outcomeFor(body.error ?? ''), raw: body.error ?? '', date: body.endDate ?? body.startDate ?? null })
       }
     } catch {
       setResult({ kind: 'network', raw: '' })
@@ -397,9 +403,10 @@ export default function RedeemScanner({ recent: initialRecent }: { recent: Recen
             </label>
             <p className="mt-1 mb-3 text-sm text-brand-muted">{r.manualBody}</p>
             <div className="flex gap-2.5">
-              {/* The member code is "<uuid>.<hmac>" — letters, digits, '-' and
-                  '.' — so a numeric keypad would make it impossible to type;
-                  plain text, no autocorrect/capitalisation. */}
+              {/* The 8-character code under the pass barcode (letters + digits,
+                  see 20261017e_member_redeem_code.sql) — so a text keyboard
+                  with auto-capitals, not a numeric keypad. A pasted full
+                  barcode value still works too. */}
               <input
                 id={`${ids}-code`}
                 value={manualValue}
@@ -409,11 +416,11 @@ export default function RedeemScanner({ recent: initialRecent }: { recent: Recen
                 dir="ltr"
                 inputMode="text"
                 autoComplete="off"
-                autoCapitalize="none"
+                autoCapitalize="characters"
                 autoCorrect="off"
                 spellCheck={false}
                 enterKeyHint="go"
-                className={`${INPUT} min-w-0 flex-1 text-[15px] [&:not(:placeholder-shown)]:font-mono`}
+                className={`${INPUT} min-w-0 flex-1 font-mono text-[17px] tracking-wider uppercase placeholder:normal-case`}
               />
               <button type="submit" disabled={checking || !manualValue.trim()} className={`${BTN_PRIMARY} shrink-0`}>
                 {checking ? r.checking : r.submit}
@@ -483,11 +490,15 @@ function ResultScreen({
 }) {
   const r = copy.redeem
   const ok = result.kind === 'success'
+  const dateText =
+    result.kind !== 'success' && result.date ? formatDay(result.date, locale, { day: 'numeric', month: 'long', year: 'numeric' }) : ''
   const failure: Record<Exclude<Outcome, 'success'>, { title: string; body?: string; Icon: typeof AlertIcon }> = {
     already: { title: r.alreadyTitle, body: r.alreadyBody, Icon: XCircleIcon },
     pass: { title: r.passTitle, body: r.passBody, Icon: ClockIcon },
     invalid: { title: r.invalidTitle, body: r.invalidBody, Icon: XCircleIcon },
     noOffer: { title: r.noOfferTitle, body: r.noOfferBody, Icon: AlertIcon },
+    ended: { title: r.endedTitle, body: fill(r.endedBody, { date: dateText }), Icon: ClockIcon },
+    scheduled: { title: r.scheduledTitle, body: fill(r.scheduledBody, { date: dateText }), Icon: ClockIcon },
     frozen: { title: r.frozenTitle, Icon: AlertIcon },
     network: { title: r.networkTitle, body: r.networkBody, Icon: WifiOffIcon },
     generic: { title: r.genericTitle, body: copy.common.errorBody, Icon: AlertIcon },
@@ -538,9 +549,9 @@ function ResultScreen({
         </div>
 
         <div className="flex flex-col gap-2.5">
-          {result.kind === 'noOffer' ? (
+          {result.kind === 'noOffer' || result.kind === 'ended' || result.kind === 'scheduled' ? (
             <a href="/dashboard/owner" className={`inline-flex min-h-14 items-center justify-center rounded-2xl bg-white text-[17px] font-bold text-brand-coral ${PRESS}`}>
-              {r.activateOffer}
+              {result.kind === 'noOffer' ? r.activateOffer : r.editOffer}
             </a>
           ) : result.kind === 'network' ? (
             <button type="button" onClick={onRetry} className={`inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-white text-[17px] font-bold text-brand-coral ${PRESS}`}>
@@ -558,7 +569,7 @@ function ResultScreen({
               {r.scanNext}
             </button>
           )}
-          {(result.kind === 'noOffer' || result.kind === 'network') && (
+          {(result.kind === 'noOffer' || result.kind === 'ended' || result.kind === 'scheduled' || result.kind === 'network') && (
             <button type="button" onClick={onNext} className="min-h-12 rounded-2xl text-[16px] font-semibold text-white">
               {r.scanNext}
             </button>

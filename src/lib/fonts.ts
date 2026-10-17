@@ -10,6 +10,10 @@ export const baloo2 = Baloo_2({
   subsets: ['latin', 'latin-ext', 'vietnamese'],
   weight: ['600', '700', '800'],
   variable: '--font-baloo',
+  // Legacy face (landing/login/signup/browse only) — not preloaded, so the
+  // dashboard and customer pages, which use Readex Pro + IBM Plex Sans
+  // Arabic, never download it; pages that use it fetch it on demand.
+  preload: false,
   display: 'swap',
 })
 
@@ -24,6 +28,10 @@ export const notoKufiArabic = Noto_Kufi_Arabic({
   subsets: ['arabic'],
   weight: ['500', '700', '900'],
   variable: '--font-noto-kufi-arabic',
+  // Legacy face (landing/login/signup/browse only) — not preloaded, so the
+  // dashboard and customer pages, which use Readex Pro + IBM Plex Sans
+  // Arabic, never download it; pages that use it fetch it on demand.
+  preload: false,
   display: 'swap',
 })
 
@@ -31,6 +39,10 @@ export const inter = Inter({
   subsets: ['latin', 'latin-ext', 'vietnamese'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-inter',
+  // Legacy face (landing/login/signup/browse only) — not preloaded, so the
+  // dashboard and customer pages, which use Readex Pro + IBM Plex Sans
+  // Arabic, never download it; pages that use it fetch it on demand.
+  preload: false,
   display: 'swap',
 })
 

@@ -42,12 +42,12 @@ const PAGE_SIZES = {
 } as const
 const CM = 72 / 2.54
 
-// Final bilingual explanation (kept to what the scan page actually does:
-// it shows neighbouring shops' offers — not the host's own — and offers the
-// free Jeeran Wallet card, which then carries offers from shops near the
-// customer).
-const EXPLAIN_AR = 'امسح الرمز لتشاهد عروض المحلات المجاورة، واحفظ بطاقة جيران لتصلك العروض القريبة منك. مجانًا، بدون تطبيق.'
-const EXPLAIN_EN = 'Scan to see offers from neighbouring shops, and save the Jeeran card to get nearby offers. Free, no app needed.'
+// Final bilingual explanation, kept to what the scan page actually does: it
+// shows offers from OTHER shops (get_top_ads() excludes the host and has no
+// distance filter, so no "nearby" claim there) and offers the free Jeeran
+// Wallet card, whose offers ARE filtered by distance from the customer.
+const EXPLAIN_AR = 'امسح الرمز لتشاهد عروضًا من محلات أخرى، واحفظ بطاقة جيران لتصلك العروض القريبة منك. مجانًا، بدون تطبيق.'
+const EXPLAIN_EN = 'Scan to see offers from other shops, and save the Jeeran card to get offers near you. Free, no app needed.'
 
 // Jeeran mark path data (public/design/jeeran-mark-navy.svg).
 const MARK_TOP_BAR = 'M 100 110 L 260 110'

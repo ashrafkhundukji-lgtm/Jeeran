@@ -8,7 +8,7 @@ import { ClockIcon } from '@/components/customer/icons'
 import { useLocale } from '@/lib/i18n/useLocale'
 import type { Locale } from '@/lib/i18n/locale'
 import { DASHBOARD_COPY, type DashboardCopy } from '@/lib/i18n/dashboard'
-import { INTL_LOCALE, OWNER_UI_COPY } from '@/lib/i18n/ownerUi'
+import { INTL_LOCALE, OWNER_UI_COPY, fill, type OwnerUiCopy } from '@/lib/i18n/ownerUi'
 import type { CatalogEntry } from '@/lib/billing/catalog'
 import type { ReachTier } from '@/lib/billing/account'
 
@@ -17,7 +17,9 @@ export interface LedgerEntry {
   date: string
   amount: number
   isCredit: boolean
-  kind: 'topup' | 'subscription_initial' | 'subscription_renewal' | 'usage'
+  // 'spent' / 'earned' = redemption credit transfers (ad_credit_transfers);
+  // 'usage' = the legacy per-offer pass claims (scans_and_claims).
+  kind: 'topup' | 'subscription_initial' | 'subscription_renewal' | 'usage' | 'spent' | 'earned'
   campaignTitle: string | null
   // Set only for add-on billing_transactions rows (see
   // billing_transactions.addon_key's migration comment) — distinguishes an
@@ -51,7 +53,7 @@ function groupLedgerByDay(ledger: LedgerEntry[], copy: DashboardCopy['billing'],
   return groups
 }
 
-function labelFor(entry: LedgerEntry, copy: DashboardCopy['billing']) {
+function labelFor(entry: LedgerEntry, copy: DashboardCopy['billing'], o: OwnerUiCopy['billing']) {
   if (entry.addonKey) {
     switch (entry.kind) {
       case 'subscription_initial':
@@ -69,6 +71,10 @@ function labelFor(entry: LedgerEntry, copy: DashboardCopy['billing']) {
       return copy.subscriptionRenewed
     case 'usage':
       return copy.adClaimed.replace('{title}', entry.campaignTitle ?? copy.campaignFallback)
+    case 'spent':
+      return fill(o.spentOn, { title: entry.campaignTitle ?? copy.campaignFallback })
+    case 'earned':
+      return o.earned
   }
 }
 
@@ -149,7 +155,7 @@ export default function BillingView({
                           <div className="min-w-0">
                             <p className="text-[15px] font-semibold">
                               <bdi dir="auto" className="line-clamp-2 break-words">
-                                {labelFor(row, copy)}
+                                {labelFor(row, copy, o.billing)}
                               </bdi>
                             </p>
                             <p className="text-[13px] text-brand-muted">{time.format(new Date(row.date))}</p>

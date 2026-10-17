@@ -25,6 +25,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthenticatedBusinessId } from '@/lib/business-auth'
 import { verifyMemberToken } from '@/lib/wallet/member-token'
+import { offerWindowState } from '@/lib/offerWindow'
+
+// Manual-entry fallback: the 8-character code printed under the pass barcode
+// (wallet_members.redeem_code, see 20261017e_member_redeem_code.sql). Staff
+// may type it with or without the dash, in any case.
+const REDEEM_CODE_RE = /^[A-HJKMNP-Z2-9]{8}$/
+function normalizeRedeemCode(raw: string): string | null {
+  const code = raw.toUpperCase().replace(/[\s-]/g, '')
+  return REDEEM_CODE_RE.test(code) ? code : null
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +51,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'barcodeValue is required' }, { status: 400 })
   }
 
-  const decoded = verifyMemberToken(barcodeValue)
+  let decoded = verifyMemberToken(barcodeValue)
+  if (!decoded) {
+    const code = normalizeRedeemCode(barcodeValue)
+    if (code) {
+      const { data: byCode, error: codeErr } = await supabaseAdmin
+        .from('wallet_members')
+        .select('id')
+        .eq('redeem_code', code)
+        .maybeSingle()
+      if (codeErr) return NextResponse.json({ error: codeErr.message }, { status: 500 })
+      if (byCode) decoded = { memberId: byCode.id }
+    }
+  }
   if (!decoded) {
     return NextResponse.json({ error: 'invalid or tampered barcode' }, { status: 400 })
   }
@@ -79,7 +101,7 @@ export async function POST(req: NextRequest) {
   // already redeemed?
   const { data: offer, error: offerErr } = await supabaseAdmin
     .from('campaigns')
-    .select('id, title, description')
+    .select('id, title, description, start_date, end_date')
     .eq('creator_type', 'business')
     .eq('creator_id', businessId)
     .eq('is_active', true)
@@ -91,6 +113,15 @@ export async function POST(req: NextRequest) {
   }
   if (!offer) {
     return NextResponse.json({ error: 'no active offer for this shop' }, { status: 404 })
+  }
+  // Switched on but outside its start/end dates: not redeemable (same rule
+  // as nearby_active_offers() — see lib/offerWindow.ts).
+  const windowState = offerWindowState(offer.start_date, offer.end_date)
+  if (windowState !== 'live') {
+    return NextResponse.json(
+      { error: windowState === 'ended' ? 'offer has ended' : 'offer has not started', endDate: offer.end_date, startDate: offer.start_date },
+      { status: 409 },
+    )
   }
 
   const { data: existing, error: alreadyErr } = await supabaseAdmin

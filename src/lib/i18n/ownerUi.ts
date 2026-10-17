@@ -86,6 +86,11 @@ export interface OwnerUiCopy {
     from: string // {start}
     until: string // {end}
     newCampaign: string
+    ended: string
+    scheduled: string // {date}
+    endedNotice: string // {date}
+    scheduledNotice: string // {date}
+    spent: string // {n}
   }
   qr: {
     heading: string
@@ -139,6 +144,7 @@ export interface OwnerUiCopy {
     presetMonth: string
     clear: string
     endError: string
+    datesHint: string
     pickDate: string
     prevMonth: string
     nextMonth: string
@@ -185,6 +191,11 @@ export interface OwnerUiCopy {
     networkTitle: string
     networkBody: string
     genericTitle: string
+    endedTitle: string
+    endedBody: string // {date}
+    scheduledTitle: string
+    scheduledBody: string // {date}
+    editOffer: string
     scanNext: string
     activateOffer: string
     recentHeading: string
@@ -236,6 +247,8 @@ export interface OwnerUiCopy {
     emptyTitle: string
     emptyBody: string
     reachHeading: string
+    earned: string
+    spentOn: string // {title}
   }
   leaderboard: {
     emptyWeekTitle: string
@@ -310,6 +323,11 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       from: 'من {start}',
       until: 'حتى {end}',
       newCampaign: 'عرض جديد',
+      ended: 'انتهى',
+      scheduled: 'يبدأ {date}',
+      endedNotice: 'انتهت مدة هذا العرض في {date}، ولم يعد يظهر للعملاء أو يُستبدل. عدّل تاريخ الانتهاء أو أوقفه.',
+      scheduledNotice: 'هذا العرض مُجدول: يبدأ ظهوره للعملاء في {date}.',
+      spent: 'صُرف {n}',
     },
     qr: {
       heading: 'ملصق QR لمحلك',
@@ -363,6 +381,7 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       presetMonth: 'شهر',
       clear: 'مسح',
       endError: 'يجب أن يكون تاريخ الانتهاء بعد تاريخ البدء أو في نفس اليوم.',
+      datesHint: 'يظهر العرض للعملاء ويمكن استبداله بين هذين التاريخين فقط (بتوقيت السعودية).',
       pickDate: 'اختر التاريخ',
       prevMonth: 'الشهر السابق',
       nextMonth: 'الشهر التالي',
@@ -391,8 +410,8 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       torchOn: 'تشغيل الفلاش',
       torchOff: 'إطفاء الفلاش',
       manualHeading: 'إدخال الرمز يدويًا',
-      manualBody: 'إذا لم تعمل الكاميرا، الصق رمز البطاقة هنا.',
-      manualPlaceholder: 'رمز البطاقة',
+      manualBody: 'اكتب الرمز المكوّن من 8 خانات تحت الباركود في بطاقة العميل.',
+      manualPlaceholder: 'ABCD-EFGH',
       submit: 'تحقق',
       checking: 'جارٍ التحقق…',
       successTitle: 'تم الاستبدال',
@@ -409,6 +428,11 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       networkTitle: 'تعذّر الاتصال',
       networkBody: 'تحقق من الإنترنت وحاول مرة أخرى.',
       genericTitle: 'تعذّر الاستبدال',
+      endedTitle: 'انتهت مدة عرضك',
+      endedBody: 'عرضك النشط انتهى في {date}. عدّل تاريخ الانتهاء أو أنشئ عرضًا جديدًا.',
+      scheduledTitle: 'عرضك لم يبدأ بعد',
+      scheduledBody: 'يبدأ عرضك في {date}، ويمكن استبداله من ذلك اليوم.',
+      editOffer: 'تعديل العرض',
       scanNext: 'مسح العميل التالي',
       activateOffer: 'تفعيل عرض',
       recentHeading: 'آخر الاستبدالات',
@@ -460,6 +484,8 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       emptyTitle: 'لا توجد حركات بعد',
       emptyBody: 'ستظهر هنا عمليات الشحن والاشتراك والخصم من رصيدك.',
       reachHeading: 'مدى الوصول',
+      earned: 'رصيد مكتسب: عميل جلبته استبدل عرضًا لدى محل آخر',
+      spentOn: 'استبدال عرضك: {title}',
     },
     leaderboard: {
       emptyWeekTitle: 'لا يوجد عملاء جدد بعد هذا الأسبوع',
@@ -532,6 +558,11 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       from: 'From {start}',
       until: 'Until {end}',
       newCampaign: 'New offer',
+      ended: 'Ended',
+      scheduled: 'Starts {date}',
+      endedNotice: 'This offer ended on {date}. Customers no longer see it and it can’t be redeemed. Change the end date or pause it.',
+      scheduledNotice: 'Scheduled: customers start seeing this offer on {date}.',
+      spent: '{n} spent',
     },
     qr: {
       heading: 'Your QR sheet',
@@ -585,6 +616,7 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       presetMonth: '1 month',
       clear: 'Clear',
       endError: 'The end date must be on or after the start date.',
+      datesHint: 'Customers see the offer and can redeem it only between these dates (Saudi time).',
       pickDate: 'Pick a date',
       prevMonth: 'Previous month',
       nextMonth: 'Next month',
@@ -613,8 +645,8 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       torchOn: 'Turn on flashlight',
       torchOff: 'Turn off flashlight',
       manualHeading: 'Enter the code manually',
-      manualBody: "If the camera isn't working, paste the card code here.",
-      manualPlaceholder: 'Card code',
+      manualBody: 'Type the 8-character code shown under the barcode on the customer’s card.',
+      manualPlaceholder: 'ABCD-EFGH',
       submit: 'Check',
       checking: 'Checking…',
       successTitle: 'Redeemed',
@@ -631,6 +663,11 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       networkTitle: "Couldn't connect",
       networkBody: 'Check your internet connection and try again.',
       genericTitle: "Couldn't redeem",
+      endedTitle: 'Your offer has ended',
+      endedBody: 'Your active offer ended on {date}. Change its end date or create a new offer.',
+      scheduledTitle: 'Your offer hasn’t started',
+      scheduledBody: 'Your offer starts on {date} and can be redeemed from that day.',
+      editOffer: 'Edit offer',
       scanNext: 'Scan next customer',
       activateOffer: 'Turn on an offer',
       recentHeading: 'Recent redemptions',
@@ -682,6 +719,8 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       emptyTitle: 'No activity yet',
       emptyBody: 'Top-ups, subscription payments and credit spent on your offers will show up here.',
       reachHeading: 'Reach',
+      earned: 'Credit earned: a customer you brought in redeemed at another shop',
+      spentOn: 'Your offer redeemed: {title}',
     },
     leaderboard: {
       emptyWeekTitle: 'No new customers yet this week',
@@ -754,6 +793,11 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       from: '{start} سے',
       until: '{end} تک',
       newCampaign: 'نئی آفر',
+      ended: 'ختم',
+      scheduled: '{date} سے شروع',
+      endedNotice: 'یہ آفر {date} کو ختم ہو گئی۔ گاہک اب اسے نہیں دیکھتے اور یہ ریڈیم نہیں ہو سکتی۔ اختتامی تاریخ بدلیں یا اسے روک دیں۔',
+      scheduledNotice: 'شیڈول شدہ: گاہک یہ آفر {date} سے دیکھیں گے۔',
+      spent: '{n} خرچ',
     },
     qr: {
       heading: 'آپ کی QR شیٹ',
@@ -807,6 +851,7 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       presetMonth: 'ایک مہینہ',
       clear: 'صاف کریں',
       endError: 'اختتامی تاریخ شروع کی تاریخ کے دن یا اس کے بعد ہونی چاہیے۔',
+      datesHint: 'گاہک یہ آفر صرف ان تاریخوں کے درمیان دیکھ اور ریڈیم کر سکتے ہیں (سعودی وقت)۔',
       pickDate: 'تاریخ چنیں',
       prevMonth: 'پچھلا مہینہ',
       nextMonth: 'اگلا مہینہ',
@@ -835,8 +880,8 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       torchOn: 'فلیش لائٹ آن کریں',
       torchOff: 'فلیش لائٹ بند کریں',
       manualHeading: 'کوڈ دستی طور پر درج کریں',
-      manualBody: 'اگر کیمرہ کام نہ کرے تو کارڈ کا کوڈ یہاں پیسٹ کریں۔',
-      manualPlaceholder: 'کارڈ کوڈ',
+      manualBody: 'گاہک کے کارڈ پر بارکوڈ کے نیچے لکھا 8 حرفی کوڈ درج کریں۔',
+      manualPlaceholder: 'ABCD-EFGH',
       submit: 'چیک کریں',
       checking: 'چیک ہو رہا ہے…',
       successTitle: 'ریڈیم ہو گیا',
@@ -853,6 +898,11 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       networkTitle: 'کنکشن نہیں ہو سکا',
       networkBody: 'انٹرنیٹ چیک کر کے دوبارہ کوشش کریں۔',
       genericTitle: 'ریڈیم نہیں ہو سکا',
+      endedTitle: 'آپ کی آفر ختم ہو گئی',
+      endedBody: 'آپ کی فعال آفر {date} کو ختم ہو گئی۔ اختتامی تاریخ بدلیں یا نئی آفر بنائیں۔',
+      scheduledTitle: 'آپ کی آفر ابھی شروع نہیں ہوئی',
+      scheduledBody: 'آپ کی آفر {date} سے شروع ہوگی اور اسی دن سے ریڈیم ہو سکے گی۔',
+      editOffer: 'آفر میں ترمیم',
       scanNext: 'اگلا گاہک اسکین کریں',
       activateOffer: 'آفر فعال کریں',
       recentHeading: 'حالیہ ریڈیمپشنز',
@@ -904,6 +954,8 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       emptyTitle: 'ابھی کوئی سرگرمی نہیں',
       emptyBody: 'ٹاپ اپ، سبسکرپشن ادائیگیاں اور آپ کی آفرز پر خرچ ہونے والا بیلنس یہاں دکھایا جائے گا۔',
       reachHeading: 'ریچ',
+      earned: 'کمایا گیا بیلنس: آپ کے لائے ہوئے گاہک نے دوسری دکان پر آفر ریڈیم کی',
+      spentOn: 'آپ کی آفر ریڈیم ہوئی: {title}',
     },
     leaderboard: {
       emptyWeekTitle: 'اس ہفتے ابھی کوئی نیا گاہک نہیں',
