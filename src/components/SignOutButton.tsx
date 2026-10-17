@@ -29,12 +29,12 @@ export default function SignOutButton({
   // consistent with the rest of the UI instead of breaking out of it.
   if (confirming) {
     return (
-      <div className="flex items-center justify-center gap-3 text-sm">
-        <span className="text-neutral-500">{copy.profile.signOutConfirm}</span>
-        <button onClick={handleSignOut} className="font-semibold text-[#dc2626]">
+      <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm">
+        <span className="text-brand-muted">{copy.profile.signOutConfirm}</span>
+        <button type="button" onClick={handleSignOut} className="min-h-11 rounded-xl px-3 font-semibold text-brand-coral">
           {copy.profile.signOutConfirmYes}
         </button>
-        <button onClick={() => setConfirming(false)} className="font-medium text-neutral-400">
+        <button type="button" onClick={() => setConfirming(false)} className="min-h-11 rounded-xl px-3 font-semibold text-brand-muted">
           {copy.campaigns.cancel}
         </button>
       </div>

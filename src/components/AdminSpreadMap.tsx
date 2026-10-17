@@ -10,7 +10,7 @@ import type { AdminShopRow } from '@/lib/admin'
 const DEFAULT_CENTER: [number, number] = [24.7136, 46.6753]
 
 function pinIcon(frozen: boolean) {
-  const color = frozen ? '#9CA3AF' : '#FF6B4A'
+  const color = frozen ? '#5A6385' : '#CF3B19'
   return L.divIcon({
     className: '',
     html: `<svg viewBox="0 0 24 30" width="26" height="26" style="display:block">
@@ -47,10 +47,10 @@ export default function AdminSpreadMap({ shops }: { shops: AdminShopRow[] }) {
 
   return (
     <div>
-      <p className="text-sm text-neutral-500 mb-3">
+      <p className="text-sm text-brand-muted mb-3">
         {located.length} of {shops.length} shops have a location set. Gray pins are frozen shops.
       </p>
-      <div className="rounded-xl overflow-hidden border border-neutral-200" style={{ height: 520 }}>
+      <div className="rounded-xl overflow-hidden border border-brand-line" style={{ height: 520 }}>
         <MapContainer center={DEFAULT_CENTER} zoom={5} style={{ height: '100%', width: '100%' }}>
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -62,7 +62,7 @@ export default function AdminSpreadMap({ shops }: { shops: AdminShopRow[] }) {
               <Popup>
                 <div className="text-sm">
                   <div className="font-medium">{shop.name}</div>
-                  <div className="text-neutral-500">{shop.category}</div>
+                  <div className="text-brand-muted">{shop.category}</div>
                   <div className="mt-1">
                     <LevelBadge level={shop.promotionLevel} />
                   </div>

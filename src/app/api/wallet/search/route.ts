@@ -16,6 +16,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { verifyMemberToken } from '@/lib/wallet/member-token'
 import { CATEGORIES, CATEGORY_LABELS } from '@/lib/categories'
 import type { NearbyBusiness } from '@/lib/wallet/nearby-businesses'
+import { fetchBusinessImages } from '@/lib/businessImages'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,8 +71,12 @@ export async function GET(req: NextRequest) {
   })
   if (searchErr) return NextResponse.json({ error: searchErr.message }, { status: 500 })
 
+  // Shop logos for the result avatars — read-only decoration, same order.
+  const rows = (data ?? []) as NearbyBusiness[]
+  const images = await fetchBusinessImages(rows.map((r) => r.business_id))
+
   return NextResponse.json({
-    results: (data ?? []) as NearbyBusiness[],
+    results: rows.map((r) => ({ ...r, logo_url: images.get(r.business_id)?.logoUrl ?? null })),
     radiusKm: Number(member.push_radius_km),
   })
 }

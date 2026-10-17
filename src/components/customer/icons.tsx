@@ -3,7 +3,7 @@ import type { ReactNode, SVGProps } from 'react'
 // Customer-UI icon set: inline stroke SVGs, 2px stroke, round caps/joins,
 // `currentColor` — no icon dependency, no emoji. Paths match the design
 // artboards in docs/design-reference/. Size/stroke are overridable per use.
-type IconProps = Omit<SVGProps<SVGSVGElement>, 'children'> & { size?: number }
+export type IconProps = Omit<SVGProps<SVGSVGElement>, 'children'> & { size?: number }
 
 function Icon({ size = 24, strokeWidth = 2, children, ...rest }: IconProps & { children: ReactNode }) {
   return (
@@ -188,6 +188,151 @@ export const RefreshIcon = (p: IconProps) => (
 export const CloseIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M6 6l12 12M18 6 6 18" />
+  </Icon>
+)
+
+// ── Owner dashboard additions (same stroke system) ──
+export const ScanIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16" />
+    <path d="M4 12h16" />
+  </Icon>
+)
+export const CardIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="5" width="18" height="14" rx="2.5" />
+    <path d="M3 10h18M7 15h3" />
+  </Icon>
+)
+export const UserIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4.5 20c.8-3.6 3.8-5.5 7.5-5.5s6.7 1.9 7.5 5.5" />
+  </Icon>
+)
+export const PlusIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 5v14M5 12h14" />
+  </Icon>
+)
+export const DownloadIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 4v11M7 10.5l5 5 5-5" />
+    <path d="M5 20h14" />
+  </Icon>
+)
+export const CameraIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2.5h6L16.5 7h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5v-9Z" />
+    <circle cx="12" cy="13" r="3.5" />
+  </Icon>
+)
+export const ImageIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+    <circle cx="9" cy="10" r="1.6" />
+    <path d="m20.5 16-5-5-9 8.5" />
+  </Icon>
+)
+export const AlertIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 3.5 2.5 20h19L12 3.5Z" />
+    <path d="M12 10v4.5M12 17.5h.01" />
+  </Icon>
+)
+export const ChartIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 20V11M12 20V4M19 20v-7" />
+  </Icon>
+)
+export const CalendarIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+    <path d="M3.5 10h17M8 3v4M16 3v4" />
+  </Icon>
+)
+export const EditIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 20h4L19 9l-4-4L4 16v4Z" />
+    <path d="m13.5 6.5 4 4" />
+  </Icon>
+)
+export const CopyIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="8" y="8" width="12" height="12" rx="2" />
+    <path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8" />
+  </Icon>
+)
+export const FlashIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M13 2.5 4.5 13.5H11l-1 8 8.5-11H12l1-8Z" />
+  </Icon>
+)
+export const InfoIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5.5M12 7.5h.01" />
+  </Icon>
+)
+export const EyeIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+    <circle cx="12" cy="12" r="3" />
+  </Icon>
+)
+export const TrendUpIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m4 16 6-6 4 4 6-6" />
+    <path d="M15 8h5v5" />
+  </Icon>
+)
+export const TrendDownIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m4 8 6 6 4-4 6 6" />
+    <path d="M15 16h5v-5" />
+  </Icon>
+)
+export const XCircleIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="m9 9 6 6M15 9l-6 6" />
+  </Icon>
+)
+export const WifiOffIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 3l18 18" />
+    <path d="M8.5 16.5a5 5 0 0 1 7 0M5 12.6a10 10 0 0 1 4.2-2.4M19 12.6a10 10 0 0 0-3.5-2.2M2 9a15 15 0 0 1 3.6-2.4M22 9a15 15 0 0 0-9-3.9" />
+    <path d="M12 20h.01" />
+  </Icon>
+)
+export const PrinterIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M7 9V3.5h10V9" />
+    <rect x="3.5" y="9" width="17" height="8" rx="2" />
+    <path d="M7 14h10v6.5H7z" />
+  </Icon>
+)
+export const ChevronDownIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m6 9 6 6 6-6" />
+  </Icon>
+)
+export const AwardIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="9" r="5.5" />
+    <path d="m8.5 13.5-1.5 7 5-2.5 5 2.5-1.5-7" />
+  </Icon>
+)
+export const KeyboardIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="2.5" y="6" width="19" height="12" rx="2" />
+    <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" />
+  </Icon>
+)
+export const InstallIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+    <path d="M12 7v7M9 11l3 3 3-3" />
   </Icon>
 )
 

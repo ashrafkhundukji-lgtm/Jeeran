@@ -6,6 +6,7 @@ import WalletHomeView from '@/components/WalletHomeView'
 import WalletLocaleSync from '@/components/WalletLocaleSync'
 import { fetchOfferEndDates } from '@/lib/offerEndDates'
 import { nearbyOfferToCard } from '@/lib/cardOffer'
+import { fetchBusinessImages } from '@/lib/businessImages'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,7 +41,10 @@ export default async function WalletHomePage({
     p_limit: 5,
   })
   const nearbyOffers = (offers ?? []) as NearbyOffer[]
-  const endDates = await fetchOfferEndDates(nearbyOffers.map((o) => o.offer_id))
+  const [endDates, images] = await Promise.all([
+    fetchOfferEndDates(nearbyOffers.map((o) => o.offer_id)),
+    fetchBusinessImages(nearbyOffers.map((o) => o.business_id)),
+  ])
 
   // The hero is the card's own top offer; the "featured near you" strip is
   // the same 5 rows in the same order (no extra query, no reorder).
@@ -49,7 +53,7 @@ export default async function WalletHomePage({
       <WalletLocaleSync preferred={member.preferred_language} />
       <WalletHomeView
         token={token}
-        offers={nearbyOffers.map((o) => nearbyOfferToCard(o, token, endDates))}
+        offers={nearbyOffers.map((o) => nearbyOfferToCard(o, token, endDates, images))}
         otherCount={Math.max(nearbyOffers.length - 1, 0)}
       />
     </>

@@ -1,29 +1,23 @@
 'use client'
 
-import DashboardNav from '@/components/DashboardNav'
-import OwnerAppBar from '@/components/OwnerAppBar'
+import OwnerShell, { OwnerTopBar } from '@/components/owner/OwnerShell'
 import NewCustomerLeaderboard from '@/components/NewCustomerLeaderboard'
 import { useLocale } from '@/lib/i18n/useLocale'
-import { getDir } from '@/lib/i18n/locale'
 import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
 
-// Drill-in page for the leaderboard that used to be inlined on the owner
-// dashboard home (design_handoff_jeeran_mobile/README.md §1, point 6) — it's
-// motivational, not operational, and was outranking the owner's own numbers
-// at the top of the page. NewCustomerLeaderboard itself is unchanged; this
-// is just the subpage shell around it.
+// Drill-in page for the "most active shops" leaderboard — motivational, not
+// operational, so it lives off the home screen. Highlights the Home tab
+// (it's reached from there).
 export default function OwnerLeaderboardView({ businessId }: { businessId: string }) {
   const [locale] = useLocale()
-  const dir = getDir(locale)
   const copy = DASHBOARD_COPY[locale]
 
   return (
-    <main dir={dir} className="min-h-screen bg-[#FFF8EC] pb-24 md:pb-10">
-      <OwnerAppBar variant="subpage" dir={dir} title={copy.leaderboard.heading} backHref="/dashboard/owner" backLabel={copy.common.back} />
-      <div className="px-5 pt-5">
-        <NewCustomerLeaderboard businessId={businessId} />
-      </div>
-      <DashboardNav />
-    </main>
+    <OwnerShell
+      tab="home"
+      header={<OwnerTopBar variant="subpage" title={copy.leaderboard.heading} backHref="/dashboard/owner" backLabel={copy.common.back} />}
+    >
+      <NewCustomerLeaderboard businessId={businessId} />
+    </OwnerShell>
   )
 }

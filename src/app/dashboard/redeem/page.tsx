@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import RedeemScanner from '@/components/RedeemScanner'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import RedeemScanner, { type RecentRedemption } from '@/components/RedeemScanner'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,5 +28,24 @@ export default async function RedeemPage() {
   if (!business) redirect('/dashboard/onboarding')
   if (business.is_frozen) redirect('/dashboard/frozen')
 
-  return <RedeemScanner />
+  // "Recent redemptions" under the scanner — read-only, this business only
+  // (ownership proven above, same reasoning as the owner page's admin read).
+  const { data: rows } = await supabaseAdmin
+    .from('redemptions')
+    .select('id, offer_id, redeemed_at')
+    .eq('business_id', business.id)
+    .order('redeemed_at', { ascending: false })
+    .limit(8)
+  const offerIds = [...new Set((rows ?? []).map((r) => r.offer_id))]
+  const { data: offers } = offerIds.length
+    ? await supabaseAdmin.from('campaigns').select('id, title').in('id', offerIds)
+    : { data: [] as { id: string; title: string }[] }
+  const titleById = new Map((offers ?? []).map((o) => [o.id, o.title]))
+  const recent: RecentRedemption[] = (rows ?? []).map((r) => ({
+    id: r.id,
+    title: titleById.get(r.offer_id) ?? '',
+    at: r.redeemed_at,
+  }))
+
+  return <RedeemScanner recent={recent} />
 }

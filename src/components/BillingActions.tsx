@@ -5,35 +5,30 @@ import type { CatalogEntry } from '@/lib/billing/catalog'
 import type { ReachTier } from '@/lib/billing/account'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { DASHBOARD_COPY, type DashboardCopy } from '@/lib/i18n/dashboard'
+import { OWNER_UI_COPY, fill } from '@/lib/i18n/ownerUi'
+import { AlertIcon, ChevronForwardIcon, FlashIcon } from '@/components/customer/icons'
+import { PRESS } from '@/components/customer/primitives'
+import { BTN_CORAL, Card, Notice } from '@/components/owner/ui'
 
-// Concentric-ring icon: ring count scales with reach (standard has just the
-// center dot's own small ring, extended adds one, premium adds two), same
-// visual shorthand as the design canvas mockup this section was built from.
-// `active` (this tier is the one currently subscribed) recolors it orange,
-// matching the selected-row treatment used for the topup cards below.
+// Concentric-ring icon: ring count scales with reach (standard = just the
+// centre, extended adds one ring, premium two). `active` = the tier the
+// business currently has.
 function ReachRingIcon({ tier, active }: { tier: 'standard' | 'extended' | 'premium'; active: boolean }) {
-  const color = active ? '#FF5A79' : '#9ca3af'
   return (
-    <div
-      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : 'bg-neutral-100'}`}
-    >
-      <svg width="20" height="20" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-        {tier === 'premium' && <circle cx="16" cy="16" r="14" stroke={color} strokeWidth="1.5" opacity="0.3" />}
-        {tier !== 'standard' && (
-          <circle cx="16" cy="16" r="11" stroke={color} strokeWidth="1.75" opacity="0.4" />
-        )}
-        <circle cx="16" cy="16" r="6" stroke={color} strokeWidth="1.75" />
-        <circle cx="16" cy="16" r="2" fill={color} />
+    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${active ? 'bg-brand-navy text-white' : 'bg-brand-tint text-brand-navy'}`}>
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none" stroke="currentColor" aria-hidden="true">
+        {tier === 'premium' && <circle cx="16" cy="16" r="14" strokeWidth="1.5" opacity="0.4" />}
+        {tier !== 'standard' && <circle cx="16" cy="16" r="10.5" strokeWidth="1.75" opacity="0.6" />}
+        <circle cx="16" cy="16" r="6" strokeWidth="2" />
+        <circle cx="16" cy="16" r="2" fill="currentColor" />
       </svg>
     </div>
   )
 }
 
 // Maps /api/billing/checkout's own known error strings to localized copy —
-// same reasoning as CampaignManager's campaignErrorCopyFor: the route
-// returns raw English text, so showing body.error directly stayed English
-// regardless of the dashboard's selected language. Anything not listed here
-// (an unexpected 500, a raw Stripe error) falls back to copy.checkoutError.
+// same reasoning as campaignErrorCopyFor: the route returns raw English
+// text. Anything not listed here falls back to copy.checkoutError.
 function billingErrorCopyFor(rawError: string, copy: DashboardCopy['billing']): string {
   switch (rawError) {
     case 'Not authenticated':
@@ -47,6 +42,11 @@ function billingErrorCopyFor(rawError: string, copy: DashboardCopy['billing']): 
   }
 }
 
+// Checkout flow is unchanged (POST /api/billing/checkout with a price_id,
+// redirect to Stripe). Presentation only: subscription CTA, then credit
+// packages as stacked tappable cards, then reach and instant-notify add-ons.
+// Prices/amounts come from the server catalog as before — "$" matches how
+// the catalog (amountUsd) and webhook (p_amount_usd) model them.
 export default function BillingActions({
   catalog,
   isSubscriptionActive,
@@ -60,6 +60,7 @@ export default function BillingActions({
 }) {
   const [locale] = useLocale()
   const copy = DASHBOARD_COPY[locale].billing
+  const o = OWNER_UI_COPY[locale].billing
 
   const [loadingKey, setLoadingKey] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -68,27 +69,29 @@ export default function BillingActions({
     setLoadingKey(key)
     setError('')
 
-    const res = await fetch('/api/billing/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ price_id: priceId }),
-    })
-    const body = await res.json().catch(() => ({}))
-
-    if (!res.ok) {
-      setError(billingErrorCopyFor(body.error ?? '', copy))
+    try {
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ price_id: priceId }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(billingErrorCopyFor(body.error ?? '', copy))
+        setLoadingKey(null)
+        return
+      }
+      window.location.assign(body.url)
+    } catch {
+      setError(copy.checkoutError)
       setLoadingKey(null)
-      return
     }
-
-    window.location.href = body.url
   }
 
   const subscriptionEntry = catalog.find((c) => c.type === 'subscription')
   const topupEntries = catalog.filter((c) => c.type === 'topup')
   // Best-value pack: highest credits-per-dollar ratio, computed here rather
-  // than a stored `recommended` flag on CatalogEntry (design_handoff_jeeran_
-  // mobile/README.md §4 — no such flag exists in the catalog today).
+  // than a stored `recommended` flag (no such flag exists in the catalog).
   const bestValueKey = topupEntries.length
     ? topupEntries.reduce((best, e) => (e.creditsGranted / e.amountUsd > best.creditsGranted / best.amountUsd ? e : best)).key
     : null
@@ -96,163 +99,137 @@ export default function BillingActions({
   const reachExtendedEntry = catalog.find((c) => c.type === 'addon' && c.addonKey === 'reach_extended')
   const reachPremiumEntry = catalog.find((c) => c.type === 'addon' && c.addonKey === 'reach_premium')
 
-  if (
-    !subscriptionEntry &&
-    topupEntries.length === 0 &&
-    !instantNotifyEntry &&
-    !reachExtendedEntry &&
-    !reachPremiumEntry
-  ) {
-    return <p className="text-sm text-neutral-400">{copy.notConfigured}</p>
+  if (!subscriptionEntry && topupEntries.length === 0 && !instantNotifyEntry && !reachExtendedEntry && !reachPremiumEntry) {
+    return (
+      <Notice tone="info" icon={<AlertIcon size={20} />}>
+        {copy.notConfigured}
+      </Notice>
+    )
+  }
+
+  const reachRow = (tier: 'extended' | 'premium', entry: CatalogEntry, label: string, description: string) => {
+    const current = reachTier === tier
+    return (
+      <li className={`flex items-center gap-3 border-b border-brand-line px-4 py-3 last:border-b-0 ${current ? 'bg-brand-tint' : ''}`}>
+        <ReachRingIcon tier={tier} active={current} />
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-semibold">{label}</p>
+          <p className={`text-[13px] ${current ? 'font-semibold text-brand-navy' : 'text-brand-muted'}`}>{current ? copy.reachCurrentPlan : description}</p>
+        </div>
+        {!current && (
+          <button
+            type="button"
+            onClick={() => handleCheckout(entry.priceId, entry.key)}
+            disabled={loadingKey !== null}
+            className={`min-h-11 shrink-0 rounded-xl bg-brand-navy px-3.5 text-sm font-semibold text-white disabled:opacity-50 ${PRESS}`}
+          >
+            {loadingKey === entry.key ? copy.redirecting : copy.reachSubscribe.replace('{n}', String(entry.amountUsd))}
+          </button>
+        )}
+      </li>
+    )
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && (
+        <Notice tone="warning" icon={<AlertIcon size={20} />}>
+          {error}
+        </Notice>
+      )}
 
       {subscriptionEntry && !isSubscriptionActive && (
         <button
+          type="button"
           onClick={() => handleCheckout(subscriptionEntry.priceId, subscriptionEntry.key)}
           disabled={loadingKey !== null}
-          className="bg-[#FF5A79] text-white rounded-lg py-2.5 text-sm font-medium transition-colors hover:bg-[#E8425F] disabled:opacity-50"
+          className={`${BTN_CORAL} w-full`}
         >
-          {loadingKey === subscriptionEntry.key
-            ? copy.redirecting
-            : copy.subscribe.replace('{n}', String(subscriptionEntry.amountUsd))}
+          {loadingKey === subscriptionEntry.key ? copy.redirecting : copy.subscribe.replace('{n}', String(subscriptionEntry.amountUsd))}
         </button>
       )}
 
-      {(reachExtendedEntry || reachPremiumEntry) && (
-        <div>
-          <h3 className="text-sm font-medium text-neutral-700 mb-1">{copy.reachHeading}</h3>
-          <p className="text-xs text-neutral-500 mb-3">{copy.reachDescription}</p>
-          <div className="flex flex-col gap-2">
-            {/* Standard is always included — nothing to buy, just the baseline every business already has. */}
-            <div className="flex items-center gap-3 border border-neutral-200 rounded-xl p-3">
-              <ReachRingIcon tier="standard" active={false} />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium">{copy.reachStandardLabel}</div>
-                <div className="text-xs text-neutral-500">{copy.reachStandardDescription}</div>
-              </div>
-            </div>
-
-            {reachExtendedEntry && (
-              <div
-                className={`flex items-center gap-3 rounded-xl p-3 ${
-                  reachTier === 'extended' ? 'border-2 border-[#FF5A79] bg-[#FFF7F3]' : 'border border-neutral-200'
-                }`}
-              >
-                <ReachRingIcon tier="extended" active={reachTier === 'extended'} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium">{copy.reachExtendedLabel}</div>
-                  <div className={`text-xs ${reachTier === 'extended' ? 'text-[#FF5A79] font-semibold' : 'text-neutral-500'}`}>
-                    {reachTier === 'extended' ? copy.reachCurrentPlan : copy.reachExtendedDescription}
-                  </div>
-                </div>
-                {reachTier !== 'extended' && (
-                  <button
-                    onClick={() => handleCheckout(reachExtendedEntry.priceId, reachExtendedEntry.key)}
-                    disabled={loadingKey !== null}
-                    className="shrink-0 bg-[#FF5A79] text-white rounded-lg py-2 px-3 text-xs font-medium transition-colors hover:bg-[#E8425F] disabled:opacity-50"
-                  >
-                    {loadingKey === reachExtendedEntry.key
-                      ? copy.redirecting
-                      : copy.reachSubscribe.replace('{n}', String(reachExtendedEntry.amountUsd))}
-                  </button>
-                )}
-              </div>
-            )}
-
-            {reachPremiumEntry && (
-              <div
-                className={`flex items-center gap-3 rounded-xl p-3 ${
-                  reachTier === 'premium' ? 'border-2 border-[#FF5A79] bg-[#FFF7F3]' : 'border border-neutral-200'
-                }`}
-              >
-                <ReachRingIcon tier="premium" active={reachTier === 'premium'} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium">{copy.reachPremiumLabel}</div>
-                  <div className={`text-xs ${reachTier === 'premium' ? 'text-[#FF5A79] font-semibold' : 'text-neutral-500'}`}>
-                    {reachTier === 'premium' ? copy.reachCurrentPlan : copy.reachPremiumDescription}
-                  </div>
-                </div>
-                {reachTier !== 'premium' && (
-                  <button
-                    onClick={() => handleCheckout(reachPremiumEntry.priceId, reachPremiumEntry.key)}
-                    disabled={loadingKey !== null}
-                    className="shrink-0 bg-[#FF5A79] text-white rounded-lg py-2 px-3 text-xs font-medium transition-colors hover:bg-[#E8425F] disabled:opacity-50"
-                  >
-                    {loadingKey === reachPremiumEntry.key
-                      ? copy.redirecting
-                      : copy.reachSubscribe.replace('{n}', String(reachPremiumEntry.amountUsd))}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {topupEntries.length > 0 && (
-        <div>
-          <h3 className="mb-2.5 text-[13px] font-semibold tracking-[0.06em] text-[#8A76BE]">{copy.buyCredits}</h3>
-          <div className="grid grid-cols-3 gap-2.5">
+        <section>
+          <h2 className="mb-2.5 font-display text-[17px] font-semibold">{o.packagesHeading}</h2>
+          <ul className="flex flex-col gap-3">
             {topupEntries.map((entry) => {
               const isBestValue = entry.key === bestValueKey
               return (
-                <button
-                  key={entry.key}
-                  onClick={() => handleCheckout(entry.priceId, entry.key)}
-                  disabled={loadingKey !== null}
-                  className={`relative rounded-2xl p-[14px_8px] text-center transition-colors disabled:opacity-50 ${
-                    isBestValue
-                      ? 'border-2 border-[#FF5A79] shadow-[0_8px_18px_-12px_rgba(255,90,121,0.7)]'
-                      : 'border border-[#EDE3F7] bg-white'
-                  }`}
-                >
-                  {isBestValue && (
-                    <span className="absolute -top-[9px] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#FF5A79] px-2 py-[3px] text-[9.5px] font-semibold text-white">
-                      {copy.bestValue}
+                <li key={entry.key}>
+                  <button
+                    type="button"
+                    onClick={() => handleCheckout(entry.priceId, entry.key)}
+                    disabled={loadingKey !== null}
+                    className={`flex min-h-[76px] w-full items-center gap-3 rounded-[20px] bg-white px-4 py-3 text-start disabled:opacity-60 ${PRESS} ${
+                      isBestValue ? 'border-2 border-brand-coral shadow-brand-card' : 'border border-brand-line'
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      {isBestValue && <span className="mb-1 inline-block rounded-full bg-brand-coral px-2.5 py-0.5 text-xs font-bold text-white">{copy.bestValue}</span>}
+                      <p className="font-display text-[19px] leading-tight font-bold text-brand-navy-deep">
+                        {fill(o.packageCredits, { n: entry.creditsGranted.toLocaleString('en') })}
+                      </p>
+                      <p className="text-[13px] text-brand-muted">
+                        {fill(o.perCredit, { price: `$${((entry.amountUsd / entry.creditsGranted) * 100).toFixed(2)}` })}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-xl bg-brand-tint px-3 py-2 font-display text-[18px] font-bold text-brand-navy">
+                      {loadingKey === entry.key ? '…' : <bdi dir="ltr">${entry.amountUsd}</bdi>}
                     </span>
-                  )}
-                  <div className="text-[21px] font-bold">{entry.creditsGranted.toLocaleString()}</div>
-                  <div className="mt-0.5 text-[11px] text-[#8A76BE]">{copy.creditsSuffix}</div>
-                  <div className="mt-[9px] text-[13px] font-semibold">
-                    {loadingKey === entry.key ? '…' : `$${entry.amountUsd}`}
-                  </div>
-                </button>
+                    <ChevronForwardIcon size={20} className="shrink-0 text-brand-muted" />
+                  </button>
+                </li>
               )
             })}
-          </div>
-        </div>
+          </ul>
+        </section>
+      )}
+
+      {(reachExtendedEntry || reachPremiumEntry) && (
+        <section>
+          <h2 className="font-display text-[17px] font-semibold">{o.reachHeading}</h2>
+          <p className="mt-0.5 mb-2.5 text-sm text-brand-muted">{copy.reachDescription}</p>
+          <Card className="overflow-hidden">
+            <ul>
+              {/* Standard is always included — nothing to buy, the baseline every business has. */}
+              <li className="flex items-center gap-3 border-b border-brand-line px-4 py-3">
+                <ReachRingIcon tier="standard" active={reachTier === 'none'} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] font-semibold">{copy.reachStandardLabel}</p>
+                  <p className="text-[13px] text-brand-muted">{copy.reachStandardDescription}</p>
+                </div>
+              </li>
+              {reachExtendedEntry && reachRow('extended', reachExtendedEntry, copy.reachExtendedLabel, copy.reachExtendedDescription)}
+              {reachPremiumEntry && reachRow('premium', reachPremiumEntry, copy.reachPremiumLabel, copy.reachPremiumDescription)}
+            </ul>
+          </Card>
+        </section>
       )}
 
       {instantNotifyEntry && (
-        <div className="rounded-[20px] border border-[#FF5A79]/30 bg-[#FFF7F3] p-[17px]">
-          <div className="mb-[7px] flex items-center gap-[9px]">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF5A79" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z" />
-            </svg>
-            <h3 className="text-[15px] font-semibold">{copy.instantNotifyLabel}</h3>
+        <Card className="p-4">
+          <div className="mb-1.5 flex items-center gap-2">
+            <FlashIcon size={20} className="text-brand-coral" />
+            <h2 className="font-display text-[17px] font-semibold">{copy.instantNotifyLabel}</h2>
           </div>
-          <p className="mb-3.5 text-[13px] leading-[1.6] text-[#6B5A8C]">{copy.instantNotifyDescription}</p>
+          <p className="mb-3.5 text-sm leading-relaxed text-brand-muted">{copy.instantNotifyDescription}</p>
           {isInstantNotifyActive ? (
-            <div className="flex items-center gap-[7px]">
-              <span className="h-[7px] w-[7px] rounded-full bg-[#16a34a]" aria-hidden="true" />
-              <span className="text-[14px] font-semibold text-[#15803d]">{copy.instantNotifyActive}</span>
-            </div>
+            <p className="flex items-center gap-2 text-[15px] font-semibold text-brand-navy">
+              <span aria-hidden="true" className="h-2 w-2 rounded-full bg-brand-navy" />
+              {copy.instantNotifyActive}
+            </p>
           ) : (
             <button
+              type="button"
               onClick={() => handleCheckout(instantNotifyEntry.priceId, instantNotifyEntry.key)}
               disabled={loadingKey !== null}
-              className="rounded-[13px] bg-[#FF5A79] px-4 py-[13px] text-[14.5px] font-semibold text-white transition-colors hover:bg-[#E8425F] disabled:opacity-50"
+              className={`${BTN_CORAL} w-full`}
             >
-              {loadingKey === instantNotifyEntry.key
-                ? copy.redirecting
-                : copy.instantNotifySubscribe.replace('{n}', String(instantNotifyEntry.amountUsd))}
+              {loadingKey === instantNotifyEntry.key ? copy.redirecting : copy.instantNotifySubscribe.replace('{n}', String(instantNotifyEntry.amountUsd))}
             </button>
           )}
-        </div>
+        </Card>
       )}
     </div>
   )

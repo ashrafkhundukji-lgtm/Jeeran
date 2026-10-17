@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { offerWindowState } from '@/lib/offerWindow'
 
 export interface CampaignForClaim {
   id: string
@@ -15,7 +16,7 @@ export interface CampaignForClaim {
 export async function getCampaignForClaim(campaignId: string): Promise<CampaignForClaim | null> {
   const { data: campaign, error } = await supabaseAdmin
     .from('campaigns')
-    .select('id, title, description, bid_per_view, is_active, creator_type, creator_id')
+    .select('id, title, description, bid_per_view, is_active, start_date, end_date, creator_type, creator_id')
     .eq('id', campaignId)
     .maybeSingle()
 
@@ -33,7 +34,8 @@ export async function getCampaignForClaim(campaignId: string): Promise<CampaignF
     title: campaign.title,
     description: campaign.description,
     bidPerView: campaign.bid_per_view,
-    isActive: campaign.is_active,
+    // Outside its start/end dates counts as inactive (see lib/offerWindow.ts).
+    isActive: campaign.is_active && offerWindowState(campaign.start_date, campaign.end_date) === 'live',
     creatorType: campaign.creator_type,
     creatorId: campaign.creator_id,
     creatorLatitude: creator?.latitude ?? null,

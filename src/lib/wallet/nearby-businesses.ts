@@ -15,4 +15,6 @@ export interface NearbyBusiness {
   has_active_offer: boolean
   top_offer_id: string | null
   top_offer_title: string | null
+  // businesses.logo_url — added by /api/wallet/search (not by the RPC).
+  logo_url?: string | null
 }

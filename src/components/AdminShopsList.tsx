@@ -12,9 +12,9 @@ const BILLING_LABELS: Record<BillingStatus, string> = {
 }
 
 const BILLING_STYLES: Record<BillingStatus, string> = {
-  paid: 'bg-emerald-50 text-emerald-700',
-  trial: 'bg-blue-50 text-blue-700',
-  lapsed: 'bg-red-50 text-red-700',
+  paid: 'bg-brand-tint text-brand-navy',
+  trial: 'bg-brand-tint text-brand-navy-deep',
+  lapsed: 'bg-brand-coral-tint text-brand-coral',
 }
 
 export default function AdminShopsList({ shops: initialShops }: { shops: AdminShopRow[] }) {
@@ -68,12 +68,12 @@ export default function AdminShopsList({ shops: initialShops }: { shops: AdminSh
           placeholder="Search by name, owner email, or id"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="flex-1 min-w-[220px] border border-neutral-300 rounded-lg px-3 py-2 text-sm"
+          className="flex-1 min-w-[220px] border border-brand-line rounded-lg px-3 py-2 text-sm"
         />
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="border border-neutral-300 rounded-lg px-3 py-2 text-sm"
+          className="border border-brand-line rounded-lg px-3 py-2 text-sm"
         >
           <option value="all">All categories</option>
           {CATEGORIES.map((c) => (
@@ -85,7 +85,7 @@ export default function AdminShopsList({ shops: initialShops }: { shops: AdminSh
         <select
           value={billingStatus}
           onChange={(e) => setBillingStatus(e.target.value as 'all' | BillingStatus)}
-          className="border border-neutral-300 rounded-lg px-3 py-2 text-sm"
+          className="border border-brand-line rounded-lg px-3 py-2 text-sm"
         >
           <option value="all">All billing statuses</option>
           <option value="paid">Paid</option>
@@ -95,7 +95,7 @@ export default function AdminShopsList({ shops: initialShops }: { shops: AdminSh
         <select
           value={frozenFilter}
           onChange={(e) => setFrozenFilter(e.target.value as 'all' | 'frozen' | 'active')}
-          className="border border-neutral-300 rounded-lg px-3 py-2 text-sm"
+          className="border border-brand-line rounded-lg px-3 py-2 text-sm"
         >
           <option value="all">All statuses</option>
           <option value="active">Not frozen</option>
@@ -103,30 +103,30 @@ export default function AdminShopsList({ shops: initialShops }: { shops: AdminSh
         </select>
       </div>
 
-      <p className="text-xs text-neutral-400 mb-3">
+      <p className="text-xs text-brand-muted mb-3">
         {filtered.length} of {shops.length} shops
       </p>
 
-      {actionError && <p className="text-sm text-red-600 mb-3">{actionError}</p>}
+      {actionError && <p className="text-sm text-brand-coral mb-3">{actionError}</p>}
 
       <div className="flex flex-col gap-2">
-        {filtered.length === 0 && <p className="text-sm text-neutral-400 py-6 text-center">No shops match.</p>}
+        {filtered.length === 0 && <p className="text-sm text-brand-muted py-6 text-center">No shops match.</p>}
         {filtered.map((shop) => (
           <div
             key={shop.id}
             className={`border rounded-lg px-4 py-3 ${
-              shop.isFrozen ? 'border-red-200 bg-red-50/30' : 'border-neutral-200'
+              shop.isFrozen ? 'border-brand-coral/30 bg-brand-coral-tint/30' : 'border-brand-line'
             }`}
           >
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <div className="flex items-center gap-2 min-w-[220px]">
-                <LevelBadge level={shop.promotionLevel} />
+                <LevelBadge level={shop.promotionLevel} variant="chip" />
                 <div>
-                  <div className="font-medium text-sm text-neutral-900">{shop.name}</div>
-                  <div className="text-xs text-neutral-400">
+                  <div className="font-medium text-sm text-brand-navy-deep">{shop.name}</div>
+                  <div className="text-xs text-brand-muted">
                     {shop.category} · {shop.ownerEmail ?? '—'}
                   </div>
-                  <div className="text-[10px] text-neutral-300">{shop.id}</div>
+                  <div className="text-xs text-brand-muted">{shop.id}</div>
                 </div>
               </div>
 
@@ -141,7 +141,7 @@ export default function AdminShopsList({ shops: initialShops }: { shops: AdminSh
               </span>
 
               {shop.isFrozen && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-800">Frozen</span>
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-brand-coral-tint text-brand-coral">Frozen</span>
               )}
 
               <div className="ml-auto flex items-center gap-2">
@@ -150,7 +150,7 @@ export default function AdminShopsList({ shops: initialShops }: { shops: AdminSh
                     href={`https://www.google.com/maps?q=${shop.latitude},${shop.longitude}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs text-neutral-500 underline"
+                    className="text-xs text-brand-muted underline"
                   >
                     Map
                   </a>
@@ -158,7 +158,7 @@ export default function AdminShopsList({ shops: initialShops }: { shops: AdminSh
                 {shop.isFrozen ? (
                   <button
                     onClick={() => applyFreeze(shop.id, false)}
-                    className="text-xs font-medium px-2.5 py-1 rounded-full bg-neutral-900 text-white hover:bg-neutral-700 transition-colors"
+                    className="text-xs font-medium px-2.5 py-1 rounded-full bg-brand-navy text-white hover:bg-brand-navy-deep transition-colors"
                   >
                     Unfreeze
                   </button>
@@ -169,11 +169,11 @@ export default function AdminShopsList({ shops: initialShops }: { shops: AdminSh
                       placeholder="Reason (optional)"
                       value={freezeReason}
                       onChange={(e) => setFreezeReason(e.target.value)}
-                      className="border border-neutral-300 rounded-lg px-2 py-1 text-xs w-40"
+                      className="border border-brand-line rounded-lg px-2 py-1 text-xs w-40"
                     />
                     <button
                       onClick={() => applyFreeze(shop.id, true, freezeReason)}
-                      className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors"
+                      className="text-xs font-medium px-2.5 py-1 rounded-full bg-brand-coral text-white hover:bg-brand-coral/90 transition-colors"
                     >
                       Confirm
                     </button>
@@ -182,7 +182,7 @@ export default function AdminShopsList({ shops: initialShops }: { shops: AdminSh
                         setPendingFreezeId(null)
                         setFreezeReason('')
                       }}
-                      className="text-xs text-neutral-500"
+                      className="text-xs text-brand-muted"
                     >
                       Cancel
                     </button>
@@ -190,7 +190,7 @@ export default function AdminShopsList({ shops: initialShops }: { shops: AdminSh
                 ) : (
                   <button
                     onClick={() => setPendingFreezeId(shop.id)}
-                    className="text-xs font-medium px-2.5 py-1 rounded-full border border-red-200 text-red-700 hover:bg-red-50 transition-colors"
+                    className="text-xs font-medium px-2.5 py-1 rounded-full border border-brand-coral/30 text-brand-coral hover:bg-brand-coral-tint transition-colors"
                   >
                     Freeze
                   </button>
@@ -199,11 +199,11 @@ export default function AdminShopsList({ shops: initialShops }: { shops: AdminSh
             </div>
 
             {shop.activeCampaign && (
-              <div className="text-xs text-neutral-500 mt-2">
+              <div className="text-xs text-brand-muted mt-2">
                 Active campaign: {shop.activeCampaign.title} · {shop.activeCampaign.bidPerView} credits/view
               </div>
             )}
-            {shop.frozenReason && <div className="text-xs text-red-600 mt-2">Frozen reason: {shop.frozenReason}</div>}
+            {shop.frozenReason && <div className="text-xs text-brand-coral mt-2">Frozen reason: {shop.frozenReason}</div>}
           </div>
         ))}
       </div>
@@ -213,8 +213,8 @@ export default function AdminShopsList({ shops: initialShops }: { shops: AdminSh
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="text-xs text-neutral-500">
-      {label}: <span className="text-neutral-800 font-medium">{value}</span>
+    <div className="text-xs text-brand-muted">
+      {label}: <span className="text-brand-navy-deep font-medium">{value}</span>
     </div>
   )
 }

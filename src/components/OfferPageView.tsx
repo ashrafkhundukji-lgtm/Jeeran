@@ -25,6 +25,7 @@ export default function OfferPageView({
   isActive,
   imageUrl,
   businessName,
+  businessLogoUrl = null,
   category,
   content,
   endDate,
@@ -38,6 +39,7 @@ export default function OfferPageView({
   isActive: boolean
   imageUrl: string | null
   businessName: string
+  businessLogoUrl?: string | null
   category: string
   content: Record<Locale, { title: string; description: string | null }>
   endDate: string | null
@@ -126,7 +128,7 @@ export default function OfferPageView({
         )}
 
         <div className="flex items-center gap-3">
-          <ShopAvatar name={businessName} size={52} />
+          <ShopAvatar name={businessName} logoUrl={businessLogoUrl} size={52} />
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="min-w-0 text-start font-display text-lg font-bold text-brand-navy-deep">
               <bdi className="inline-block max-w-full truncate align-bottom">{businessName}</bdi>

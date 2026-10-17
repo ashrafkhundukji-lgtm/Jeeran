@@ -12,15 +12,16 @@ export default function AdminNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="flex items-center gap-1 bg-[#1E3A8A]/5 rounded-lg p-1 w-fit mb-8">
+    <nav className="mb-8 flex w-fit items-center gap-1 rounded-2xl bg-brand-tint p-1">
       {TABS.map((tab) => {
         const active = pathname === tab.href
         return (
           <a
             key={tab.href}
             href={tab.href}
-            className={`text-sm font-medium rounded-md px-3 py-1.5 transition-colors ${
-              active ? 'bg-[#1E3A8A] text-white shadow-sm' : 'text-[#5a5a5a] hover:text-[#1a1a1a]'
+            aria-current={active ? 'page' : undefined}
+            className={`flex min-h-10 items-center rounded-xl px-4 text-sm font-semibold transition-colors ${
+              active ? 'bg-brand-navy text-white' : 'text-brand-muted hover:text-brand-navy-deep'
             }`}
           >
             {tab.label}

@@ -5,15 +5,8 @@ import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir } from '@/lib/i18n/locale'
 import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
 import type { PromotionLevel } from '@/lib/promotion'
-
-// Same medal/label maps as LevelBadge — not imported from there since
-// LevelBadge only exports the component, not the maps themselves.
-const LABELS: Record<'en' | 'ar' | 'ur', Record<PromotionLevel, string>> = {
-  en: { bronze: 'Bronze', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' },
-  ar: { bronze: 'برونزي', silver: 'فضي', gold: 'ذهبي', platinum: 'بلاتيني' },
-  ur: { bronze: 'کانسی', silver: 'چاندی', gold: 'سونا', platinum: 'پلاٹینم' },
-}
-const MEDALS: Record<PromotionLevel, string> = { bronze: '🥉', silver: '🥈', gold: '🥇', platinum: '💎' }
+import { LEVEL_LABELS } from '@/components/LevelBadge'
+import { AwardIcon } from '@/components/customer/icons'
 
 // Phase 4, item 9 — a real acknowledged moment, not a passive ad_credits
 // number quietly being higher than before. Shown once per crossing (the
@@ -47,18 +40,17 @@ export default function MilestoneAnnouncement({
   }
 
   return (
-    <div
-      dir={dir}
-      className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-center justify-between gap-4"
-    >
-      <p className="text-sm font-medium text-amber-900">
-        <span className="text-xl align-middle me-1.5">{MEDALS[tier]}</span>
-        {copy.reached.replace('{tier}', LABELS[locale][tier]).replace('{n}', String(bonus))}
+    <div dir={dir} role="status" className="flex items-center gap-3 rounded-[22px] bg-brand-tint p-4">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-navy text-white">
+        <AwardIcon size={22} />
+      </span>
+      <p className="min-w-0 flex-1 text-[15px] leading-relaxed font-semibold text-brand-navy-deep">
+        {copy.reached.replace('{tier}', LEVEL_LABELS[locale][tier]).replace('{n}', String(bonus))}
       </p>
       <button
         type="button"
         onClick={handleDismiss}
-        className="shrink-0 bg-white border border-amber-300 text-amber-800 text-xs font-medium rounded-lg px-3 py-1.5 transition-colors hover:bg-amber-100"
+        className="min-h-11 shrink-0 rounded-xl px-3 text-sm font-semibold text-brand-navy active:bg-white"
       >
         {copy.dismiss}
       </button>

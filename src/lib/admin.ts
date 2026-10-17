@@ -51,6 +51,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     { data: scans, error: scanError },
     { data: redemptions, error: redemptionError },
     thresholds,
+    { data: touchpoints, error: touchpointError },
   ] = await Promise.all([
     supabaseAdmin
       .from('businesses')
@@ -66,12 +67,17 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     supabaseAdmin.from('scans_and_claims').select('host_business_id'),
     supabaseAdmin.from('redemptions').select('business_id'),
     getPromotionThresholds(),
+    // Scans in the current membership flow (see get_owner_metrics,
+    // 20261017d_owner_metrics_touchpoints.sql) — scans_and_claims above is
+    // only the legacy per-offer pass flow.
+    supabaseAdmin.from('wallet_member_touchpoints').select('business_id'),
   ])
 
   if (bizError) throw new Error(bizError.message)
   if (campError) throw new Error(campError.message)
   if (scanError) throw new Error(scanError.message)
   if (redemptionError) throw new Error(redemptionError.message)
+  if (touchpointError) throw new Error(touchpointError.message)
 
   const ownerIds = Array.from(new Set((businesses ?? []).map((b) => b.owner_id)))
   const emailByOwnerId = new Map<string, string>()
@@ -90,6 +96,9 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   const scansHostedByBusinessId = new Map<string, number>()
   for (const s of scans ?? []) {
     scansHostedByBusinessId.set(s.host_business_id, (scansHostedByBusinessId.get(s.host_business_id) ?? 0) + 1)
+  }
+  for (const t of touchpoints ?? []) {
+    scansHostedByBusinessId.set(t.business_id, (scansHostedByBusinessId.get(t.business_id) ?? 0) + 1)
   }
 
   const promotionScoreByBusinessId = new Map<string, number>()

@@ -1,10 +1,28 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import jsQR from 'jsqr'
+import OwnerShell, { OwnerTopBar } from '@/components/owner/OwnerShell'
+import { useClientValue } from '@/components/owner/useClientValue'
+import { BTN_CORAL, BTN_PRIMARY, Card, INPUT, SectionHeading } from '@/components/owner/ui'
+import { PRESS } from '@/components/customer/primitives'
+import {
+  AlertIcon,
+  CameraIcon,
+  CheckIcon,
+  ClockIcon,
+  FlashIcon,
+  KeyboardIcon,
+  RefreshIcon,
+  ScanIcon,
+  WifiOffIcon,
+  XCircleIcon,
+} from '@/components/customer/icons'
 import { useLocale } from '@/lib/i18n/useLocale'
-import { getDir } from '@/lib/i18n/locale'
-import { DASHBOARD_COPY, type DashboardCopy } from '@/lib/i18n/dashboard'
+import type { Locale } from '@/lib/i18n/locale'
+import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
+import { INTL_LOCALE, OWNER_UI_COPY, fill, type OwnerUiCopy } from '@/lib/i18n/ownerUi'
+import { formatDay } from '@/components/owner/campaigns'
 
 // BarcodeDetector isn't in TS's default DOM lib (still an experimental Web
 // API). Used when present (cheaper — decodes off the video element
@@ -35,70 +53,107 @@ interface TorchCapabilities {
   torch?: boolean
 }
 
+export interface RecentRedemption {
+  id: string
+  title: string
+  at: string
+}
+
+type Outcome = 'success' | 'already' | 'pass' | 'invalid' | 'noOffer' | 'ended' | 'scheduled' | 'frozen' | 'network' | 'generic'
+
 type RedeemResult =
   | {
       kind: 'success'
       title: string
-      description: string | null
-      // Best-effort context from /api/redeem (design_handoff_jeeran_mobile/
-      // README.md §3) — null when the count query itself failed server-side,
-      // in which case the corresponding context-card row is omitted rather
-      // than showing a misleading zero.
+      // Best-effort context from /api/redeem — null when the count query
+      // itself failed server-side, in which case that line is omitted.
       isNewCustomer: boolean | null
       redemptionsToday: number | null
     }
-  | { kind: 'error'; message: string }
+  | { kind: Exclude<Outcome, 'success'>; raw: string; date?: string | null }
 
-// Maps /api/redeem's own distinct error strings to localized copy, rather
-// than collapsing everything into one generic failure message — staff need
-// to know WHY a scan didn't work (no offer live right now vs. already
-// claimed vs. a dead pass vs. a corrupted code are all different actions).
-function errorCopyFor(rawError: string, copy: DashboardCopy['redeem']): string {
+type CameraState = 'idle' | 'starting' | 'scanning' | 'denied' | 'failed' | 'unsupported'
+
+// /api/redeem's own error strings → result states. The route itself is
+// unchanged; note there is no separate "wrong shop" or "expired offer"
+// response — a valid member card always redeems against the scanning shop's
+// own active offer. "Expired" = the shop's offer is outside its dates
+// ('ended' / 'scheduled'), or the customer removed the pass ('pass').
+function outcomeFor(rawError: string): Exclude<Outcome, 'success' | 'network'> {
   switch (rawError) {
-    case 'no active offer for this shop':
-      return copy.errorNoActiveOffer
     case 'already redeemed by this customer':
-      return copy.errorAlreadyRedeemed
+      return 'already'
     case 'pass no longer active':
-      return copy.errorPassInactive
+      return 'pass'
     case 'invalid or tampered barcode':
-      return copy.errorInvalidBarcode
+    case 'barcodeValue is required':
+      return 'invalid'
+    case 'no active offer for this shop':
+      return 'noOffer'
+    case 'offer has ended':
+      return 'ended'
+    case 'offer has not started':
+      return 'scheduled'
+    case 'This account is frozen':
+      return 'frozen'
     default:
-      return `${copy.errorGeneric}${rawError ? ` (${rawError})` : ''}`
+      return 'generic'
   }
 }
 
-export default function RedeemScanner() {
-  const [locale] = useLocale()
-  const dir = getDir(locale)
-  const copy = DASHBOARD_COPY[locale].redeem
+function vibrate(pattern: number | number[]) {
+  try {
+    navigator.vibrate?.(pattern)
+  } catch {
+    // Not supported (iOS) — silent.
+  }
+}
 
-  const [cameraSupported, setCameraSupported] = useState<boolean | null>(null) // null until checked client-side, matches useLocale's post-mount check pattern
-  const [scanning, setScanning] = useState(false)
+export default function RedeemScanner({ recent: initialRecent }: { recent: RecentRedemption[] }) {
+  const [locale] = useLocale()
+  const copy = OWNER_UI_COPY[locale]
+  const r = copy.redeem
+  const ids = useId()
+
+  const [camera, setCamera] = useState<CameraState>('idle')
   const [checking, setChecking] = useState(false)
   const [manualValue, setManualValue] = useState('')
   const [result, setResult] = useState<RedeemResult | null>(null)
-  const [cameraError, setCameraError] = useState('')
   const [torchSupported, setTorchSupported] = useState(false)
   const [torchOn, setTorchOn] = useState(false)
+  const [recent, setRecent] = useState(initialRecent)
+  const [lastCode, setLastCode] = useState('')
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null) // off-screen — only used to grab frames for the jsQR fallback path, never rendered
   const trackRef = useRef<MediaStreamTrack | null>(null) // the active camera track, kept only for the torch toggle below
 
+  const scanning = camera === 'starting' || camera === 'scanning'
+
+  // Feature check + auto-start when the camera permission is already
+  // granted (a cashier reopening the page shouldn't need an extra tap);
+  // otherwise wait for the explicit button so the permission prompt only
+  // ever appears in response to a tap.
+  const cameraApi = useClientValue(() => Boolean(navigator.mediaDevices?.getUserMedia), true)
+  const cameraState: CameraState = cameraApi ? camera : 'unsupported'
+
   useEffect(() => {
-    setCameraSupported(typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia)
+    if (!navigator.mediaDevices?.getUserMedia) return
+    navigator.permissions
+      ?.query({ name: 'camera' as PermissionName })
+      .then((s) => {
+        if (s.state === 'granted') setCamera('starting')
+        else if (s.state === 'denied') setCamera('denied')
+      })
+      .catch(() => {})
   }, [])
 
-  // Camera scan loop — only runs while `scanning` is true, torn down on
-  // every stop (including an in-flight redeem check or unmount) so the
-  // camera stream and detection loop never outlive the page. Unchanged from
-  // the pre-redesign version — the mobile redesign is a pure presentation
-  // change to this component (design_handoff_jeeran_mobile/README.md §2),
-  // aside from the added torch wiring.
+  // Camera scan loop — only runs while scanning, torn down on every stop
+  // (including an in-flight redeem check or unmount) so the camera stream
+  // and detection loop never outlive the page. Decode logic unchanged from
+  // the previous version.
   useEffect(() => {
     if (!scanning) return
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return
 
     let stream: MediaStream | null = null
     let rafId = 0
@@ -107,10 +162,15 @@ export default function RedeemScanner() {
     async function start() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        if (stopped) {
+          stream.getTracks().forEach((t) => t.stop())
+          return
+        }
         const video = videoRef.current
         if (!video) return
         video.srcObject = stream
         await video.play()
+        setCamera('scanning')
 
         const track = stream.getVideoTracks()[0] ?? null
         trackRef.current = track
@@ -152,9 +212,9 @@ export default function RedeemScanner() {
           rafId = requestAnimationFrame(tick)
         }
         rafId = requestAnimationFrame(tick)
-      } catch {
-        setCameraError('camera')
-        setScanning(false)
+      } catch (e) {
+        const name = (e as DOMException)?.name
+        setCamera(name === 'NotAllowedError' || name === 'SecurityError' ? 'denied' : 'failed')
       }
     }
     start()
@@ -173,22 +233,20 @@ export default function RedeemScanner() {
     const track = trackRef.current
     if (!track) return
     try {
-      // `advanced`/`torch` aren't in TS's MediaTrackConstraintSet — this is a
-      // real but non-standardized capability some Android Chrome builds
-      // expose; iOS Safari never reports torchSupported=true so this path
-      // just isn't reached there.
+      // `advanced`/`torch` aren't in TS's MediaTrackConstraintSet — a real
+      // but non-standardized capability some Android Chrome builds expose.
       await track.applyConstraints({ advanced: [{ torch: !torchOn } as MediaTrackConstraintSet & TorchCapabilities] })
       setTorchOn((v) => !v)
     } catch {
-      // Some browsers report the capability but reject the constraint at
-      // runtime — leave torchOn as-is rather than lying about the state.
+      // Some browsers report the capability but reject the constraint.
     }
   }
 
   async function handleDecoded(barcodeValue: string) {
-    setScanning(false)
+    setCamera('idle')
     setChecking(true)
     setResult(null)
+    setLastCode(barcodeValue)
 
     try {
       const res = await fetch('/api/redeem', {
@@ -199,18 +257,21 @@ export default function RedeemScanner() {
       const body = await res.json().catch(() => ({}))
 
       if (res.ok && body.ok) {
+        const title = body.offer?.title ?? ''
+        vibrate(200)
         setResult({
           kind: 'success',
-          title: body.offer?.title ?? '',
-          description: body.offer?.description ?? null,
+          title,
           isNewCustomer: typeof body.isNewCustomer === 'boolean' ? body.isNewCustomer : null,
           redemptionsToday: typeof body.redemptionsToday === 'number' ? body.redemptionsToday : null,
         })
+        setRecent((prev) => [{ id: `local-${Date.now()}`, title, at: new Date().toISOString() }, ...prev].slice(0, 8))
       } else {
-        setResult({ kind: 'error', message: body.error ?? '' })
+        vibrate([80, 60, 80])
+        setResult({ kind: outcomeFor(body.error ?? ''), raw: body.error ?? '', date: body.endDate ?? body.startDate ?? null })
       }
     } catch {
-      setResult({ kind: 'error', message: '' })
+      setResult({ kind: 'network', raw: '' })
     } finally {
       setChecking(false)
     }
@@ -223,201 +284,301 @@ export default function RedeemScanner() {
     handleDecoded(value)
   }
 
-  function reset() {
+  function scanNext() {
     setResult(null)
     setManualValue('')
-    setCameraError('')
+    if (cameraState !== 'unsupported' && cameraState !== 'denied') setCamera('starting')
   }
 
   return (
-    <div dir={dir} className="relative min-h-dvh overflow-hidden bg-[#111] text-white">
-      {scanning && (
-        <>
-          <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" playsInline muted />
-          <canvas ref={canvasRef} className="hidden" />
-        </>
-      )}
-      {checking && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60">
-          <p className="text-[14px] text-white">{copy.checking}</p>
-        </div>
-      )}
+    <OwnerShell
+      tab="redeem"
+      header={
+        <OwnerTopBar
+          variant="subpage"
+          title={DASHBOARD_COPY[locale].redeem.heading}
+          backHref="/dashboard/owner"
+          backLabel={DASHBOARD_COPY[locale].common.back}
+          trailing={
+            scanning && torchSupported ? (
+              <button
+                type="button"
+                aria-pressed={torchOn}
+                aria-label={torchOn ? r.torchOff : r.torchOn}
+                onClick={toggleTorch}
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${torchOn ? 'bg-brand-navy text-white' : 'bg-white text-brand-navy'} ${PRESS}`}
+              >
+                <FlashIcon size={20} />
+              </button>
+            ) : undefined
+          }
+        />
+      }
+    >
+      <div className="flex flex-col gap-5">
+        {/* Camera viewport */}
+        <section aria-label={r.aim}>
+          <div className="relative aspect-square w-full overflow-hidden rounded-[24px] bg-brand-navy-deep text-white">
+            {scanning && (
+              <>
+                <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" playsInline muted />
+                <canvas ref={canvasRef} className="hidden" />
+              </>
+            )}
 
-      {/* Top bar — no background plate, sits over the video/dark canvas. */}
-      <div className="relative z-10 flex items-center gap-3 px-[18px] pt-2.5 pb-1">
-        <a
-          href="/dashboard/owner"
-          aria-label={copy.finish}
-          className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-white/[0.14]"
-        >
-          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true" className={dir === 'rtl' ? 'scale-x-[-1]' : ''}>
-            <path d="M10 3.5L5.5 8L10 12.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </a>
-        <h1 className="flex-1 truncate text-[16px] font-semibold">{copy.heading}</h1>
-        {scanning && torchSupported ? (
-          <button
-            type="button"
-            aria-pressed={torchOn}
-            aria-label={copy.torch}
-            onClick={toggleTorch}
-            className={`flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full ${torchOn ? 'bg-white text-[#111]' : 'bg-white/[0.14] text-white'}`}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M9 2h8l-2 8h4l-10 12 2-9H7z" />
-            </svg>
-          </button>
-        ) : (
-          <span className="h-[38px] w-[38px] shrink-0" aria-hidden="true" />
-        )}
-      </div>
-
-      {!result && scanning && (
-        <>
-          <div className="relative z-10 mx-auto mt-[9vh] h-[250px] w-[250px]">
-            <div className="absolute top-0 left-0 h-[46px] w-[46px] rounded-tl-[16px] border-t-4 border-l-4 border-[#FF5A79]" />
-            <div className="absolute top-0 right-0 h-[46px] w-[46px] rounded-tr-[16px] border-t-4 border-r-4 border-[#FF5A79]" />
-            <div className="absolute bottom-0 left-0 h-[46px] w-[46px] rounded-bl-[16px] border-b-4 border-l-4 border-[#FF5A79]" />
-            <div className="absolute bottom-0 right-0 h-[46px] w-[46px] rounded-br-[16px] border-b-4 border-r-4 border-[#FF5A79]" />
-            <div
-              className="motion-safe:animate-[scan-line-move_1.6s_ease-in-out_infinite_alternate] absolute top-1/2 right-[10px] left-[10px] h-[2px] rounded-full bg-[#FF5A79] shadow-[0_0_14px_3px_rgba(255,90,121,0.75)]"
-            />
-          </div>
-          <p className="relative z-10 mt-[22px] px-8 text-center text-[15px] font-medium text-white/90">{copy.aimHint}</p>
-        </>
-      )}
-
-      {!result && !scanning && cameraSupported && (
-        <div className="relative z-10 flex flex-col items-center gap-3 px-8 pt-[16vh]">
-          <button
-            type="button"
-            onClick={() => {
-              setCameraError('')
-              setScanning(true)
-            }}
-            className="w-full max-w-xs rounded-2xl bg-[#FF5A79] py-3 text-[15px] font-semibold text-white"
-          >
-            {copy.startScan}
-          </button>
-          {cameraError && <p className="text-center text-[12px] text-red-300">{copy.cameraStartFailed}</p>}
-        </div>
-      )}
-
-      {/* Manual entry — pinned bottom sheet, always available regardless of
-          camera state (unconditionally, same as before the redesign). */}
-      {!result && (
-        <div className="fixed inset-x-0 bottom-0 z-10 px-[18px] pb-[26px]">
-          <form
-            onSubmit={handleManualSubmit}
-            className="rounded-[22px] border border-white/[0.12] bg-[rgba(28,28,28,0.82)] p-4 pt-4 backdrop-blur-[12px]"
-          >
-            <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-white/[0.28]" />
-            <div className="mb-3.5">
-              <p className="text-[14px] font-semibold">{copy.manualHeading}</p>
-              <p className="text-[12px] text-white/55">
-                {cameraSupported === false ? copy.cameraUnsupported : copy.manualEntrySubtitle}
-              </p>
+            {/* Framing guide — always drawn so the area never reads as a void */}
+            <div aria-hidden="true" className="pointer-events-none absolute inset-[14%]">
+              {[
+                'top-0 start-0 border-t-[5px] border-s-[5px] rounded-ss-[18px]',
+                'top-0 end-0 border-t-[5px] border-e-[5px] rounded-se-[18px]',
+                'bottom-0 start-0 border-b-[5px] border-s-[5px] rounded-es-[18px]',
+                'bottom-0 end-0 border-b-[5px] border-e-[5px] rounded-ee-[18px]',
+              ].map((c) => (
+                <span key={c} className={`absolute h-12 w-12 ${scanning ? 'border-brand-coral-brand' : 'border-white/35'} ${c}`} />
+              ))}
+              {cameraState === 'scanning' && (
+                <span className="absolute inset-x-3 top-1/2 h-[3px] rounded-full bg-brand-coral-brand shadow-[0_0_14px_3px_rgba(255,107,74,0.7)] motion-safe:animate-[scan-line-move_1.6s_ease-in-out_infinite_alternate]" />
+              )}
             </div>
+
+            {cameraState === 'scanning' && (
+              <p className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-navy-deep/90 to-transparent px-6 pt-10 pb-4 text-center text-[15px] font-semibold">
+                {r.aim}
+              </p>
+            )}
+
+            {cameraState === 'starting' && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span aria-hidden="true" className="h-10 w-10 animate-spin rounded-full border-[3px] border-white/25 border-t-white motion-reduce:animate-none" />
+              </div>
+            )}
+
+            {(cameraState === 'idle' || cameraState === 'failed') && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 text-center">
+                <ScanIcon size={44} className="text-white/80" />
+                <p className="text-[15px] leading-relaxed text-white/85">{cameraState === 'failed' ? DASHBOARD_COPY[locale].redeem.cameraStartFailed : r.aim}</p>
+                <button type="button" onClick={() => setCamera('starting')} className={`${BTN_CORAL} min-w-[200px]`}>
+                  <CameraIcon size={20} />
+                  {r.startCamera}
+                </button>
+              </div>
+            )}
+
+            {cameraState === 'denied' && (
+              <div role="alert" className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white px-6 text-center text-brand-navy-deep">
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-coral-tint text-brand-coral">
+                  <CameraIcon size={28} />
+                </span>
+                <p className="font-display text-[17px] font-semibold">{r.deniedTitle}</p>
+                <p className="text-sm leading-relaxed text-brand-muted">{r.deniedBody}</p>
+                <button type="button" onClick={() => setCamera('starting')} className={`${BTN_PRIMARY} mt-1`}>
+                  <RefreshIcon size={18} />
+                  {copy.common.retry}
+                </button>
+              </div>
+            )}
+
+            {cameraState === 'unsupported' && (
+              <div role="status" className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white px-6 text-center text-brand-navy-deep">
+                <KeyboardIcon size={36} className="text-brand-navy" />
+                <p className="text-[15px] leading-relaxed font-semibold">{r.unsupportedTitle}</p>
+              </div>
+            )}
+
+            {checking && (
+              <div role="status" className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-brand-navy-deep/80">
+                <span aria-hidden="true" className="h-10 w-10 animate-spin rounded-full border-[3px] border-white/25 border-t-white motion-reduce:animate-none" />
+                <p className="text-[15px] font-semibold">{r.checking}</p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Manual entry — always available */}
+        <Card className="p-4">
+          <form onSubmit={handleManualSubmit}>
+            <label htmlFor={`${ids}-code`} className="flex items-center gap-2 font-display text-[16px] font-semibold">
+              <KeyboardIcon size={20} className="text-brand-navy" />
+              {r.manualHeading}
+            </label>
+            <p className="mt-1 mb-3 text-sm text-brand-muted">{r.manualBody}</p>
             <div className="flex gap-2.5">
+              {/* The 8-character code under the pass barcode (letters + digits,
+                  see 20261017e_member_redeem_code.sql) — so a text keyboard
+                  with auto-capitals, not a numeric keypad. A pasted full
+                  barcode value still works too. */}
               <input
+                id={`${ids}-code`}
                 value={manualValue}
                 onChange={(e) => setManualValue(e.target.value)}
-                placeholder={copy.manualPlaceholder}
+                placeholder={r.manualPlaceholder}
                 disabled={checking}
-                className="flex-1 rounded-[13px] border border-white/[0.14] bg-white/10 px-[14px] py-[13px] text-[13.5px] text-white placeholder:text-white/45 disabled:opacity-50"
+                dir="ltr"
+                inputMode="text"
+                autoComplete="off"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="go"
+                className={`${INPUT} min-w-0 flex-1 font-mono text-[17px] tracking-wider uppercase placeholder:normal-case`}
               />
-              <button
-                type="submit"
-                disabled={checking || !manualValue.trim()}
-                className="shrink-0 rounded-[13px] bg-white px-[18px] py-[13px] text-[14px] font-semibold text-[#2E1065] disabled:opacity-50"
-              >
-                {checking ? copy.checking : copy.manualSubmit}
+              <button type="submit" disabled={checking || !manualValue.trim()} className={`${BTN_PRIMARY} shrink-0`}>
+                {checking ? r.checking : r.submit}
               </button>
             </div>
           </form>
-        </div>
-      )}
+        </Card>
 
-      {/* Result bottom sheet */}
-      {result && (
-        <div className="fixed inset-x-0 bottom-0 z-20 rounded-[28px_28px_0_0] bg-white px-[22px] pt-[26px] pb-[30px] text-[#2E1065] shadow-[0_16px_32px_-18px_rgba(0,0,0,0.5)]">
-          <div
-            className={`mx-auto mb-4 flex h-[60px] w-[60px] items-center justify-center rounded-full ${
-              result.kind === 'success' ? 'bg-[#dcfce7]' : 'bg-[#fee2e2]'
-            }`}
-          >
-            {result.kind === 'success' ? (
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            )}
-          </div>
-
-          <p
-            className={`mb-1 text-center text-[13px] font-semibold tracking-[0.06em] ${
-              result.kind === 'success' ? 'text-[#15803d]' : 'text-[#dc2626]'
-            }`}
-          >
-            {result.kind === 'success' ? copy.redeemedLabel : errorCopyFor(result.message, copy)}
-          </p>
-
-          {result.kind === 'success' && (
-            <>
-              <p className="mb-[22px] text-center text-[23px] font-black leading-[1.25]">{result.title}</p>
-
-              {(result.isNewCustomer !== null || result.redemptionsToday !== null) && (
-                <div className="mb-5 overflow-hidden rounded-[16px] border border-[#EDE3F7] bg-[#FFF8EC]">
-                  {result.isNewCustomer !== null && (
-                    <div className="flex items-center justify-between border-b border-[#f2f2f2] px-4 py-3 last:border-b-0">
-                      <span className="text-[13px] text-[#8A76BE]">{copy.customerLabel}</span>
-                      <span className="text-[13.5px] font-semibold">
-                        {result.isNewCustomer ? copy.newCustomerFirstVisit : copy.returningCustomer}
-                      </span>
-                    </div>
-                  )}
-                  {result.redemptionsToday !== null && (
-                    <div className="flex items-center justify-between px-4 py-3">
-                      <span className="text-[13px] text-[#8A76BE]">{copy.redemptionsTodayLabel}</span>
-                      <span className="text-[13.5px] font-semibold">{result.redemptionsToday}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
+        {/* Recent redemptions */}
+        <section>
+          <SectionHeading>{r.recentHeading}</SectionHeading>
+          {recent.length === 0 ? (
+            <Card className="flex items-center gap-3 p-4 text-sm text-brand-muted">
+              <ClockIcon size={20} className="shrink-0" />
+              {r.recentEmpty}
+            </Card>
+          ) : (
+            <Card>
+              <ul>
+                {recent.map((row) => (
+                  <li key={row.id} className="flex min-h-14 items-center gap-3 border-b border-brand-line px-4 py-2.5 last:border-b-0">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-tint text-brand-navy">
+                      <CheckIcon size={18} strokeWidth={2.6} />
+                    </span>
+                    <span className="min-w-0 flex-1 text-[15px] font-semibold">
+                      <bdi dir="auto" className="line-clamp-1 break-all">
+                        {row.title}
+                      </bdi>
+                    </span>
+                    <span className="shrink-0 text-[13px] text-brand-muted">{relativeTime(row.at, locale)}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
           )}
+        </section>
+      </div>
 
-          {result.kind === 'error' && result.message === 'no active offer for this shop' ? (
-            <a
-              href="/dashboard/owner#campaign-manager"
-              className="mb-2.5 flex items-center justify-center gap-2.5 rounded-2xl bg-[#FF5A79] py-[17px] text-[16px] font-semibold text-white"
-            >
-              {DASHBOARD_COPY[locale].campaigns.createButton}
+      {result && <ResultScreen result={result} copy={copy} locale={locale} onNext={scanNext} onRetry={() => handleDecoded(lastCode)} />}
+    </OwnerShell>
+  )
+}
+
+function relativeTime(iso: string, locale: Locale): string {
+  const diffMin = Math.round((Date.now() - new Date(iso).getTime()) / 60000)
+  const rtf = new Intl.RelativeTimeFormat(INTL_LOCALE[locale], { numeric: 'auto', style: 'short' })
+  if (diffMin < 60) return rtf.format(-Math.max(diffMin, 0), 'minute')
+  if (diffMin < 24 * 60) return rtf.format(-Math.round(diffMin / 60), 'hour')
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: 'numeric', month: 'short' }).format(new Date(iso))
+}
+
+// Full-screen result, readable at arm's length: success = navy with a big
+// white check; every failure = coral with the reason in large type. Covers
+// the tab bar; the primary action is always "scan next".
+function ResultScreen({
+  result,
+  copy,
+  locale,
+  onNext,
+  onRetry,
+}: {
+  result: RedeemResult
+  copy: OwnerUiCopy
+  locale: Locale
+  onNext: () => void
+  onRetry: () => void
+}) {
+  const r = copy.redeem
+  const ok = result.kind === 'success'
+  const dateText =
+    result.kind !== 'success' && result.date ? formatDay(result.date, locale, { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+  const failure: Record<Exclude<Outcome, 'success'>, { title: string; body?: string; Icon: typeof AlertIcon }> = {
+    already: { title: r.alreadyTitle, body: r.alreadyBody, Icon: XCircleIcon },
+    pass: { title: r.passTitle, body: r.passBody, Icon: ClockIcon },
+    invalid: { title: r.invalidTitle, body: r.invalidBody, Icon: XCircleIcon },
+    noOffer: { title: r.noOfferTitle, body: r.noOfferBody, Icon: AlertIcon },
+    ended: { title: r.endedTitle, body: fill(r.endedBody, { date: dateText }), Icon: ClockIcon },
+    scheduled: { title: r.scheduledTitle, body: fill(r.scheduledBody, { date: dateText }), Icon: ClockIcon },
+    frozen: { title: r.frozenTitle, Icon: AlertIcon },
+    network: { title: r.networkTitle, body: r.networkBody, Icon: WifiOffIcon },
+    generic: { title: r.genericTitle, body: copy.common.errorBody, Icon: AlertIcon },
+  }
+  const info = result.kind === 'success' ? null : failure[result.kind]
+  const Icon = info?.Icon ?? CheckIcon
+
+  return (
+    <div
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="redeem-result-title"
+      className={`fixed inset-0 z-50 flex justify-center ${ok ? 'bg-brand-hero' : 'bg-brand-coral'} text-white`}
+    >
+      <div
+        className="flex w-full max-w-[480px] flex-col px-6 pt-[max(48px,env(safe-area-inset-top))]"
+        style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+          <span className="flex h-28 w-28 items-center justify-center rounded-full bg-white text-current">
+            <Icon size={64} strokeWidth={ok ? 3 : 2.4} className={ok ? 'text-brand-navy' : 'text-brand-coral'} />
+          </span>
+          <h2 id="redeem-result-title" className="font-display text-[34px] leading-tight font-bold">
+            {ok ? r.successTitle : info!.title}
+          </h2>
+          {result.kind === 'success' ? (
+            <>
+              <p className="font-display text-[24px] leading-snug font-semibold">
+                <bdi dir="auto" className="break-words">
+                  {result.title}
+                </bdi>
+              </p>
+              <p className="text-[17px] text-white/90">{r.successBody}</p>
+              <div className="mt-2 flex flex-wrap justify-center gap-2">
+                {result.isNewCustomer !== null && (
+                  <span className="rounded-full bg-white/15 px-4 py-2 text-[15px] font-semibold">
+                    {result.isNewCustomer ? r.newCustomer : r.returningCustomer}
+                  </span>
+                )}
+                {result.redemptionsToday !== null && (
+                  <span className="rounded-full bg-white/15 px-4 py-2 text-[15px] font-semibold">{fill(r.todayCount, { n: result.redemptionsToday })}</span>
+                )}
+              </div>
+            </>
+          ) : (
+            info!.body && <p className="max-w-[340px] text-[17px] leading-relaxed text-white/95">{info!.body}</p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-2.5">
+          {result.kind === 'noOffer' || result.kind === 'ended' || result.kind === 'scheduled' ? (
+            <a href="/dashboard/owner" className={`inline-flex min-h-14 items-center justify-center rounded-2xl bg-white text-[17px] font-bold text-brand-coral ${PRESS}`}>
+              {result.kind === 'noOffer' ? r.activateOffer : r.editOffer}
             </a>
+          ) : result.kind === 'network' ? (
+            <button type="button" onClick={onRetry} className={`inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-white text-[17px] font-bold text-brand-coral ${PRESS}`}>
+              <RefreshIcon size={20} />
+              {copy.common.retry}
+            </button>
           ) : (
             <button
               type="button"
-              onClick={() => {
-                reset()
-                setScanning(true)
-              }}
-              className="mb-2.5 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#FF5A79] py-[17px] text-[16px] font-semibold text-white"
+              autoFocus
+              onClick={onNext}
+              className={`inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-white text-[17px] font-bold ${ok ? 'text-brand-navy' : 'text-brand-coral'} ${PRESS}`}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M4 8V5a1 1 0 0 1 1-1h3M20 8V5a1 1 0 0 0-1-1h-3M4 16v3a1 1 0 0 0 1 1h3M20 16v3a1 1 0 0 1-1 1h-3" />
-                <rect x="9" y="9" width="6" height="6" rx="1" />
-              </svg>
-              {copy.scanAnother}
+              <ScanIcon size={22} />
+              {r.scanNext}
             </button>
           )}
-          <a href="/dashboard/owner" className="block text-center text-[14.5px] font-medium text-[#8A76BE]">
-            {copy.finish}
+          {(result.kind === 'noOffer' || result.kind === 'ended' || result.kind === 'scheduled' || result.kind === 'network') && (
+            <button type="button" onClick={onNext} className="min-h-12 rounded-2xl text-[16px] font-semibold text-white">
+              {r.scanNext}
+            </button>
+          )}
+          <a href="/dashboard/owner" className="flex min-h-12 items-center justify-center text-[16px] font-semibold text-white/85">
+            {DASHBOARD_COPY[locale].redeem.finish}
           </a>
         </div>
-      )}
+      </div>
     </div>
   )
 }

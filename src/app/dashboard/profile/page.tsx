@@ -21,6 +21,7 @@ export default async function ProfilePage() {
 
   return (
     <ProfileView
+      businessId={business.id}
       email={user.email ?? ''}
       fullName={profile?.full_name ?? ''}
       businessName={business.name}
@@ -29,6 +30,8 @@ export default async function ProfilePage() {
       longitude={business.longitude}
       phone={business.phone}
       whatsapp={business.whatsapp}
+      logoUrl={business.logo_url ?? null}
+      coverUrl={business.cover_url ?? null}
     />
   )
 }
