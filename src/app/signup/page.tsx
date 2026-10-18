@@ -6,9 +6,19 @@ import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { SIGNUP_COPY } from '@/lib/i18n/auth'
 import { getDir } from '@/lib/i18n/locale'
 import { useLocale } from '@/lib/i18n/useLocale'
-import LanguageSwitcher from '@/components/LanguageSwitcher'
-import SiteLogo from '@/components/SiteLogo'
-import Backdrop from '@/components/Backdrop'
+import {
+  AuthHeading,
+  AuthShell,
+  EmailField,
+  ErrorAlert,
+  PasswordField,
+  SubmitButton,
+  SwitchLink,
+  authErrorReason,
+  errorField,
+  type AuthErrorReason,
+} from '@/components/auth/AuthForm'
+import { CheckIcon, MailIcon } from '@/components/customer/icons'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -18,20 +28,22 @@ export default function SignupPage() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  // A reason, not Supabase's raw message — shown via copy.errors so it's
+  // friendly and translated (see authErrorReason).
+  const [error, setError] = useState<AuthErrorReason | null>(null)
   const [loading, setLoading] = useState(false)
   const [needsConfirmation, setNeedsConfirmation] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    setError('')
+    setError(null)
 
     const supabase = createSupabaseBrowserClient()
     const { data, error } = await supabase.auth.signUp({ email, password })
 
     if (error) {
-      setError(error.message)
+      setError(authErrorReason(error))
       setLoading(false)
       return
     }
@@ -46,133 +58,67 @@ export default function SignupPage() {
     router.refresh()
   }
 
+  const shell = {
+    locale,
+    dir,
+    onLocaleChange: setLocale,
+    sideHeading: copy.sideHeading,
+    sideBody: copy.sideBody,
+    sidePhotoAlt: copy.sidePhotoAlt,
+  }
+
   if (needsConfirmation) {
     return (
-      <div dir={dir} className="relative min-h-screen overflow-hidden bg-[#FFF8EC] text-[#2E1065]">
-        <Backdrop />
-        <div className="relative z-10 mx-auto mt-24 max-w-sm px-4 text-center">
-          <div className="mb-6 flex justify-center">
-            <SiteLogo className="h-14 sm:h-16" />
-          </div>
-          <p className="text-sm text-[#6B5A8C]">{copy.confirmationNotice}</p>
+      <AuthShell {...shell}>
+        <div role="status" className="text-center">
+          <span className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-brand-tint text-brand-navy">
+            <MailIcon size={26} strokeWidth={1.8} />
+          </span>
+          <h1 className="mb-2 font-display text-[26px] leading-[1.3] font-bold text-brand-navy-deep">{copy.confirmationTitle}</h1>
+          <p className="m-0 text-[15px] leading-[1.7] text-brand-muted">{copy.confirmationNotice}</p>
         </div>
-      </div>
+        <SwitchLink prompt="" href="/login" label={copy.loginLink} />
+      </AuthShell>
     )
   }
 
+  const field = errorField(error)
+
   return (
-    <div dir={dir} className="min-h-screen bg-[#FFF8EC] text-[#2E1065]">
-      {/* Mobile-native layout (<640px) — same reasoning as login/page.tsx:
-          a plain full-screen centered form, no decorative backdrop. */}
-      <div className="flex min-h-screen flex-col sm:hidden">
-        <div dir="ltr" className="flex items-center justify-between p-5">
-          <a href="/" className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/design/jeeran-mark.svg" alt="" aria-hidden="true" className="h-6 w-6" />
-            <span className="font-[family-name:var(--font-baloo)] text-[15px] font-black text-[#2E1065]">Jeeran</span>
-          </a>
-          <LanguageSwitcher locale={locale} onChange={setLocale} />
-        </div>
-
-        <div className="flex flex-1 flex-col justify-center px-7">
-          <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2E1065] to-[#4C2A98] shadow-[0_10px_20px_-10px_rgba(46,16,101,0.5)]">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M4 9l1-5h14l1 5" />
-              <path d="M4 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0" />
-              <path d="M5 9v10h14V9" />
-            </svg>
+    <AuthShell {...shell}>
+      <AuthHeading title={copy.title} subtitle={copy.subtitle} />
+      <form onSubmit={handleSubmit}>
+        {error && (
+          <div id="auth-error">
+            <ErrorAlert>{copy.errors[error]}</ErrorAlert>
           </div>
-
-          <h1 className="mb-1 font-[family-name:var(--font-baloo)] text-[28px] font-black tracking-[-0.01em]">
-            {copy.title}
-          </h1>
-          <p className="mb-7 text-sm text-[#6B5A8C]">{copy.subtitle}</p>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <input
-              type="email"
-              required
-              placeholder={copy.emailPlaceholder}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="rounded-2xl border border-[#EDE3F7] px-4 py-3.5 text-[15px] focus:border-[#2E1065] focus:outline-none"
-            />
-            <input
-              type="password"
-              required
-              minLength={6}
-              placeholder={copy.passwordPlaceholder}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="rounded-2xl border border-[#EDE3F7] px-4 py-3.5 text-[15px] focus:border-[#2E1065] focus:outline-none"
-            />
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-2xl bg-[#FF5A79] py-3.5 text-[15px] font-semibold text-white shadow-[0_12px_24px_-8px_rgba(255,90,121,0.5)] transition-colors hover:bg-[#E8425F] disabled:opacity-50"
-            >
-              {loading ? copy.submitting : copy.submit}
-            </button>
-            <p className="text-center text-sm text-[#6B5A8C]">
-              {copy.haveAccount}{' '}
-              <a href="/login" className="text-[#2E1065] underline">
-                {copy.loginLink}
-              </a>
-            </p>
-          </form>
-        </div>
-      </div>
-
-      {/* Desktop layout (>=640px) — unchanged from before. */}
-      <div className="relative hidden min-h-screen overflow-hidden sm:block">
-        <Backdrop />
-
-        {/* z-20: the language switcher's dropdown must paint above the form
-            below it, not get hidden behind it — see LandingPage.tsx for the
-            full explanation of this z-index sibling-stacking gotcha. */}
-        <div dir="ltr" className="relative z-20 mx-auto flex max-w-sm items-center justify-between px-4 pt-8">
-          <SiteLogo className="h-14 sm:h-16" />
-          <LanguageSwitcher locale={locale} onChange={setLocale} />
-        </div>
-
-        <form onSubmit={handleSubmit} className="relative z-10 mx-auto mt-16 flex max-w-sm flex-col gap-3 px-4">
-          <h1 className="mb-2 font-[family-name:var(--font-baloo)] text-2xl font-black tracking-[-0.01em]">
-            {copy.title}
-          </h1>
-          <input
-            type="email"
-            required
-            placeholder={copy.emailPlaceholder}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="rounded-[10px] border border-[#EDE3F7] px-3 py-2 text-sm focus:border-[#2E1065] focus:outline-none"
-          />
-          <input
-            type="password"
-            required
-            minLength={6}
-            placeholder={copy.passwordPlaceholder}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="rounded-[10px] border border-[#EDE3F7] px-3 py-2 text-sm focus:border-[#2E1065] focus:outline-none"
-          />
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-[10px] bg-[#FF5A79] py-2.5 text-sm font-semibold text-white shadow-[0_12px_24px_-8px_rgba(255,90,121,0.5)] transition-colors hover:bg-[#E8425F] disabled:opacity-50"
-          >
-            {loading ? copy.submitting : copy.submit}
-          </button>
-          <p className="text-center text-sm text-[#6B5A8C]">
-            {copy.haveAccount}{' '}
-            <a href="/login" className="text-[#2E1065] underline">
-              {copy.loginLink}
-            </a>
-          </p>
-        </form>
-      </div>
-    </div>
+        )}
+        <EmailField
+          label={copy.emailLabel}
+          value={email}
+          onChange={setEmail}
+          invalid={field === 'email'}
+          describedBy={error ? 'auth-error' : undefined}
+        />
+        <PasswordField
+          label={copy.passwordLabel}
+          value={password}
+          onChange={setPassword}
+          autoComplete="new-password"
+          minLength={6}
+          hint={copy.passwordHint}
+          invalid={field === 'password'}
+          showLabel={copy.showPassword}
+          hideLabel={copy.hidePassword}
+          describedBy={error ? 'auth-error' : undefined}
+        />
+        <SubmitButton loading={loading} label={copy.submit} loadingLabel={copy.submitting} />
+      </form>
+      <p className="mt-4 flex items-start gap-2 text-[13.5px] leading-relaxed text-brand-muted">
+        <CheckIcon size={18} strokeWidth={2} className="mt-0.5 flex-none text-brand-navy" />
+        <span>{copy.setupNote}</span>
+      </p>
+      <SwitchLink prompt={copy.haveAccount} href="/login" label={copy.loginLink} />
+    </AuthShell>
   )
 }
