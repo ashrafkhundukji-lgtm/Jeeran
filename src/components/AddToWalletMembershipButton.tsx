@@ -5,6 +5,7 @@ import { useLocale } from '@/lib/i18n/useLocale'
 import { CUSTOMER_UI_COPY } from '@/lib/i18n/customerUi'
 import { CheckIcon, CloseIcon, SmartphoneIcon, TrashIcon, WalletIcon } from '@/components/customer/icons'
 import { PRESS } from '@/components/customer/primitives'
+import GoogleWalletBadge from '@/components/GoogleWalletBadge'
 
 type Status = 'idle' | 'working' | 'error' | 'confirming'
 
@@ -48,8 +49,9 @@ function getBrowserLocation(): Promise<{ lat: number; lng: number } | null> {
 // offers server-side. See src/app/api/wallet/membership/create/route.ts.
 //
 // Visual refresh only (docs/design-reference/Scan.dc.html): renders the
-// whole body of the scan page's overlapping card — intro, the large coral
-// button and the trust row, or the first-scan confirmation. handleClick()
+// whole body of the scan page's overlapping card — intro, Google's official
+// Add to Google Wallet button and the trust row, or the first-scan
+// confirmation. handleClick()
 // is unchanged. `onConfirmed` just lets the page header show "visit
 // recorded" once the create call has actually succeeded.
 export default function AddToWalletMembershipButton({
@@ -108,9 +110,12 @@ export default function AddToWalletMembershipButton({
     }
   }
 
-  // min-h, not h: a long label (Urdu) wraps to two balanced lines instead
-  // of overflowing or leaving one orphaned word.
-  const bigButton = `flex min-h-[58px] w-full items-center justify-center gap-2.5 rounded-2xl bg-brand-coral px-4 py-2 text-center font-display text-[19px] leading-tight font-bold text-balance text-white shadow-brand-coral disabled:opacity-60 ${PRESS}`
+  // Both taps that lead to Google Wallet use Google's official button
+  // (GoogleWalletBadge) — the brand guidelines don't allow our own version.
+  // The <button> only adds a focus ring and the press effect; it never
+  // paints over the asset, and the busy state is shown beside it rather
+  // than by dimming it.
+  const badgeButton = `@container block w-full rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-navy ${PRESS}`
 
   if (status === 'confirming') {
     return (
@@ -129,10 +134,9 @@ export default function AddToWalletMembershipButton({
           onClick={() => {
             window.location.href = saveUrl
           }}
-          className={bigButton}
+          className={badgeButton}
         >
-          <WalletIcon size={22} />
-          {copy.continueToWallet}
+          <GoogleWalletBadge locale={locale} alt={copy.addToWallet} />
         </button>
 
         {/* Not a blocking requirement — the pass saves and works either way
@@ -182,14 +186,16 @@ export default function AddToWalletMembershipButton({
         </div>
       </div>
 
-      <button type="button" onClick={handleClick} disabled={status === 'working'} aria-busy={status === 'working'} className={bigButton}>
-        {status === 'working' ? (
-          <span aria-hidden="true" className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none" />
-        ) : (
-          <WalletIcon size={22} />
-        )}
-        {status === 'working' ? copy.saving : copy.addToWallet}
+      <button type="button" onClick={handleClick} disabled={status === 'working'} aria-busy={status === 'working'} className={badgeButton}>
+        <GoogleWalletBadge locale={locale} alt={copy.addToWallet} />
       </button>
+
+      {status === 'working' && (
+        <p role="status" className="flex items-center justify-center gap-2 text-[13px] font-semibold text-brand-muted">
+          <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-brand-navy/25 border-t-brand-navy motion-reduce:animate-none" />
+          {copy.saving}
+        </p>
+      )}
 
       {status === 'error' && (
         <p role="alert" className="rounded-xl bg-brand-coral-tint px-3 py-2 text-center text-[13px] font-medium text-brand-coral">
