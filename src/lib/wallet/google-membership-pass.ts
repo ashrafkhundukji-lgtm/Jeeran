@@ -22,8 +22,8 @@ const BASE_URL = 'https://walletobjects.googleapis.com/walletobjects/v1'
 // Brand assets — set once at object creation (see createMembershipObject).
 // The values live in pass-brand.json, the single source shared with the
 // plain-JS scripts that can't import this module:
-// scripts/generate-wallet-pass-art.mjs (renders the logo/hero PNGs on this
-// background) and scripts/migrate-wallet-pass-brand.mjs (backfills existing
+// scripts/generate-wallet-pass-art.mjs (renders the logo on this background
+// and encodes the hero photo) and scripts/migrate-wallet-pass-brand.mjs (backfills existing
 // passes). The image URLs point at production on purpose: Google fetches
 // them server-side, and preview deployments sit behind Vercel SSO.
 const PASS_BRAND = passBrand satisfies {
