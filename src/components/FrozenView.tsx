@@ -3,7 +3,7 @@
 import SignOutButton from '@/components/SignOutButton'
 import OwnerShell from '@/components/owner/OwnerShell'
 import { BTN_PRIMARY, Card } from '@/components/owner/ui'
-import { AlertIcon, MessageIcon } from '@/components/customer/icons'
+import { AlertIcon, WhatsAppIcon } from '@/components/customer/icons'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
 
@@ -47,7 +47,7 @@ export default function FrozenView({
             actionable link, so the plain contact text stands alone. */}
         {supportWhatsappUrl ? (
           <a href={supportWhatsappUrl} target="_blank" rel="noopener noreferrer" className={`${BTN_PRIMARY} w-full max-w-sm`}>
-            <MessageIcon size={20} />
+            <WhatsAppIcon size={20} />
             {copy.whatsappCta}
           </a>
         ) : (
