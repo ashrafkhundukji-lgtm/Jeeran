@@ -13,6 +13,7 @@ import {
   EmailField,
   ErrorAlert,
   PasswordField,
+  SuccessNotice,
   SubmitButton,
   SwitchLink,
   authErrorReason,
@@ -53,6 +54,9 @@ function LoginForm() {
   }
 
   const field = errorField(error)
+  // Set by /reset-password after a successful reset (it signs the recovery
+  // session out and sends the owner here to log in with the new password).
+  const resetDone = searchParams.get('reset') === 'success'
 
   return (
     <AuthShell
@@ -65,6 +69,7 @@ function LoginForm() {
     >
       <AuthHeading title={copy.title} subtitle={copy.subtitle} />
       <form onSubmit={handleSubmit}>
+        {resetDone && !error && <SuccessNotice>{copy.resetSuccess}</SuccessNotice>}
         {error && (
           <div id="auth-error">
             <ErrorAlert>{copy.errors[error]}</ErrorAlert>
@@ -86,7 +91,16 @@ function LoginForm() {
           showLabel={copy.showPassword}
           hideLabel={copy.hidePassword}
           describedBy={error ? 'auth-error' : undefined}
-        />
+        >
+          {/* No minLength here on purpose: accounts made under the old
+              6-character rule must still be able to log in. */}
+          <a
+            href="/forgot-password"
+            className="mt-2 inline-flex min-h-11 items-center rounded text-sm font-semibold text-brand-navy underline underline-offset-[3px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-navy"
+          >
+            {copy.forgotLink}
+          </a>
+        </PasswordField>
         <SubmitButton loading={loading} label={copy.submit} loadingLabel={copy.submitting} />
       </form>
       <SwitchLink prompt={copy.noAccount} href="/signup" label={copy.signUpLink} />

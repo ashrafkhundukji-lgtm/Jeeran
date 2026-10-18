@@ -6,7 +6,7 @@ import type { Locale } from '@/lib/i18n/locale'
 import type { AuthErrorCopy } from '@/lib/i18n/auth'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import BrandLockup from '@/components/BrandLockup'
-import { AlertIcon, EyeIcon, EyeOffIcon, LockIcon, MailIcon } from '@/components/customer/icons'
+import { AlertIcon, CheckIcon, EyeIcon, EyeOffIcon, LockIcon, MailIcon } from '@/components/customer/icons'
 
 // Shared look for /login and /signup (approved mockup:
 // downloads/handoff/landing-auth/auth.html). Presentation only — each page
@@ -97,6 +97,15 @@ export function AuthHeading({ title, subtitle }: { title: string; subtitle: stri
   )
 }
 
+export function SuccessNotice({ children }: { children: ReactNode }) {
+  return (
+    <div role="status" className="mb-4 flex items-start gap-2.5 rounded-xl bg-[#E6F4EA] px-3.5 py-3 text-sm leading-relaxed text-[#14532D]">
+      <CheckIcon size={20} strokeWidth={2} className="mt-px flex-none" />
+      <span>{children}</span>
+    </div>
+  )
+}
+
 export function ErrorAlert({ children }: { children: ReactNode }) {
   return (
     <div role="alert" className="mb-4 flex items-start gap-2.5 rounded-xl bg-[#FDEEE9] px-3.5 py-3 text-sm leading-relaxed text-[#8A2410]">
@@ -153,6 +162,7 @@ export function EmailField({
 }
 
 export function PasswordField({
+  id = 'password',
   label,
   value,
   onChange,
@@ -163,7 +173,9 @@ export function PasswordField({
   showLabel,
   hideLabel,
   describedBy,
+  children,
 }: {
+  id?: string
   label: string
   value: string
   onChange: (v: string) => void
@@ -174,20 +186,22 @@ export function PasswordField({
   showLabel: string
   hideLabel: string
   describedBy?: string
+  // Extra line under the field (e.g. login's "Forgot password?" link).
+  children?: ReactNode
 }) {
   const [visible, setVisible] = useState(false)
-  const hintId = hint ? 'password-hint' : undefined
+  const hintId = hint ? `${id}-hint` : undefined
   const described = [describedBy, hintId].filter(Boolean).join(' ') || undefined
   return (
     <div className="mb-4">
-      <label htmlFor="password" className="mb-1.5 block font-display text-sm font-semibold text-brand-navy-deep">
+      <label htmlFor={id} className="mb-1.5 block font-display text-sm font-semibold text-brand-navy-deep">
         {label}
       </label>
       <div className={`${FIELD_BOX} pe-1 ${invalid ? 'border-brand-coral' : 'border-brand-line'}`}>
         <LockIcon size={20} strokeWidth={1.8} className="flex-none" />
         <input
-          id="password"
-          name="password"
+          id={id}
+          name={id}
           type={visible ? 'text' : 'password'}
           autoComplete={autoComplete}
           dir="ltr"
@@ -204,7 +218,7 @@ export function PasswordField({
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? hideLabel : showLabel}
           aria-pressed={visible}
-          aria-controls="password"
+          aria-controls={id}
           className="flex h-11 w-11 flex-none items-center justify-center rounded-[10px] text-brand-muted hover:text-brand-navy focus-visible:outline-2 focus-visible:outline-brand-navy"
         >
           {visible ? <EyeOffIcon size={20} strokeWidth={1.8} /> : <EyeIcon size={20} strokeWidth={1.8} />}
@@ -215,6 +229,7 @@ export function PasswordField({
           {hint}
         </p>
       )}
+      {children}
     </div>
   )
 }

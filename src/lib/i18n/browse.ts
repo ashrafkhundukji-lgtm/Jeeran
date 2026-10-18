@@ -15,7 +15,14 @@ export interface BrowseCopy {
   getDirections: string
   hasOffer: string
   allCategories: string
+  // Live result count under the search field (announced via aria-live).
+  resultCount: (n: number) => string
 }
+
+// Plural-aware count: Arabic has zero/one/two/few/many/other forms.
+const AR_PLURAL = new Intl.PluralRules('ar')
+const EN_PLURAL = new Intl.PluralRules('en')
+const UR_PLURAL = new Intl.PluralRules('ur')
 
 export const BROWSE_COPY: Record<Locale, BrowseCopy> = {
   ar: {
@@ -28,6 +35,15 @@ export const BROWSE_COPY: Record<Locale, BrowseCopy> = {
     getDirections: 'الاتجاهات',
     hasOffer: 'يوجد عرض',
     allCategories: 'الكل',
+    resultCount: (n) =>
+      ({
+        zero: 'لا توجد محلات',
+        one: 'محل واحد',
+        two: 'محلّان',
+        few: `${n} محلات`,
+        many: `${n} محلًا`,
+        other: `${n} محل`,
+      })[AR_PLURAL.select(n)] ?? `${n} محل`,
   },
   en: {
     title: 'Browse shops',
@@ -39,6 +55,7 @@ export const BROWSE_COPY: Record<Locale, BrowseCopy> = {
     getDirections: 'Get directions',
     hasOffer: 'Has an offer',
     allCategories: 'All',
+    resultCount: (n) => (EN_PLURAL.select(n) === 'one' ? '1 shop' : `${n} shops`),
   },
   ur: {
     title: 'دکانیں براؤز کریں',
@@ -50,5 +67,6 @@ export const BROWSE_COPY: Record<Locale, BrowseCopy> = {
     getDirections: 'راستہ دیکھیں',
     hasOffer: 'آفر موجود ہے',
     allCategories: 'تمام',
+    resultCount: (n) => (UR_PLURAL.select(n) === 'one' ? '1 دکان' : `${n} دکانیں`),
   },
 }

@@ -10,8 +10,9 @@ import CustomerPage from '@/components/customer/CustomerPage'
 import BottomNav, { NAV_CLEARANCE } from '@/components/customer/BottomNav'
 import SearchField from '@/components/customer/SearchField'
 import CategoryChips from '@/components/customer/CategoryChips'
-import { ChevronForwardIcon, SearchIcon, StoreIcon } from '@/components/customer/icons'
-import { DiscountBadge, DistanceText, PRESS, ShopAvatar } from '@/components/customer/primitives'
+import { SearchIcon, StoreIcon } from '@/components/customer/icons'
+import { DiscountBadge, DistanceText } from '@/components/customer/primitives'
+import ShopRow from '@/components/customer/ShopRow'
 import { EmptyState, ErrorState, InviteShopButton } from '@/components/customer/States'
 import type { NearbyBusiness } from '@/lib/wallet/nearby-businesses'
 
@@ -156,20 +157,18 @@ export default function NearbyShopsView({
     const categoryLabel = CATEGORY_LABELS[locale][s.category] ?? s.category
 
     return (
-      <a
+      <ShopRow
         key={s.business_id}
         href={href}
-        className={`flex items-center gap-3 rounded-[18px] border border-brand-line bg-white p-3.5 ${PRESS}`}
-      >
-        <ShopAvatar name={s.business_name} logoUrl={logos[s.business_id] ?? s.logo_url} size={48} />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="min-w-0 text-start text-[15px] font-bold text-brand-navy-deep">
-            <bdi className="inline-block max-w-full truncate align-bottom">{s.business_name}</bdi>
-          </span>
-          <span className="text-[12.5px] text-brand-muted">
+        name={s.business_name}
+        logoUrl={logos[s.business_id] ?? s.logo_url}
+        meta={
+          <>
             {categoryLabel} · <DistanceText km={s.distance_km} locale={locale} />
-          </span>
-          {s.has_active_offer && s.top_offer_title ? (
+          </>
+        }
+        detail={
+          s.has_active_offer && s.top_offer_title ? (
             <span className="flex min-w-0 items-center gap-1.5">
               <DiscountBadge title={s.top_offer_title} locale={locale} className="flex-none" />
               <span className="min-w-0 text-start text-[13px] font-semibold text-brand-coral">
@@ -178,10 +177,9 @@ export default function NearbyShopsView({
             </span>
           ) : (
             <span className="text-[13px] text-brand-muted">{ui.shops.noOfferNow}</span>
-          )}
-        </div>
-        <ChevronForwardIcon size={20} strokeWidth={2.2} className="flex-none text-brand-muted" />
-      </a>
+          )
+        }
+      />
     )
   }
 

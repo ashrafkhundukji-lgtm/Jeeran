@@ -19,7 +19,7 @@ export default function CategoryChips({
   locale: Locale
 }) {
   const chip = (active: boolean) =>
-    `flex h-11 flex-none items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-colors ${
+    `flex h-11 flex-none items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-navy ${
       active ? 'bg-brand-navy text-white' : 'border border-brand-line bg-white text-brand-navy-deep'
     }`
 

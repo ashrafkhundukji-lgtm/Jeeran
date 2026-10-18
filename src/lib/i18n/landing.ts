@@ -1,4 +1,5 @@
 import type { Locale } from './locale'
+import { FREE_TRIAL_MONTHS } from './trial'
 
 // Landing page copy. Arabic is the base (approved mockup,
 // downloads/handoff/landing-auth/landing.html); en and ur are translations.
@@ -67,7 +68,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       sub: 'استضف رمز QR يعرض عروض محلات أخرى واكسب نقاطًا إعلانية، ثم استخدمها لعرض عروضك عند رموزهم. بلا وكالة إعلانية وبلا هدر.',
       ctaOwner: 'أنا صاحب محل',
       ctaCustomer: 'أنا عميل: تصفح العروض',
-      assurances: ['مجاني لأول 3 أشهر', 'بلا تطبيق للعميل', 'عروض قريبة على بطاقة العميل'],
+      assurances: [`مجاني لأول ${FREE_TRIAL_MONTHS} أشهر`, 'بلا تطبيق للعميل', 'عروض قريبة على بطاقة العميل'],
       photoAlt: 'شارع في حي سعودي تقليدي عند الغروب، تحفّه أشجار النخيل والمحلات',
     },
     sampleCard: { label: 'مثال على البطاقة', title: 'عضويتك في شبكة جيران', codeLabel: 'رمز الاسترداد' },
@@ -103,12 +104,12 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       eyebrow: 'لماذا جيران',
       heading: 'بسيط، وللحيّ',
       points: [
-        { title: 'ابدأ مجانًا', body: 'أول 3 أشهر مجانًا، والنقاط الأولى تأتي من أول عرض يُعرض عندك.' },
+        { title: 'ابدأ مجانًا', body: `أول ${FREE_TRIAL_MONTHS} أشهر مجانًا، والنقاط الأولى تأتي من أول عرض يُعرض عندك.` },
         { title: 'بلا تطبيق', body: 'العميل يمسح الرمز ويحفظ بطاقته في Google Wallet مباشرة.' },
         { title: 'عروض قريبة من العميل', body: 'بطاقة العميل تعرض عروض المحلات القريبة من موقعه، فيصل عرضك إلى من هم حولك.' },
       ],
     },
-    closing: { heading: 'ابدأ بحامل واحد على طاولتك', sub: 'جرّبه مجانًا لمدة 3 أشهر.' },
+    closing: { heading: 'ابدأ بحامل واحد على طاولتك', sub: `جرّبه مجانًا لمدة ${FREE_TRIAL_MONTHS} أشهر.` },
     footer: {
       tagline: 'شبكة إعلانات محلية بين محلات الحي في السعودية.',
       product: 'المنتج',
@@ -128,7 +129,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       sub: "Host a QR code that shows other shops' offers and earn ad credits, then spend them to show your own offers at their codes. No ad agency, no wasted spend.",
       ctaOwner: "I'm a shop owner",
       ctaCustomer: "I'm a customer: browse offers",
-      assurances: ['Free for the first 3 months', 'No app for customers', "Nearby offers on the customer's card"],
+      assurances: [`Free for the first ${FREE_TRIAL_MONTHS} months`, 'No app for customers', "Nearby offers on the customer's card"],
       photoAlt: 'A traditional Saudi neighborhood street at sunset, lined with palm trees and shops',
     },
     sampleCard: { label: 'Example card', title: 'Your Jeeran membership', codeLabel: 'Redeem code' },
@@ -164,12 +165,12 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       eyebrow: 'Why Jeeran',
       heading: 'Simple, and made for the neighborhood',
       points: [
-        { title: 'Start free', body: 'The first 3 months are free, and your first credits come from the first offer shown at your place.' },
+        { title: 'Start free', body: `The first ${FREE_TRIAL_MONTHS} months are free, and your first credits come from the first offer shown at your place.` },
         { title: 'No app', body: 'Customers scan the code and save their card straight to Google Wallet.' },
         { title: 'Offers near the customer', body: "The customer's card shows offers from shops near them, so your offer reaches people around you." },
       ],
     },
-    closing: { heading: 'Start with one stand on your counter', sub: 'Try it free for 3 months.' },
+    closing: { heading: 'Start with one stand on your counter', sub: `Try it free for ${FREE_TRIAL_MONTHS} months.` },
     footer: {
       tagline: "A local ad network between neighborhood shops in Saudi Arabia.",
       product: 'Product',
@@ -189,7 +190,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       sub: 'ایک QR کوڈ رکھیں جو دوسری دکانوں کے آفرز دکھائے اور ایڈ کریڈٹس کمائیں، پھر انہیں اپنے آفرز ان کے کوڈز پر دکھانے کے لیے استعمال کریں۔ نہ کوئی ایڈ ایجنسی، نہ ضائع خرچ۔',
       ctaOwner: 'میں دکان کا مالک ہوں',
       ctaCustomer: 'میں گاہک ہوں: آفرز دیکھیں',
-      assurances: ['پہلے 3 مہینے مفت', 'گاہک کے لیے کوئی ایپ نہیں', 'گاہک کے کارڈ پر قریبی آفرز'],
+      assurances: [`پہلے ${FREE_TRIAL_MONTHS} مہینے مفت`, 'گاہک کے لیے کوئی ایپ نہیں', 'گاہک کے کارڈ پر قریبی آفرز'],
       photoAlt: 'غروبِ آفتاب کے وقت ایک روایتی سعودی محلے کی گلی، کھجور کے درختوں اور دکانوں کے ساتھ',
     },
     sampleCard: { label: 'کارڈ کی مثال', title: 'جیران میں آپ کی رکنیت', codeLabel: 'ریڈیم کوڈ' },
@@ -225,12 +226,12 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       eyebrow: 'جیران کیوں',
       heading: 'آسان، اور محلے کے لیے',
       points: [
-        { title: 'مفت شروع کریں', body: 'پہلے 3 مہینے مفت، اور پہلے کریڈٹس آپ کے یہاں دکھائے گئے پہلے آفر سے آتے ہیں۔' },
+        { title: 'مفت شروع کریں', body: `پہلے ${FREE_TRIAL_MONTHS} مہینے مفت، اور پہلے کریڈٹس آپ کے یہاں دکھائے گئے پہلے آفر سے آتے ہیں۔` },
         { title: 'کوئی ایپ نہیں', body: 'گاہک کوڈ اسکین کر کے اپنا کارڈ سیدھا Google Wallet میں محفوظ کرتا ہے۔' },
         { title: 'گاہک کے قریب آفرز', body: 'گاہک کا کارڈ اس کے قریب کی دکانوں کے آفرز دکھاتا ہے، اس لیے آپ کا آفر آپ کے آس پاس کے لوگوں تک پہنچتا ہے۔' },
       ],
     },
-    closing: { heading: 'اپنے کاؤنٹر پر ایک اسٹینڈ سے شروع کریں', sub: '3 مہینے مفت آزمائیں۔' },
+    closing: { heading: 'اپنے کاؤنٹر پر ایک اسٹینڈ سے شروع کریں', sub: `${FREE_TRIAL_MONTHS} مہینے مفت آزمائیں۔` },
     footer: {
       tagline: 'سعودی عرب میں محلے کی دکانوں کے درمیان ایک مقامی اشتہاری نیٹ ورک۔',
       product: 'پروڈکٹ',

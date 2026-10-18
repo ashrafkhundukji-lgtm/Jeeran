@@ -66,6 +66,13 @@ export default function OnboardingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fullName, businessName, category, latitude, longitude }),
       })
+      // Already onboarded (e.g. a second tab, or the back button after
+      // finishing): nothing to do, just go to the dashboard.
+      if (res.status === 409) {
+        router.replace('/dashboard/owner')
+        router.refresh()
+        return
+      }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         setError(body.error || copy.error)

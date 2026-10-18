@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
-import { SIGNUP_COPY } from '@/lib/i18n/auth'
+import { MIN_PASSWORD_LENGTH, SIGNUP_COPY } from '@/lib/i18n/auth'
 import { getDir } from '@/lib/i18n/locale'
 import { useLocale } from '@/lib/i18n/useLocale'
 import {
@@ -48,6 +48,10 @@ export default function SignupPage() {
       return
     }
 
+    // No session = Supabase wants the email confirmed. It answers exactly
+    // the same way for an email that's already registered (the returned
+    // user just has no identities), so the screen below is worded to fit
+    // both without revealing which it is.
     if (!data.session) {
       setNeedsConfirmation(true)
       setLoading(false)
@@ -77,7 +81,20 @@ export default function SignupPage() {
           <h1 className="mb-2 font-display text-[26px] leading-[1.3] font-bold text-brand-navy-deep">{copy.confirmationTitle}</h1>
           <p className="m-0 text-[15px] leading-[1.7] text-brand-muted">{copy.confirmationNotice}</p>
         </div>
-        <SwitchLink prompt="" href="/login" label={copy.loginLink} />
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <a
+            href="/login"
+            className="flex min-h-12 flex-1 items-center justify-center rounded-[14px] bg-brand-coral px-4 font-display font-semibold text-white hover:bg-[#B5330F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-navy"
+          >
+            {copy.confirmationLogin}
+          </a>
+          <a
+            href="/forgot-password"
+            className="flex min-h-12 flex-1 items-center justify-center rounded-[14px] border-[1.5px] border-brand-line bg-white px-4 font-display font-semibold text-brand-navy hover:bg-brand-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-navy"
+          >
+            {copy.confirmationReset}
+          </a>
+        </div>
       </AuthShell>
     )
   }
@@ -105,7 +122,7 @@ export default function SignupPage() {
           value={password}
           onChange={setPassword}
           autoComplete="new-password"
-          minLength={6}
+          minLength={MIN_PASSWORD_LENGTH}
           hint={copy.passwordHint}
           invalid={field === 'password'}
           showLabel={copy.showPassword}

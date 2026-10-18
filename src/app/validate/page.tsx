@@ -2,12 +2,20 @@
 
 import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import SiteLogo from '@/components/SiteLogo'
+import { useLocale } from '@/lib/i18n/useLocale'
+import { getDir } from '@/lib/i18n/locale'
+import { VALIDATE_COPY } from '@/lib/i18n/validate'
+import SiteHeader from '@/components/site/SiteHeader'
+import SiteFooter from '@/components/site/SiteFooter'
+import { AlertIcon, CheckIcon, CloseIcon } from '@/components/customer/icons'
 
 function ValidateInner() {
   const searchParams = useSearchParams()
   const claim = searchParams.get('claim') || ''
   const hash = searchParams.get('hash') || ''
+  const [locale, setLocale] = useLocale()
+  const copy = VALIDATE_COPY[locale]
+  const dir = getDir(locale)
 
   const [status, setStatus] = useState<'idle' | 'working' | 'success' | 'error'>('idle')
   const [result, setResult] = useState<{ title?: string; error?: string }>({})
@@ -23,7 +31,7 @@ function ValidateInner() {
 
     if (!res.ok) {
       setStatus('error')
-      setResult({ error: body.error || 'Could not validate this coupon' })
+      setResult({ error: body.error || copy.fallbackError })
       return
     }
 
@@ -31,52 +39,56 @@ function ValidateInner() {
     setResult({ title: body.title })
   }
 
-  if (!claim || !hash) {
+  // Full-screen result states — big and unmistakable for staff at a counter.
+  if (status === 'success' || status === 'error') {
+    const ok = status === 'success'
     return (
-      <div className="max-w-sm mx-auto mt-24 px-4 text-center">
-        <div className="flex justify-center mb-6">
-          <SiteLogo className="h-20" />
-        </div>
-        <p className="text-[#E8425F] text-sm font-medium">Missing or malformed link.</p>
-      </div>
-    )
-  }
-
-  if (status === 'success') {
-    return (
-      <div className="min-h-screen bg-[#2E1065] flex flex-col items-center justify-center text-white text-center px-6">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#FFC93C] text-4xl mb-5 text-[#2E1065]">✓</div>
-        <h1 className="font-[family-name:var(--font-baloo)] text-2xl font-bold mb-2">قسيمة صالحة</h1>
-        <p className="text-lg text-white/85">{result.title}</p>
-      </div>
-    )
-  }
-
-  if (status === 'error') {
-    return (
-      <div className="min-h-screen bg-[#E8425F] flex flex-col items-center justify-center text-white text-center px-6">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 text-4xl mb-5">✕</div>
-        <h1 className="font-[family-name:var(--font-baloo)] text-2xl font-bold mb-2">Invalid coupon</h1>
-        <p className="text-lg text-white/85">{result.error}</p>
+      <div
+        dir={dir}
+        lang={locale}
+        role="status"
+        className={`flex min-h-screen flex-col items-center justify-center px-6 text-center font-body text-white ${ok ? 'bg-brand-navy' : 'bg-brand-coral'}`}
+      >
+        <span className={`mb-5 flex h-20 w-20 items-center justify-center rounded-full ${ok ? 'bg-white text-brand-navy' : 'bg-white/20 text-white'}`}>
+          {ok ? <CheckIcon size={40} strokeWidth={2.4} /> : <CloseIcon size={40} strokeWidth={2.4} />}
+        </span>
+        <h1 className="mb-2 font-display text-2xl font-bold">{ok ? copy.validTitle : copy.invalidTitle}</h1>
+        <p className="max-w-[28em] text-lg text-white/90">{ok ? result.title : result.error}</p>
       </div>
     )
   }
 
   return (
-    <div className="max-w-sm mx-auto mt-24 px-4 text-center">
-      <div className="flex justify-center mb-6">
-        <SiteLogo className="h-20" />
-      </div>
-      <p className="text-sm text-[#6B5A8C] mb-6">
-        Confirm this customer&apos;s wallet coupon to mark it redeemed.
-      </p>
-      <button
-        onClick={handleConfirm}
-        disabled={status === 'working'}
-        className="bg-[#FF5A79] text-white rounded-full px-6 py-3 text-sm font-medium transition-colors hover:bg-[#E8425F] disabled:opacity-50"
-      >
-        {status === 'working' ? 'Checking…' : 'Confirm redemption'}
-      </button>
+    <div dir={dir} lang={locale} className="flex min-h-screen flex-col bg-brand-cream font-body text-brand-navy-deep">
+      <SiteHeader locale={locale} setLocale={setLocale} />
+
+      <main className="mx-auto w-full max-w-[480px] flex-1 px-[18px] pt-12 pb-16 lg:pt-20">
+        {!claim || !hash ? (
+          <div role="alert" className="flex items-start gap-2.5 rounded-xl bg-[#FDEEE9] px-4 py-3.5 text-[15px] text-[#8A2410]">
+            <AlertIcon size={20} strokeWidth={1.8} className="mt-0.5 flex-none" />
+            <span>{copy.missingLink}</span>
+          </div>
+        ) : (
+          <div className="rounded-3xl border border-brand-line bg-white p-6 text-center shadow-brand-card">
+            <h1 className="mb-2 font-display text-[24px] leading-[1.3] font-bold">{copy.title}</h1>
+            <p className="mb-6 text-[15px] leading-[1.7] text-brand-muted">{copy.body}</p>
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={status === 'working'}
+              aria-busy={status === 'working'}
+              className="flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-[14px] bg-brand-coral font-display text-[17px] font-semibold text-white transition-colors hover:bg-[#B5330F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-navy disabled:cursor-wait disabled:opacity-80 motion-reduce:transition-none"
+            >
+              {status === 'working' && (
+                <span aria-hidden="true" className="h-[18px] w-[18px] animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none" />
+              )}
+              {status === 'working' ? copy.checking : copy.confirm}
+            </button>
+          </div>
+        )}
+      </main>
+
+      <SiteFooter locale={locale} setLocale={setLocale} />
     </div>
   )
 }
