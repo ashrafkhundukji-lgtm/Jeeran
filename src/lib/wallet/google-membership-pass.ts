@@ -14,18 +14,23 @@ import { loadGoogleWalletCredentials, signRS256Jwt } from './google'
 import { signMemberToken } from './member-token'
 import { resolveOfferContent, type ResolvedOfferContent } from './offer-locale'
 import type { Locale } from '@/lib/i18n/locale'
+import passBrand from './pass-brand.json'
 
 const CLASS_SUFFIX = 'jeeran_offers_membership'
 const BASE_URL = 'https://walletobjects.googleapis.com/walletobjects/v1'
 
 // Brand assets — set once at object creation (see createMembershipObject).
-// No existing helper loads brand asset URLs from env/constants elsewhere in
-// the wallet code (the legacy one-off flow in google.ts hardcodes its own,
-// different hexBackgroundColor inline), so these live here rather than in a
-// shared module that doesn't otherwise exist yet.
-const BRAND_PLUM = '#2E1065'
-const LOGO_URL = 'https://jeeran.vercel.app/wallet-logo-square.png'
-const HERO_IMAGE_URL = 'https://jeeran.vercel.app/wallet-hero-banner.png'
+// The values live in pass-brand.json, the single source shared with the
+// plain-JS scripts that can't import this module:
+// scripts/generate-wallet-pass-art.mjs (renders the logo/hero PNGs on this
+// background) and scripts/migrate-wallet-pass-brand.mjs (backfills existing
+// passes). The image URLs point at production on purpose: Google fetches
+// them server-side, and preview deployments sit behind Vercel SSO.
+const PASS_BRAND = passBrand satisfies {
+  hexBackgroundColor: string
+  logoUrl: string
+  heroImageUrl: string
+}
 
 // Google Wallet's LocalizedString type (used by cardTitle, header, and
 // Message.localizedHeader/localizedBody) carries a defaultValue PLUS a
@@ -477,31 +482,48 @@ export async function createMembershipObject(
   preferredLanguage: Locale | null = null,
 ) {
   const authClient = await client()
-  const { issuerId } = loadGoogleWalletCredentials()
-  const objectId = `${issuerId}.member_${memberId}`
-  const resolvedContent = preferredLanguage ? await resolveOfferContent(initialOffers, preferredLanguage) : undefined
+  const object = await buildMembershipObject(memberId, initialOffers, preferredLanguage)
 
   await authClient.request({
     url: `${BASE_URL}/genericObject`,
     method: 'POST',
-    data: {
-      id: objectId,
-      classId: classId(),
-      state: 'ACTIVE',
-      cardTitle: localized('Jeeran Offers', 'عروض جيران', 'جیران آفرز', preferredLanguage),
-      header: localized('Nearby deals for you', 'عروض قريبة منك', 'آپ کے قریب آفرز', preferredLanguage),
-      textModulesData: offersToTextModules(initialOffers, resolvedContent),
-      merchantLocations: offersToMerchantLocations(initialOffers),
-      imageModulesData: offersToImageModules(initialOffers),
-      linksModuleData: offersToLinksModule(memberId, initialOffers, preferredLanguage),
-      hexBackgroundColor: BRAND_PLUM,
-      logo: { sourceUri: { uri: LOGO_URL } },
-      heroImage: { sourceUri: { uri: HERO_IMAGE_URL } },
-      barcode: await memberBarcode(memberId),
-    },
+    data: object,
   })
 
-  return objectId
+  return object.id
+}
+
+/**
+ * The full object createMembershipObject() inserts. Split out so the exact
+ * same payload can also be previewed through a save-URL JWT that carries the
+ * object inline (Google renders it, but stores nothing until Save is
+ * pressed) — how pass design changes are checked without leaving test
+ * objects behind in the issuer account, since the API can't delete them.
+ */
+export async function buildMembershipObject(
+  memberId: string,
+  initialOffers: NearbyOffer[],
+  preferredLanguage: Locale | null = null,
+) {
+  const { issuerId } = loadGoogleWalletCredentials()
+  const objectId = `${issuerId}.member_${memberId}`
+  const resolvedContent = preferredLanguage ? await resolveOfferContent(initialOffers, preferredLanguage) : undefined
+
+  return {
+    id: objectId,
+    classId: classId(),
+    state: 'ACTIVE',
+    cardTitle: localized('Jeeran Offers', 'عروض جيران', 'جیران آفرز', preferredLanguage),
+    header: localized('Nearby deals for you', 'عروض قريبة منك', 'آپ کے قریب آفرز', preferredLanguage),
+    textModulesData: offersToTextModules(initialOffers, resolvedContent),
+    merchantLocations: offersToMerchantLocations(initialOffers),
+    imageModulesData: offersToImageModules(initialOffers),
+    linksModuleData: offersToLinksModule(memberId, initialOffers, preferredLanguage),
+    hexBackgroundColor: PASS_BRAND.hexBackgroundColor,
+    logo: { sourceUri: { uri: PASS_BRAND.logoUrl } },
+    heroImage: { sourceUri: { uri: PASS_BRAND.heroImageUrl } },
+    barcode: await memberBarcode(memberId),
+  }
 }
 
 /**
