@@ -7,6 +7,7 @@ import { useLocale } from '@/lib/i18n/useLocale'
 import { displayFont } from '@/lib/i18n/displayFont'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import Backdrop from '@/components/Backdrop'
+import Image from 'next/image'
 
 // Reused verbatim in several spots below — kept as one literal string so
 // Tailwind's content scanner sees the full arbitrary-value class name.
@@ -15,7 +16,7 @@ import Backdrop from '@/components/Backdrop'
 // Archivo explicitly here. displayFont(locale) (src/lib/i18n/displayFont.ts)
 // swaps to the real Arabic display face for locale-driven text — see that
 // file's comment. The illustrative wallet-card mock content (business
-// names, "Exclusive Member Deal", ghost step numerals) is always
+// names, "Nearby deals for you", ghost step numerals) is always
 // English/numeral by design and keeps plain ARCHIVO regardless of locale.
 const ARCHIVO = 'font-[family-name:var(--font-baloo)]'
 
@@ -151,59 +152,60 @@ export default function LandingPage() {
   )
 }
 
-// 16-dot (4x4) QR-style pattern for the front card, lifted from the design
-// handoff verbatim: 1 = filled (navy), 0 = empty (transparent).
+// 16-dot (4x4) QR-style pattern for the front card's barcode tile:
+// 1 = filled (navy), 0 = empty (transparent).
 const QR_DOTS = [1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1]
 
 // The hero's wallet-card-stack illustration: a thin ring "network node"
 // outline behind three fanned wallet-pass cards (two faint peeking business
-// offers, one front-and-center Jeeran subscriber offer with the logo mark, a
-// SUBSCRIBER badge, and a QR-dot grid), plus a peeking coral accent circle —
-// all purely decorative and aria-hidden — with the real WALLET_HEADLINE
-// caption as a sibling below it (not overlapping, and not hidden from
-// screen readers — see BUGS.md item 3). Card content (business names, "Buy
-// 3, Get 1 Free", etc.) is always LTR/English mock content, not page copy.
+// offers, and in front the actual Jeeran Offers pass as customers see it in
+// Google Wallet — navy, round logo, "Jeeran Offers" / "Nearby deals for
+// you", the hero street photo and a barcode tile; see
+// src/lib/wallet/pass-brand.json), plus a peeking coral accent circle — all
+// purely decorative and aria-hidden — with the real WALLET_HEADLINE caption
+// as a sibling below it (not overlapping, and not hidden from screen
+// readers — see BUGS.md item 3). Card content is always LTR/English mock
+// content, not page copy (the real pass's text follows the phone's
+// language).
 function WalletCardStack({ locale, headline }: { locale: Locale; headline: string }) {
   return (
     <div className="flex flex-col items-center">
       <div dir="ltr" className="relative flex h-[290px] w-full items-center justify-center sm:h-[440px] lg:h-[460px]" aria-hidden="true">
-        <div className="absolute h-[236px] w-[236px] rounded-full border-[1.5px] border-[#2E1065]/25 sm:h-[300px] sm:w-[300px]" />
+        <div className="absolute h-[236px] w-[236px] rounded-full border-[1.5px] border-brand-navy/25 sm:h-[300px] sm:w-[300px]" />
 
         <div className="relative w-[214px] sm:w-[250px]">
           {/* Back card: faint neighboring-business offer (Café Aroma) */}
           <div
-            className="absolute top-0 left-0 z-0 box-border h-[129px] w-[214px] overflow-hidden rounded-[22px] border border-[#EDE3F7] bg-white px-5 py-[18px] shadow-[0_20px_40px_-20px_rgba(46,16,101,0.25)] sm:h-[150px] sm:w-[250px] sm:rounded-[26px]"
+            className="absolute top-0 left-0 z-0 box-border h-[129px] w-[214px] overflow-hidden rounded-[22px] border border-brand-line bg-white px-5 py-[18px] shadow-[0_20px_40px_-20px_rgba(30,58,138,0.25)] sm:h-[150px] sm:w-[250px] sm:rounded-[26px]"
             style={{ transform: 'rotate(-9deg) translate(-14px, 34px)' }}
           >
-            <div className="text-[9px] font-semibold tracking-[0.08em] text-[#8A76BE]">CAFÉ AROMA</div>
-            <div className={`${ARCHIVO} mt-1 text-[15px] font-extrabold text-[#2E1065]`}>Buy 3, Get 1 Free</div>
+            <div className="text-[9px] font-semibold tracking-[0.08em] text-brand-muted">CAFÉ AROMA</div>
+            <div className={`${ARCHIVO} mt-1 text-[15px] font-extrabold text-brand-navy-deep`}>Buy 3, Get 1 Free</div>
           </div>
 
-          {/* Front card: the Jeeran subscriber offer — stays in normal flow
-              (not absolutely positioned) so it sets this wrapper's height,
-              matching the design handoff's own layering. */}
+          {/* Front card: the Jeeran Offers pass — stays in normal flow (not
+              absolutely positioned) so it sets this wrapper's height. Same
+              navy, logo treatment (white mark in a ringed circle, as Wallet
+              masks it) and hero photo as the real pass. */}
           <div
-            className="relative z-20 box-border h-[129px] w-[214px] overflow-hidden rounded-[22px] px-5 py-[18px] text-white shadow-[0_26px_50px_-18px_rgba(46,16,101,0.5)] sm:h-[150px] sm:w-[250px] sm:rounded-[26px]"
-            style={{ background: 'linear-gradient(155deg,#2E1065,#4C2A98)', transform: 'rotate(3deg)' }}
+            className="relative z-20 box-border h-[129px] w-[214px] overflow-hidden rounded-[22px] bg-brand-navy text-white shadow-[0_26px_50px_-18px_rgba(18,41,107,0.55)] sm:h-[150px] sm:w-[250px] sm:rounded-[26px]"
+            style={{ transform: 'rotate(3deg)' }}
           >
-            <div className="flex items-center justify-between">
-              <div className="inline-flex items-center rounded-[7px] bg-white px-2 py-1">
+            <div className="flex items-center gap-2 px-4 pt-3 sm:pt-3.5">
+              <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full ring-1 ring-white/70">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/design/jeeran-mark.svg" alt="Jeeran" className="block h-[19px] w-[19px]" />
-              </div>
-              <span className="rounded-[5px] bg-[#FFC93C] px-[7px] py-[3px] text-[8px] font-bold tracking-[0.08em] text-[#2E1065]">
-                SUBSCRIBER
+                <img src="/design/jeeran-mark-white.svg" alt="" className="block h-[13px] w-[13px]" />
               </span>
+              <span className="text-[10px] font-medium">Jeeran Offers</span>
             </div>
-            <div className="mt-[14px] text-[9px] tracking-[0.06em] opacity-65">ACTIVE OFFER</div>
-            <div className={`${ARCHIVO} mt-0.5 text-[15px] font-extrabold whitespace-nowrap tracking-tight`}>
-              Exclusive Member Deal
+            <div className={`${ARCHIVO} mt-1 px-4 text-[15px] font-extrabold whitespace-nowrap tracking-tight sm:mt-1.5`}>
+              Nearby deals for you
             </div>
-            <div className="mt-2.5 flex items-end justify-between">
-              <div className="text-[8px] opacity-55">JEERAN NETWORK</div>
-              <div className="box-border grid h-8 w-8 grid-cols-4 gap-[1.5px] rounded-[5px] bg-[#FFC93C] p-[3px]">
+            <div className="absolute inset-x-0 bottom-0 h-[50px] sm:h-[58px]">
+              <Image src="/wallet-pass-hero-v2.jpg" alt="" fill sizes="250px" className="object-cover" />
+              <div className="absolute end-3 bottom-2.5 box-border grid h-8 w-8 grid-cols-4 gap-[1.5px] rounded-[5px] bg-white p-[3px] shadow-sm">
                 {QR_DOTS.map((on, i) => (
-                  <div key={i} className={`rounded-[1px] ${on ? 'bg-[#2E1065]' : 'bg-transparent'}`} />
+                  <div key={i} className={`rounded-[1px] ${on ? 'bg-brand-navy-deep' : 'bg-transparent'}`} />
                 ))}
               </div>
             </div>
@@ -211,15 +213,15 @@ function WalletCardStack({ locale, headline }: { locale: Locale; headline: strin
 
           {/* Back card: faint neighboring-business offer (Glow Spa) */}
           <div
-            className="absolute top-0 left-0 z-10 box-border h-[129px] w-[214px] overflow-hidden rounded-[22px] border border-[#EDE3F7] bg-white px-5 py-[18px] shadow-[0_20px_40px_-20px_rgba(255,90,121,0.25)] sm:h-[150px] sm:w-[250px] sm:rounded-[26px]"
+            className="absolute top-0 left-0 z-10 box-border h-[129px] w-[214px] overflow-hidden rounded-[22px] border border-brand-line bg-white px-5 py-[18px] shadow-[0_20px_40px_-20px_rgba(255,107,74,0.25)] sm:h-[150px] sm:w-[250px] sm:rounded-[26px]"
             style={{ transform: 'rotate(11deg) translate(16px, -25px)' }}
           >
-            <div className="text-[9px] font-semibold tracking-[0.08em] text-[#8A76BE]">GLOW SPA</div>
-            <div className={`${ARCHIVO} mt-1 text-[15px] font-extrabold text-[#2E1065]`}>Free Add-On Service</div>
+            <div className="text-[9px] font-semibold tracking-[0.08em] text-brand-muted">GLOW SPA</div>
+            <div className={`${ARCHIVO} mt-1 text-[15px] font-extrabold text-brand-navy-deep`}>Free Add-On Service</div>
           </div>
         </div>
 
-        <div className="absolute right-4 bottom-1.5 h-[60px] w-[60px] rounded-full bg-[#FFC93C] opacity-90" />
+        <div className="absolute right-4 bottom-1.5 h-[60px] w-[60px] rounded-full bg-brand-coral-brand opacity-90" />
       </div>
 
       {/* Real marketing copy, so unlike the illustration above it's a normal
