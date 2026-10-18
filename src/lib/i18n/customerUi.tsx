@@ -148,7 +148,7 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       ],
       oncePerCustomer: 'مرة واحدة لكل عميل',
       call: 'اتصال بالمحل',
-      whatsapp: 'مراسلة عبر واتساب',
+      whatsapp: 'راسل المحل عبر واتساب',
     },
     scan: {
       visitRecorded: 'تم تسجيل زيارتك',
@@ -225,7 +225,7 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       ],
       oncePerCustomer: 'Once per customer',
       call: 'Call the shop',
-      whatsapp: 'Message on WhatsApp',
+      whatsapp: 'Message the shop on WhatsApp',
     },
     scan: {
       visitRecorded: 'Visit recorded',
@@ -303,7 +303,7 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       ],
       oncePerCustomer: 'ہر گاہک کے لیے ایک بار',
       call: 'دکان کو کال کریں',
-      whatsapp: 'واٹس ایپ پر پیغام',
+      whatsapp: 'دکان کو واٹس ایپ پر پیغام بھیجیں',
     },
     scan: {
       visitRecorded: 'آپ کی آمد درج ہو گئی',

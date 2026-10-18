@@ -8,7 +8,7 @@ import { CUSTOMER_UI_COPY } from '@/lib/i18n/customerUi'
 import { CATEGORY_LABELS } from '@/lib/categories'
 import CustomerPage from '@/components/customer/CustomerPage'
 import { CategoryCover, DiscountBadge, DistanceText, ExpiryChip, PRESS, ShopAvatar } from '@/components/customer/primitives'
-import { ChevronBackIcon, MessageIcon, NavigationIcon, PhoneIcon, PinIcon, ShareIcon } from '@/components/customer/icons'
+import { ChevronBackIcon, NavigationIcon, PhoneIcon, PinIcon, ShareIcon, WhatsAppIcon } from '@/components/customer/icons'
 
 // Offer landing page (artboard OfferDetail.dc.html). Split from the server
 // page.tsx only because useLocale() is client-only; all data is fetched
@@ -204,7 +204,8 @@ export default function OfferPageView({
             )}
             {whatsappUrl && (
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label={copy.detail.whatsapp} className={outlinedAction}>
-                <MessageIcon size={22} />
+                {/* WhatsApp green on the white bar: #128C7E is 4.14:1 (#25D366 would be 1.98:1). */}
+                <WhatsAppIcon size={22} className="text-[#128C7E]" />
               </a>
             )}
           </div>
