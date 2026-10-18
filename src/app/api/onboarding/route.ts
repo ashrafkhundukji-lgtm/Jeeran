@@ -22,6 +22,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Business name and category are required' }, { status: 400 })
   }
 
+  // One business per owner (businesses_owner_id_key). An owner who is
+  // already onboarded gets a 409 before anything is written — previously
+  // this fell through to the insert below and returned Postgres's
+  // unique-violation text as a 500, after the profile upsert had already
+  // overwritten their name. The page redirects to the dashboard on 409.
+  const { data: existing, error: existingError } = await supabase
+    .from('businesses')
+    .select('id')
+    .eq('owner_id', user.id)
+    .maybeSingle()
+  if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
+  if (existing) {
+    return NextResponse.json({ error: 'Already onboarded', code: 'already_onboarded' }, { status: 409 })
+  }
+
   const { error: profileError } = await supabase
     .from('profiles')
     .upsert({ id: user.id, full_name: fullName, role: 'owner' })
@@ -37,7 +52,13 @@ export async function POST(req: NextRequest) {
     latitude,
     longitude,
   })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    // Same constraint hit by a double-submit racing the check above.
+    if (error.code === '23505') {
+      return NextResponse.json({ error: 'Already onboarded', code: 'already_onboarded' }, { status: 409 })
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }

@@ -2,25 +2,30 @@
 
 import { useMemo, useState } from 'react'
 import { useLocale } from '@/lib/i18n/useLocale'
-import { getDir } from '@/lib/i18n/locale'
-import { displayFont } from '@/lib/i18n/displayFont'
 import { BROWSE_COPY } from '@/lib/i18n/browse'
-import { CATEGORIES, CATEGORY_EMOJI, CATEGORY_LABELS } from '@/lib/categories'
-import SiteLogo from '@/components/SiteLogo'
-import LevelBadge from '@/components/LevelBadge'
+import { CUSTOMER_UI_COPY } from '@/lib/i18n/customerUi'
+import { CATEGORIES, CATEGORY_LABELS } from '@/lib/categories'
+import { BrowseShell } from '@/components/BrowseRouteStates'
+import SearchField from '@/components/customer/SearchField'
+import CategoryChips from '@/components/customer/CategoryChips'
+import ShopRow from '@/components/customer/ShopRow'
+import { EmptyState } from '@/components/customer/States'
+import { ChevronForwardIcon, NavigationIcon, SearchIcon, StoreIcon } from '@/components/customer/icons'
 import type { RankedBusiness } from '@/lib/promotion'
 
-// Single chip-filterable list across every category — replaces the old
-// category-grid (/browse) -> per-category rank list (/browse/[category])
-// two-step flow, matching the shape NearbyShopsView (/wallet/shops)
-// established: search + horizontal category chips + one flat list, each row
-// linking to a live offer when the shop has one, directions otherwise. The
-// only real difference from the wallet version: no visitor location here,
-// so rows show a promotion-tier badge instead of a distance.
+// Public shop directory (/browse). Same building blocks as the customer
+// pages (/wallet/shops): SearchField, CategoryChips, ShopRow + ShopAvatar,
+// EmptyState — inside the public-site shell (SiteHeader/SiteFooter).
+//
+// Data and behaviour are unchanged: the list is browse_all_businesses() in
+// its own order; search matches the shop name or category label; chips
+// filter by category; a row opens the shop's live offer, or Google Maps
+// directions when it has none. No logos yet — the browse query doesn't
+// return logo_url, so ShopAvatar shows the letter avatar.
 export default function BrowseView({ shops }: { shops: RankedBusiness[] }) {
   const [locale] = useLocale()
   const copy = BROWSE_COPY[locale]
-  const dir = getDir(locale)
+  const ui = CUSTOMER_UI_COPY[locale]
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null) // null = "All"
 
@@ -40,141 +45,77 @@ export default function BrowseView({ shops }: { shops: RankedBusiness[] }) {
   }, [shops, query, selectedCategory, locale])
 
   return (
-    <main dir={dir} className="min-h-screen bg-[#FFF8EC] px-6 py-8 text-[#2E1065] sm:px-8">
-      <div className="mx-auto max-w-[720px]">
-        <div className="mb-5 flex justify-center">
-          <SiteLogo className="h-14 sm:h-16" />
+    <BrowseShell>
+      {shops.length === 0 ? (
+        <div className="mt-6">
+          <EmptyState icon={<StoreIcon size={28} />} title={copy.empty} />
         </div>
-        <h1 className={`${displayFont(locale)} mb-2 text-[28px] font-black leading-[1.05] tracking-[-0.01em] sm:text-[34px]`}>
-          {copy.title}
-        </h1>
-        <p className="mb-6 text-[15px] text-[#6B5A8C]">{copy.subtitle}</p>
-
-        {shops.length > 0 && (
-          <>
-            <div className="relative mb-4">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                aria-hidden="true"
-                className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-neutral-400 ${dir === 'rtl' ? 'right-3.5' : 'left-3.5'}`}
-              >
-                <circle cx="7" cy="7" r="5.25" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={copy.searchPlaceholder}
-                className={`w-full rounded-xl border border-[#EDE3F7] bg-white py-3 text-[15px] text-[#2E1065] placeholder:text-neutral-400 focus:border-[#FF5A79]/50 focus:outline-none ${dir === 'rtl' ? 'pr-10 pl-4' : 'pl-10 pr-4'}`}
+      ) : (
+        <>
+          <div className="mt-5 flex flex-col gap-3.5">
+            <SearchField
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              label={ui.home.searchLabel}
+              placeholder={copy.searchPlaceholder}
+              className="w-full md:max-w-[560px]"
+            />
+            <p aria-live="polite" className="text-[13px] font-semibold text-brand-muted">
+              {copy.resultCount(visibleShops.length)}
+            </p>
+            {presentCategories.length > 1 && (
+              <CategoryChips
+                categories={presentCategories}
+                selected={selectedCategory}
+                onSelect={setSelectedCategory}
+                allLabel={copy.allCategories}
+                locale={locale}
               />
-            </div>
-
-            <div
-              className="mb-5 flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden"
-              style={{ scrollbarWidth: 'none' }}
-            >
-              <button
-                type="button"
-                onClick={() => setSelectedCategory(null)}
-                className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${
-                  selectedCategory === null ? 'bg-[#2E1065] text-white' : 'border border-[#EDE3F7] bg-white text-[#2E1065]'
-                }`}
-              >
-                {copy.allCategories}
-              </button>
-              {presentCategories.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setSelectedCategory(c)}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition-colors ${
-                    selectedCategory === c ? 'bg-[#2E1065] text-white' : 'border border-[#EDE3F7] bg-white text-[#2E1065]'
-                  }`}
-                >
-                  <span aria-hidden="true">{CATEGORY_EMOJI[c] ?? CATEGORY_EMOJI.other}</span>
-                  {CATEGORY_LABELS[locale][c]}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
-        {shops.length === 0 ? (
-          <p className="text-sm text-[#8A76BE]">{copy.empty}</p>
-        ) : visibleShops.length === 0 ? (
-          <p className="text-sm text-[#8A76BE]">{copy.emptySearch}</p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {visibleShops.map((s) => {
-              const href = s.hasActiveOffer
-                ? `/offers/${s.topOfferId}`
-                : s.businessLat != null && s.businessLng != null
-                  ? `https://www.google.com/maps/dir/?api=1&destination=${s.businessLat},${s.businessLng}`
-                  : null
-
-              const Row = (
-                <>
-                  <div
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-[#FFF7F3] text-xl"
-                    aria-hidden="true"
-                  >
-                    {CATEGORY_EMOJI[s.category] ?? CATEGORY_EMOJI.other}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="mb-1 font-medium text-[#2E1065]">{s.businessName}</h2>
-                    <LevelBadge level={s.level} locale={locale} />
-                    {s.hasActiveOffer && (
-                      <span className="ms-2 inline-block rounded-full bg-[#FF5A79]/10 px-2 py-0.5 text-xs font-medium text-[#FF5A79]">
-                        {copy.hasOffer}
-                      </span>
-                    )}
-                  </div>
-                  {href && (
-                    <div className="flex shrink-0 items-center gap-1.5 text-[#FF5A79]">
-                      <span className="text-sm font-semibold whitespace-nowrap">
-                        {s.hasActiveOffer ? copy.viewOffer : copy.getDirections}
-                      </span>
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        aria-hidden="true"
-                        className={`shrink-0 ${dir === 'rtl' ? 'scale-x-[-1]' : ''}`}
-                      >
-                        <path
-                          d="M6 3.5L10.5 8L6 12.5"
-                          stroke="currentColor"
-                          strokeWidth="1.75"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                </>
-              )
-
-              const rowClass =
-                'flex items-center gap-3 rounded-[18px] border border-[#EDE3F7] bg-white p-4 shadow-sm transition-colors'
-
-              return href ? (
-                <a key={s.businessId} href={href} className={`${rowClass} active:border-[#FF5A79]/50 active:bg-[#FFF7F3]`}>
-                  {Row}
-                </a>
-              ) : (
-                <div key={s.businessId} className={rowClass}>
-                  {Row}
-                </div>
-              )
-            })}
+            )}
           </div>
-        )}
-      </div>
-    </main>
+
+          {visibleShops.length === 0 ? (
+            <div className="mt-5">
+              <EmptyState icon={<SearchIcon size={28} />} title={copy.emptySearch} />
+            </div>
+          ) : (
+            <ul className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+              {visibleShops.map((s) => {
+                const href = s.hasActiveOffer
+                  ? `/offers/${s.topOfferId}`
+                  : s.businessLat != null && s.businessLng != null
+                    ? `https://www.google.com/maps/dir/?api=1&destination=${s.businessLat},${s.businessLng}`
+                    : null
+                const categoryLabel = CATEGORY_LABELS[locale][s.category] ?? s.category
+                const detail = s.hasActiveOffer ? (
+                  <span className="inline-flex w-fit items-center rounded-full bg-brand-coral-tint px-2.5 py-0.5 text-xs font-semibold text-[#9E2B10]">
+                    {copy.hasOffer}
+                  </span>
+                ) : undefined
+                // Offer → "View offer" + chevron. No offer → a quiet
+                // directions cue (the row opens Maps, as before).
+                const trailing = s.hasActiveOffer ? (
+                  <span className="flex flex-none items-center gap-1 text-sm font-semibold whitespace-nowrap text-brand-coral">
+                    {copy.viewOffer}
+                    <ChevronForwardIcon size={18} strokeWidth={2.2} />
+                  </span>
+                ) : (
+                  <span className="flex flex-none items-center text-brand-muted">
+                    <NavigationIcon size={20} strokeWidth={1.8} />
+                    <span className="sr-only">{copy.getDirections}</span>
+                  </span>
+                )
+
+                return (
+                  <li key={s.businessId}>
+                    <ShopRow href={href} name={s.businessName} meta={categoryLabel} detail={detail} trailing={trailing} />
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </>
+      )}
+    </BrowseShell>
   )
 }

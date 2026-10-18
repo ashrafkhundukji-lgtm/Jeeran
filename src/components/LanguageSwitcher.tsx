@@ -38,13 +38,17 @@ export default function LanguageSwitcher({
   locale,
   onChange,
   compact = false,
+  tone = 'light',
 }: {
   locale: Locale
   onChange: (next: Locale) => void
+  // 'dark' = sitting on the landing hero photo (white outline/text);
+  // 'light' = on cream/white pages.
+  tone?: 'light' | 'dark'
   // Trigger shows just the code chip ("AR") instead of "{label} (AR)" — used
   // by the landing page's mobile header, where the full label was one of
   // three items wrapping to two rows at 390px (design_handoff_jeeran_mobile/
-  // README.md §8). Off by default so signup/login keep their current look.
+  // README.md §8). Off by default (signup/login show the full label).
   compact?: boolean
 }) {
   const [open, setOpen] = useState(false)
@@ -71,9 +75,11 @@ export default function LanguageSwitcher({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`flex items-center gap-2 text-sm border border-[#EDE3F7] rounded-full bg-white text-[#2E1065] hover:bg-[#FFF6E9] ${
-          compact ? 'pl-2.5 pr-2 py-1' : 'pl-3 pr-2.5 py-1.5'
-        }`}
+        className={`flex min-h-11 items-center gap-2 rounded-full border text-sm focus-visible:outline-2 focus-visible:outline-offset-2 ${
+          tone === 'dark'
+            ? 'border-white/45 bg-white/10 text-white hover:bg-white/20 focus-visible:outline-white'
+            : 'border-brand-line bg-white text-brand-navy-deep hover:bg-brand-cream focus-visible:outline-brand-navy'
+        } ${compact ? 'ps-3 pe-2.5' : 'ps-3.5 pe-3'}`}
       >
         {!compact && <FlagIcon code={current.code} />}
         <span>{compact ? current.code.toUpperCase() : `${current.label} (${current.code.toUpperCase()})`}</span>
@@ -92,7 +98,7 @@ export default function LanguageSwitcher({
       {open && (
         <ul
           role="listbox"
-          className="absolute z-20 mt-1 min-w-full w-max bg-white border border-[#EDE3F7] rounded-2xl shadow-[0_10px_26px_-14px_rgba(46,16,101,0.35)] py-1 overflow-hidden"
+          className="absolute end-0 z-30 mt-1 min-w-full w-max overflow-hidden rounded-2xl border border-brand-line bg-white py-1 shadow-brand-card"
         >
           {LOCALES.map((l) => {
             const selected = l.code === locale
@@ -106,8 +112,8 @@ export default function LanguageSwitcher({
                     onChange(l.code)
                     setOpen(false)
                   }}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-start whitespace-nowrap ${
-                    selected ? 'bg-[#FFF6E9] text-[#2E1065] font-medium' : 'text-[#6B5A8C] hover:bg-[#FFF6E9]'
+                  className={`flex min-h-11 w-full items-center gap-2.5 px-3 text-start text-sm whitespace-nowrap ${
+                    selected ? 'bg-brand-tint font-medium text-brand-navy-deep' : 'text-brand-muted hover:bg-brand-cream'
                   }`}
                 >
                   <span className="w-4 shrink-0" aria-hidden="true">

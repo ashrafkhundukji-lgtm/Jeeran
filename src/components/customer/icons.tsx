@@ -335,6 +335,44 @@ export const InstallIcon = (p: IconProps) => (
     <path d="M12 7v7M9 11l3 3 3-3" />
   </Icon>
 )
+export const EyeOffIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M10.6 5.6A9.7 9.7 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-2.6 3.5M6.6 6.6C3.9 8.3 2.5 12 2.5 12S6 18.5 12 18.5c1.9 0 3.5-.6 4.9-1.5" />
+    <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" />
+  </Icon>
+)
+export const MailIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="m3 7 9 6 9-6" />
+  </Icon>
+)
+export const LockIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="5" y="11" width="14" height="9" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+  </Icon>
+)
+export const QrIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <path d="M14 14h3v3M21 14v.01M14 21h.01M17 21h4v-4" />
+  </Icon>
+)
+export const RouteIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="6" cy="19" r="2" />
+    <circle cx="18" cy="5" r="2" />
+    <path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16" />
+  </Icon>
+)
+export const BookmarkIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M6 3h12v18l-6-4-6 4z" />
+  </Icon>
+)
 
 // Replaces CATEGORY_EMOJI for the customer screens — categories are told
 // apart by icon alone (no per-category colors). Keys are the stored

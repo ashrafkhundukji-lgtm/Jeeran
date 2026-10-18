@@ -1,33 +1,35 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import { LANDING_COPY, type LandingCopy } from '@/lib/i18n/landing'
 import { getDir, type Locale } from '@/lib/i18n/locale'
 import { useLocale } from '@/lib/i18n/useLocale'
-import { displayFont } from '@/lib/i18n/displayFont'
-import LanguageSwitcher from '@/components/LanguageSwitcher'
-import Backdrop from '@/components/Backdrop'
-import Image from 'next/image'
+import SiteHeader from '@/components/site/SiteHeader'
+import SiteFooter from '@/components/site/SiteFooter'
+import { BookmarkIcon, QrIcon, RouteIcon, ScanIcon, TagIcon, CardIcon } from '@/components/customer/icons'
 
-// Reused verbatim in several spots below — kept as one literal string so
-// Tailwind's content scanner sees the full arbitrary-value class name.
-// Work Sans is already the site-wide default (see src/lib/fonts.ts +
-// src/app/layout.tsx), so only headings/display type need to opt into
-// Archivo explicitly here. displayFont(locale) (src/lib/i18n/displayFont.ts)
-// swaps to the real Arabic display face for locale-driven text — see that
-// file's comment. The illustrative wallet-card mock content (business
-// names, "Nearby deals for you", ghost step numerals) is always
-// English/numeral by design and keeps plain ARCHIVO regardless of locale.
-const ARCHIVO = 'font-[family-name:var(--font-baloo)]'
+// Landing page (approved mockup: downloads/handoff/landing-auth/landing.html).
+// Navy/coral/cream on the shared brand tokens, Readex Pro + IBM Plex Sans
+// Arabic, RTL-first. Copy lives in src/lib/i18n/landing.ts — see the claim
+// notes there before changing wording.
+
+// Street photo (no text baked in). Served through next/image, so phones get
+// a resized WebP rather than the source JPEG.
+const PHOTO = '/landing/street.jpg'
+
+const FOCUS_DARK = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
+const FOCUS_LIGHT = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-navy'
+const BTN = 'inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-6 font-display text-base font-semibold transition-colors motion-reduce:transition-none'
+const BTN_PRIMARY = `${BTN} bg-brand-coral text-white hover:bg-[#B5330F]`
 
 export default function LandingPage() {
   const [locale, setLocale] = useLocale()
   const copy = LANDING_COPY[locale]
   const dir = getDir(locale)
 
-  // Mobile-only sticky CTA bar (design_handoff_jeeran_mobile/README.md §8):
-  // revealed once the hero's own CTA button scrolls out of view, so it
-  // doesn't compete with the hero on first paint.
+  // Mobile-only sticky CTA bar: revealed once the hero's own CTA scrolls out
+  // of view, so it never competes with the hero on first paint.
   const heroCtaRef = useRef<HTMLAnchorElement>(null)
   const [showStickyBar, setShowStickyBar] = useState(false)
   useEffect(() => {
@@ -39,269 +41,257 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <main dir={dir} className="relative min-h-screen overflow-hidden bg-[#FFF8EC] pb-[72px] text-[#2E1065] md:pb-0">
-      <Backdrop />
+    <div dir={dir} lang={locale} className="min-h-screen bg-brand-cream font-body text-brand-navy-deep">
+      <Hero copy={copy} locale={locale} setLocale={setLocale} ctaRef={heroCtaRef} />
+      <main>
+        <HowItWorks copy={copy} />
+        <ForCustomers copy={copy} />
+        <WhyJeeran copy={copy} />
+        <ClosingCta copy={copy} />
+      </main>
+      <SiteFooter locale={locale} setLocale={setLocale} stickyBarClearance />
 
-      {/* z-20, not z-10 like the sections below: the language switcher's
-          dropdown lives inside this header and must paint above the hero
-          section. Equal z-index siblings stack by DOM order, and the hero
-          section comes after the header — so at z-10/z-10 the hero section
-          was winning hit-testing wherever the open dropdown overlapped it,
-          silently swallowing every click on a language option. */}
-      <header className="relative z-20 mx-auto flex max-w-[1240px] items-center justify-between gap-4 px-6 pt-8 sm:px-12">
-        {/* Mobile: mark + wordmark. The 800×500 full lockup renders a ~20px
-            mark inside a visible box at this width (BUGS.md item 2) —
-            jeeran-mark.svg plus a plain text wordmark instead. */}
-        <a href="/" className="flex items-center gap-2 md:hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/design/jeeran-mark.svg" alt="" aria-hidden="true" className="h-7 w-7" />
-          <span className={`${ARCHIVO} text-[17px] font-black text-[#2E1065]`}>Jeeran</span>
-        </a>
-        {/* Desktop: unchanged full lockup. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/design/jeeran-logo-redesign.svg" alt="Jeeran Network" className="hidden h-14 w-auto md:block md:h-16" />
-
-        {/* Mobile nav: shortened labels — full "تصفح المحلات" + "تسجيل
-            الدخول" + "العربية (AR)" is three items wrapping to two rows at
-            390px. */}
-        <div className="flex items-center gap-2 md:hidden">
-          <a href="/browse" className="px-2 py-1.5 text-[13px] text-[#6B5A8C]">
-            {copy.browseShort}
-          </a>
-          <a href="/login" className="rounded-full border border-[#EDE3F7] px-[13px] py-[7px] text-[13px] font-semibold">
-            {copy.loginShort}
-          </a>
-          <LanguageSwitcher locale={locale} onChange={setLocale} compact />
-        </div>
-        {/* Desktop: unchanged full labels. */}
-        <div className="hidden items-center gap-x-7 md:flex">
-          <a href="/browse" className="py-1 text-sm whitespace-nowrap text-[#6B5A8C] hover:text-[#2E1065]">
-            {copy.browse}
-          </a>
-          <a href="/login" className="py-1 text-sm whitespace-nowrap text-[#6B5A8C] hover:text-[#2E1065]">
-            {copy.login}
-          </a>
-          <LanguageSwitcher locale={locale} onChange={setLocale} />
-        </div>
-      </header>
-
-      <section className="relative z-10 mx-auto grid max-w-[1240px] items-center gap-10 px-6 pt-5 pb-8 sm:px-12 sm:pt-20 sm:pb-28 lg:grid-cols-[1.15fr_0.85fr] lg:pt-[88px] lg:pb-[140px]">
-        <div>
-          <div className="mb-[18px] h-[5px] w-[46px] rounded-full bg-[#FF5A79] sm:mb-7 sm:h-1.5 sm:w-14" />
-          <h1
-            className={`${displayFont(locale)} mb-[14px] text-[33px] font-bold leading-[1.22] tracking-[-0.01em] sm:mb-7 sm:text-6xl sm:font-black sm:leading-[0.98] lg:text-[76px]`}
-          >
-            {/*
-              Design spec renders this as two lines, the second in navy
-              (#2E1065) — e.g. "Your offers," / "everywhere they go." That
-              split (and the wording itself, since the spec's headline
-              differs from our current tagline) is on hold pending the
-              headline decision. Rendering the current LANDING_COPY tagline
-              at full size/weight in the meantime.
-            */}
-            {copy.headline}
-          </h1>
-          {/* Mobile: trimmed to the first sentence — the full paragraph is
-              19px x 4 lines at this width. Desktop keeps the full copy. */}
-          <p className="mb-[22px] max-w-[460px] text-[16px] leading-[1.65] text-[#6B5A8C] sm:hidden">{copy.subheadlineShort}</p>
-          <p className="mb-10 hidden max-w-[460px] text-[19px] leading-[1.6] text-[#6B5A8C] sm:block">{copy.subheadline}</p>
-          <a
-            ref={heroCtaRef}
-            href="/login"
-            className="inline-block rounded-full bg-[#FF5A79] px-8 py-4 text-[15px] font-semibold text-white shadow-[0_12px_24px_-8px_rgba(255,90,121,0.5)] transition-colors hover:bg-[#E8425F]"
-          >
-            {copy.ctaBusiness}
-          </a>
-        </div>
-
-        <WalletCardStack locale={locale} headline={copy.walletHeadline} />
-      </section>
-
-      <StepSection copy={copy} locale={locale} />
-
-      <ClosingCtaSection copy={copy} locale={locale} />
-
-      <footer className="relative z-10 flex items-center justify-center gap-2.5 border-t border-[#EDE3F7] px-6 py-6">
-        <div className="h-2 w-2 rounded-full bg-[#FF5A79]" />
-        <p className="m-0 text-xs text-[#8A76BE]">Jeeran Network</p>
-      </footer>
-
-      {/* Sticky mobile CTA bar — revealed once the hero button above scrolls
-          out of view (see the IntersectionObserver above). Desktop never
-          shows it regardless of scroll position. */}
+      {/* Sticky mobile CTA bar — desktop never shows it. */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-20 flex gap-[9px] border-t border-[#EDE3F7] bg-[rgba(255,248,236,0.94)] px-4 pt-[11px] backdrop-blur-[8px] transition-transform duration-200 md:hidden ${
+        className={`fixed inset-x-0 bottom-0 z-30 flex gap-2.5 border-t border-brand-line bg-brand-cream/95 px-4 pt-3 backdrop-blur-sm transition-transform duration-200 motion-reduce:transition-none md:hidden ${
           showStickyBar ? 'translate-y-0' : 'translate-y-full'
         }`}
-        style={{ paddingBottom: 'calc(22px + env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
+        aria-hidden={!showStickyBar}
       >
-        <a
-          href="/login"
-          className="flex-1 rounded-full bg-[#FF5A79] py-[15px] text-center text-[15px] font-semibold text-white"
-        >
-          {copy.ctaBusiness}
+        <a href="/signup" tabIndex={showStickyBar ? 0 : -1} className={`${BTN_PRIMARY} flex-1 ${FOCUS_LIGHT}`}>
+          {copy.hero.ctaOwner}
         </a>
         <a
           href="/browse"
-          className="shrink-0 rounded-full border border-[#E3D6F5] px-[18px] py-[15px] text-[15px] font-semibold text-[#2E1065]"
+          tabIndex={showStickyBar ? 0 : -1}
+          className={`${BTN} shrink-0 border border-brand-line bg-white px-4 text-brand-navy-deep ${FOCUS_LIGHT}`}
         >
-          {copy.browse}
+          {copy.nav.browse}
         </a>
       </div>
-    </main>
-  )
-}
-
-// 16-dot (4x4) QR-style pattern for the front card's barcode tile:
-// 1 = filled (navy), 0 = empty (transparent).
-const QR_DOTS = [1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1]
-
-// The hero's wallet-card-stack illustration: a thin ring "network node"
-// outline behind three fanned wallet-pass cards (two faint peeking business
-// offers, and in front the actual Jeeran Offers pass as customers see it in
-// Google Wallet — navy, round logo, "Jeeran Offers" / "Nearby deals for
-// you", the hero street photo and a barcode tile; see
-// src/lib/wallet/pass-brand.json), plus a peeking coral accent circle — all
-// purely decorative and aria-hidden — with the real WALLET_HEADLINE caption
-// as a sibling below it (not overlapping, and not hidden from screen
-// readers — see BUGS.md item 3). Card content is always LTR/English mock
-// content, not page copy (the real pass's text follows the phone's
-// language).
-function WalletCardStack({ locale, headline }: { locale: Locale; headline: string }) {
-  return (
-    <div className="flex flex-col items-center">
-      <div dir="ltr" className="relative flex h-[290px] w-full items-center justify-center sm:h-[440px] lg:h-[460px]" aria-hidden="true">
-        <div className="absolute h-[236px] w-[236px] rounded-full border-[1.5px] border-brand-navy/25 sm:h-[300px] sm:w-[300px]" />
-
-        <div className="relative w-[214px] sm:w-[250px]">
-          {/* Back card: faint neighboring-business offer (Café Aroma) */}
-          <div
-            className="absolute top-0 left-0 z-0 box-border h-[129px] w-[214px] overflow-hidden rounded-[22px] border border-brand-line bg-white px-5 py-[18px] shadow-[0_20px_40px_-20px_rgba(30,58,138,0.25)] sm:h-[150px] sm:w-[250px] sm:rounded-[26px]"
-            style={{ transform: 'rotate(-9deg) translate(-14px, 34px)' }}
-          >
-            <div className="text-[9px] font-semibold tracking-[0.08em] text-brand-muted">CAFÉ AROMA</div>
-            <div className={`${ARCHIVO} mt-1 text-[15px] font-extrabold text-brand-navy-deep`}>Buy 3, Get 1 Free</div>
-          </div>
-
-          {/* Front card: the Jeeran Offers pass — stays in normal flow (not
-              absolutely positioned) so it sets this wrapper's height. Same
-              navy, logo treatment (white mark in a ringed circle, as Wallet
-              masks it) and hero photo as the real pass. */}
-          <div
-            className="relative z-20 box-border h-[129px] w-[214px] overflow-hidden rounded-[22px] bg-brand-navy text-white shadow-[0_26px_50px_-18px_rgba(18,41,107,0.55)] sm:h-[150px] sm:w-[250px] sm:rounded-[26px]"
-            style={{ transform: 'rotate(3deg)' }}
-          >
-            <div className="flex items-center gap-2 px-4 pt-3 sm:pt-3.5">
-              <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full ring-1 ring-white/70">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/design/jeeran-mark-white.svg" alt="" className="block h-[13px] w-[13px]" />
-              </span>
-              <span className="text-[10px] font-medium">Jeeran Offers</span>
-            </div>
-            <div className={`${ARCHIVO} mt-1 px-4 text-[15px] font-extrabold whitespace-nowrap tracking-tight sm:mt-1.5`}>
-              Nearby deals for you
-            </div>
-            <div className="absolute inset-x-0 bottom-0 h-[50px] sm:h-[58px]">
-              <Image src="/wallet-pass-hero-v2.jpg" alt="" fill sizes="250px" className="object-cover" />
-              <div className="absolute end-3 bottom-2.5 box-border grid h-8 w-8 grid-cols-4 gap-[1.5px] rounded-[5px] bg-white p-[3px] shadow-sm">
-                {QR_DOTS.map((on, i) => (
-                  <div key={i} className={`rounded-[1px] ${on ? 'bg-brand-navy-deep' : 'bg-transparent'}`} />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Back card: faint neighboring-business offer (Glow Spa) */}
-          <div
-            className="absolute top-0 left-0 z-10 box-border h-[129px] w-[214px] overflow-hidden rounded-[22px] border border-brand-line bg-white px-5 py-[18px] shadow-[0_20px_40px_-20px_rgba(255,107,74,0.25)] sm:h-[150px] sm:w-[250px] sm:rounded-[26px]"
-            style={{ transform: 'rotate(11deg) translate(16px, -25px)' }}
-          >
-            <div className="text-[9px] font-semibold tracking-[0.08em] text-brand-muted">GLOW SPA</div>
-            <div className={`${ARCHIVO} mt-1 text-[15px] font-extrabold text-brand-navy-deep`}>Free Add-On Service</div>
-          </div>
-        </div>
-
-        <div className="absolute right-4 bottom-1.5 h-[60px] w-[60px] rounded-full bg-brand-coral-brand opacity-90" />
-      </div>
-
-      {/* Real marketing copy, so unlike the illustration above it's a normal
-          sibling, not aria-hidden — was previously nested inside that hidden
-          wrapper and invisible to screen readers (BUGS.md item 3). Placed
-          below rather than overlapping the top of the stack (its old
-          bottom-full position collided with the h1 on narrow screens). */}
-      <p dir="ltr" className={`${displayFont(locale)} mt-4 max-w-[280px] text-center text-[14px] leading-[1.5] font-semibold text-[#2E1065]`}>
-        {headline}
-      </p>
     </div>
   )
 }
 
-// Full-bleed navy section with the diagonal clip-path edge and large
-// ghost-numeral typography behind each step.
-function StepSection({ copy, locale }: { copy: LandingCopy; locale: Locale }) {
-  const steps = [
-    { number: '01', accent: '#FF5A79', title: copy.step1Title, body: copy.step1Body },
-    { number: '02', accent: '#FFC93C', title: copy.step2Title, body: copy.step2Body },
-    { number: '03', accent: '#FF5A79', title: copy.step3Title, body: copy.step3Body },
-  ]
-
+function Hero({
+  copy,
+  locale,
+  setLocale,
+  ctaRef,
+}: {
+  copy: LandingCopy
+  locale: Locale
+  setLocale: (l: Locale) => void
+  ctaRef: React.RefObject<HTMLAnchorElement | null>
+}) {
   return (
-    <section
-      className="relative z-10 bg-[#2E1065] px-6 py-[44px] sm:px-12 sm:py-24"
-      // Fixed px inset, not a percentage: at 3% a ~900px-tall mobile section
-      // reads as a much steeper wedge than the same clip on a short desktop
-      // section. A fixed 12px keeps the same visual angle at every height.
-      style={{ clipPath: 'polygon(0 12px, 100% 0, 100% calc(100% - 12px), 0 100%)' }}
-    >
-      <div className="mx-auto grid max-w-[1240px] gap-[34px] sm:grid-cols-3 sm:gap-14">
-        {steps.map((step) => (
-          <Step key={step.number} {...step} locale={locale} />
-        ))}
+    <div className="relative isolate overflow-hidden bg-brand-navy-deep text-white">
+      <Image src={PHOTO} alt={copy.hero.photoAlt} fill preload sizes="100vw" className="-z-20 object-cover object-[center_40%]" />
+      {/* Legibility wash. Phones: the text sits at the top over the bright
+          sky, so the wash stays dense top to bottom (measured ≥ 4.5:1 for
+          white text). Desktop: strongest behind the text column (right in
+          RTL, left in LTR), fading toward the sample card. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,rgba(18,41,107,0.86)_0%,rgba(18,41,107,0.8)_50%,rgba(18,41,107,0.94)_100%)] lg:rtl:bg-[linear-gradient(to_left,rgba(18,41,107,0.9)_0%,rgba(18,41,107,0.64)_46%,rgba(18,41,107,0.14)_100%)] lg:ltr:bg-[linear-gradient(to_right,rgba(18,41,107,0.9)_0%,rgba(18,41,107,0.64)_46%,rgba(18,41,107,0.14)_100%)]"
+      />
+
+      <SiteHeader locale={locale} setLocale={setLocale} tone="dark" />
+
+      <section className="mx-auto grid max-w-[1240px] gap-8 px-[18px] pt-[92px] pb-9 lg:min-h-[600px] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-end lg:gap-9 lg:px-10 lg:pt-[150px] lg:pb-[70px]">
+        <div>
+          <h1 className="mb-3.5 font-display text-[32px] leading-[1.3] font-bold text-balance sm:text-[40px] lg:mb-4 lg:text-[clamp(40px,4.4vw,58px)]">
+            {copy.hero.headline}
+          </h1>
+          <p className="mb-6 max-w-[34em] text-base leading-[1.75] text-brand-tint lg:mb-7 lg:text-lg">{copy.hero.sub}</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <a ref={ctaRef} href="/signup" className={`${BTN_PRIMARY} ${FOCUS_DARK}`}>
+              {copy.hero.ctaOwner}
+            </a>
+            <a href="/browse" className={`${BTN} border border-white/60 bg-brand-navy-deep/55 text-white hover:bg-brand-navy-deep/75 ${FOCUS_DARK}`}>
+              {copy.hero.ctaCustomer}
+            </a>
+          </div>
+          <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-brand-tint-2">
+            {copy.hero.assurances.map((a) => (
+              <li key={a} className="flex items-center gap-2">
+                <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brand-coral-brand" />
+                {a}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <SampleCard copy={copy} />
+      </section>
+    </div>
+  )
+}
+
+// Illustration of the real Google Wallet pass (navy, white mark in a
+// ringed circle, street photo, QR + redeem code), labelled as an example.
+// No shop or offer names, and nothing the real pass doesn't have.
+function SampleCard({ copy }: { copy: LandingCopy }) {
+  return (
+    <figure className="m-0 mx-auto flex w-[min(300px,100%)] flex-col items-center lg:me-0">
+      <div className="w-full overflow-hidden rounded-[22px] bg-brand-navy shadow-[0_24px_50px_rgba(8,16,60,0.45)] lg:rtl:-rotate-[2.5deg] lg:ltr:rotate-[2.5deg]">
+        <div className="flex items-center gap-2.5 px-[18px] pt-4 pb-1.5">
+          <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full ring-1 ring-white/70">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/design/jeeran-mark-white.svg" alt="" className="h-[18px] w-[18px]" />
+          </span>
+          <span className="font-display text-[15px] font-semibold">{copy.brand}</span>
+        </div>
+        <p className="px-[18px] pt-0.5 pb-3 font-display text-[21px] leading-[1.35] font-bold">{copy.sampleCard.title}</p>
+        <div className="px-[18px] pb-3.5 text-xs text-brand-tint-2">
+          {copy.sampleCard.codeLabel}
+          <b dir="ltr" className="block font-display text-sm font-semibold text-white rtl:text-right">
+            ABCD-EFGH
+          </b>
+        </div>
+        <div className="relative h-[110px]">
+          <Image src={PHOTO} alt="" fill sizes="300px" className="object-cover object-[center_60%]" />
+        </div>
+        <div className="m-3.5 flex flex-col items-center gap-2 rounded-xl bg-white p-3 text-brand-navy-deep">
+          <SampleCodePlaceholder />
+          <span dir="ltr" className="font-display text-sm leading-none font-semibold tracking-[0.18em]">
+            ABCD-EFGH
+          </span>
+        </div>
+      </div>
+      <figcaption className="mt-3 rounded-md bg-white/16 px-2.5 py-0.5 text-xs text-white">{copy.sampleCard.label}</figcaption>
+    </figure>
+  )
+}
+
+// Placeholder for the pass barcode: a soft grid of rounded dots in two
+// navy tints. Deliberately nothing like a real QR (no finder squares, no
+// square modules, low contrast) so it can't be mistaken for, or decoded
+// as, a working code. The real pass shows the member's own QR here.
+const DOT_GRID = 9
+const DOTS: number[] = (() => {
+  const levels: number[] = []
+  let seed = 11
+  for (let i = 0; i < DOT_GRID * DOT_GRID; i++) {
+    seed = (seed * 1103515245 + 12345) % 2147483648
+    levels.push(seed % 3) // 0 = gap, 1 = light, 2 = mid
+  }
+  return levels
+})()
+
+function SampleCodePlaceholder() {
+  return (
+    <svg viewBox={`0 0 ${DOT_GRID * 10} ${DOT_GRID * 10}`} width="96" height="96" aria-hidden="true">
+      {DOTS.map((level, i) =>
+        level === 0 ? null : (
+          <circle
+            key={i}
+            cx={(i % DOT_GRID) * 10 + 5}
+            cy={Math.floor(i / DOT_GRID) * 10 + 5}
+            r={3.4}
+            fill={level === 2 ? '#C9D6F4' : '#EAF0FC'}
+          />
+        ),
+      )}
+    </svg>
+  )
+}
+
+function HowItWorks({ copy }: { copy: LandingCopy }) {
+  const icons = [QrIcon, RouteIcon, CardIcon]
+  return (
+    <section aria-labelledby="how-heading" className="mx-auto max-w-[1240px] px-[18px] py-11 lg:px-10 lg:py-[72px]">
+      <p className="mb-2 font-display text-[13px] font-semibold text-brand-coral">{copy.how.eyebrow}</p>
+      <h2 id="how-heading" className="mb-8 max-w-[20em] font-display text-[26px] leading-[1.35] font-bold text-balance lg:mb-9 lg:text-[clamp(26px,3vw,36px)]">
+        {copy.how.heading}
+      </h2>
+      <ol className="grid gap-5 md:grid-cols-3">
+        {copy.how.steps.map((step, i) => {
+          const Icon = icons[i]
+          return (
+            <li key={step.title} className="rounded-2xl border border-brand-line bg-white p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <span className="flex h-[46px] w-[46px] items-center justify-center rounded-xl bg-brand-tint text-brand-navy">
+                  <Icon size={24} strokeWidth={1.8} />
+                </span>
+                <span aria-hidden="true" className="font-display text-sm font-semibold text-brand-muted">
+                  {i + 1}
+                </span>
+              </div>
+              <h3 className="mb-1.5 font-display text-lg font-semibold">{step.title}</h3>
+              <p className="m-0 text-[15px] leading-[1.7] text-brand-muted">{step.body}</p>
+            </li>
+          )
+        })}
+      </ol>
+    </section>
+  )
+}
+
+function ForCustomers({ copy }: { copy: LandingCopy }) {
+  const icons = [ScanIcon, BookmarkIcon, TagIcon]
+  return (
+    <section id="customers" aria-labelledby="customers-heading" className="scroll-mt-4 bg-brand-navy-deep text-white">
+      <div className="mx-auto grid max-w-[1240px] items-center gap-8 px-[18px] py-11 md:grid-cols-2 md:gap-10 lg:px-10 lg:py-[72px]">
+        <div className="relative order-first min-h-[200px] overflow-hidden rounded-[18px] shadow-[0_18px_40px_rgba(0,0,0,0.3)] md:order-last md:min-h-[340px]">
+          <Image src={PHOTO} alt={copy.customers.photoAlt} fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover object-[30%_50%]" />
+        </div>
+        <div>
+          <p className="mb-2 font-display text-[13px] font-semibold text-brand-coral-brand">{copy.customers.eyebrow}</p>
+          <h2 id="customers-heading" className="mb-8 font-display text-[26px] leading-[1.35] font-bold text-balance lg:text-[clamp(26px,3vw,36px)]">
+            {copy.customers.heading}
+          </h2>
+          <ol className="grid gap-4">
+            {copy.customers.rows.map((row, i) => {
+              const Icon = icons[i]
+              return (
+                <li key={row.title} className="flex items-start gap-3.5">
+                  <span className="flex h-[46px] w-[46px] flex-none items-center justify-center rounded-xl bg-white/10">
+                    <Icon size={24} strokeWidth={1.8} />
+                  </span>
+                  <div>
+                    <h3 className="mb-0.5 font-display text-[17px] font-semibold">{row.title}</h3>
+                    <p className="m-0 text-[15px] leading-[1.7] text-brand-tint-2">{row.body}</p>
+                  </div>
+                </li>
+              )
+            })}
+          </ol>
+        </div>
       </div>
     </section>
   )
 }
 
-function Step({
-  number,
-  accent,
-  title,
-  body,
-  locale,
-}: {
-  number: string
-  accent: string
-  title: string
-  body: string
-  locale: Locale
-}) {
+function WhyJeeran({ copy }: { copy: LandingCopy }) {
   return (
-    <div className="relative">
-      <div className={`${ARCHIVO} -mb-8 text-[64px] font-black leading-none text-white/[0.15] sm:-mb-10 sm:text-[110px]`}>
-        {number}
-      </div>
-      <div className="mb-4 h-1 w-[34px] rounded-sm" style={{ background: accent }} />
-      <h3 className={`${displayFont(locale)} mb-2.5 text-xl font-bold text-white sm:text-[22px]`}>{title}</h3>
-      {/* Opacity raised from /70 to /78 — white/70 on #2E1065 is ~4.1:1,
-          under the 4.5:1 floor for 14.5px body text. */}
-      <p className="max-w-[280px] text-sm leading-relaxed text-white/[0.78] sm:text-[15px]">{body}</p>
-    </div>
+    <section aria-labelledby="why-heading" className="mx-auto max-w-[1240px] px-[18px] py-11 lg:px-10 lg:py-[72px]">
+      <p className="mb-2 font-display text-[13px] font-semibold text-brand-coral">{copy.why.eyebrow}</p>
+      <h2 id="why-heading" className="mb-8 font-display text-[26px] leading-[1.35] font-bold text-balance lg:mb-9 lg:text-[clamp(26px,3vw,36px)]">
+        {copy.why.heading}
+      </h2>
+      <ul className="grid gap-6 md:grid-cols-3 md:gap-5">
+        {copy.why.points.map((p) => (
+          <li key={p.title} className="border-t-[3px] border-brand-coral-brand pt-3.5">
+            <h3 className="mb-1 font-display text-lg font-semibold">{p.title}</h3>
+            <p className="m-0 text-[15px] leading-[1.7] text-brand-muted">{p.body}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 
-// New closing section (design_handoff_jeeran_mobile/README.md §8) — today
-// the only CTA is above ~1,100px of content; this gives mobile visitors a
-// second one after reading the steps, without waiting on the sticky bar.
-function ClosingCtaSection({ copy, locale }: { copy: LandingCopy; locale: Locale }) {
+function ClosingCta({ copy }: { copy: LandingCopy }) {
   return (
-    <section className="relative z-10 px-6 py-[44px] text-center sm:px-12 sm:py-10">
-      <h2 className={`${displayFont(locale)} mb-2.5 text-[25px] font-bold leading-[1.3]`}>{copy.closingCtaHeading}</h2>
-      <p className="mx-auto mb-[22px] max-w-[420px] text-[15px] leading-[1.6] text-[#6B5A8C]">{copy.closingCtaSubtitle}</p>
-      <a
-        href="/login"
-        className="inline-block rounded-full bg-[#FF5A79] px-8 py-4 text-[16px] font-semibold text-white shadow-[0_12px_24px_-10px_rgba(255,90,121,0.55)] transition-colors hover:bg-[#E8425F]"
-      >
-        {copy.ctaBusiness}
+    <section aria-labelledby="closing-heading" className="bg-brand-tint px-[18px] py-11 text-center lg:py-[72px]">
+      <h2 id="closing-heading" className="mx-auto mb-2 max-w-[20em] font-display text-[26px] leading-[1.35] font-bold text-balance lg:text-[clamp(26px,3vw,36px)]">
+        {copy.closing.heading}
+      </h2>
+      <p className="mx-auto mb-6 text-brand-muted">{copy.closing.sub}</p>
+      <a href="/signup" className={`${BTN_PRIMARY} ${FOCUS_LIGHT}`}>
+        {copy.hero.ctaOwner}
       </a>
     </section>
   )
