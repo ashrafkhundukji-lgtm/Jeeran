@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import QRCode from 'qrcode'
 import { PDFDocument, rgb, LineCapStyle, type PDFFont, type PDFPage, type RGB } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import sharp from 'sharp'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { fetchLogo, renderLogoQrPng } from '@/lib/qr/logoQr'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -14,7 +14,9 @@ export const dynamic = 'force-dynamic'
 // A4 portrait by default; ?size=a5 gives the same layout scaled to A5 (e.g.
 // a table tent) — the QR stays ≥ 6 cm either way. The QR still encodes
 // exactly `${NEXT_PUBLIC_APP_URL}/scan/<business_id>` (unchanged), drawn
-// pure black on white with a 4-module quiet zone.
+// pure black on white with a 4-module quiet zone, at error-correction level
+// H with the shop logo (or Jeeran mark) in a cleared centre tile — see
+// src/lib/qr/logoQr.ts.
 //
 // Text: the app's own faces, embedded — Readex Pro (shop name) and IBM
 // Plex Sans Arabic (body). fontkit (via pdf-lib) does Arabic joining and
@@ -200,13 +202,14 @@ function fitName(name: string, faces: Face[], maxWidth: number, max: number, min
   return { lines: [lines[0], ellipsize(lines.slice(1).join(' '), faces, min, maxWidth)], size: min }
 }
 
-async function logoPng(url: string | null): Promise<Buffer | null> {
-  if (!url) return null
+async function logoPng(logo: Buffer | null): Promise<Buffer | null> {
+  if (!logo) return null
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
-    if (!res.ok) return null
-    const input = Buffer.from(await res.arrayBuffer())
-    return await sharp(input, { limitInputPixels: 40_000_000 }).resize(512, 512, { fit: 'cover' }).png().toBuffer()
+    return await sharp(logo, { limitInputPixels: 40_000_000 })
+      .resize(512, 512, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
+      .flatten({ background: '#FFFFFF' })
+      .png()
+      .toBuffer()
   } catch {
     return null // a broken logo must never break the sheet — fall back to the Jeeran mark
   }
@@ -255,7 +258,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ busi
   const cx = W / 2
 
   // ── Layout pass: header height depends on logo + how many name lines ──
-  const logo = await logoPng(business.logo_url)
+  const logoSource = await fetchLogo(business.logo_url)
+  const logo = await logoPng(logoSource)
   const name = fitName(business.name, display, contentW, 40 * s, 24 * s)
   const nameLead = name.size * 1.25
   const top = H - 54 * s
@@ -287,7 +291,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ busi
 
   // ── QR: pure black on white, 4-module quiet zone, 9 cm at A4 (≥ 6 cm at A5) ──
   const qrSide = Math.max(9 * CM * s, 6 * CM)
-  const qrPng = await QRCode.toBuffer(scanUrl, { type: 'png', width: 1200, margin: 4, errorCorrectionLevel: 'M', color: { dark: '#000000', light: '#FFFFFF' } })
+  const qrPng = await renderLogoQrPng(scanUrl, logoSource, 1200)
   const qrImg = await doc.embedPng(qrPng)
   const qrTop = bandBottom - 34 * s
   const qrX = cx - qrSide / 2
