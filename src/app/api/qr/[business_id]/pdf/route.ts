@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import QRCode from 'qrcode'
 import { PDFDocument, rgb, LineCapStyle, type PDFFont, type PDFPage, type RGB } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import sharp from 'sharp'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { renderJeeranQrPng } from '@/lib/qr/jeeranQr'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 // ── QR sheet (print) ─────────────────────────────────────────────────────
 // A4 portrait by default; ?size=a5 gives the same layout scaled to A5 (e.g.
-// a table tent) — the QR stays ≥ 6 cm either way. The QR still encodes
+// a table tent). The QR is ~11.5 cm at A4 (~8 cm at A5) and still encodes
 // exactly `${NEXT_PUBLIC_APP_URL}/scan/<business_id>` (unchanged), drawn
-// pure black on white with a 4-module quiet zone.
+// pure black on white with a 4-module quiet zone, at error-correction level
+// H with the Jeeran mark in a cleared centre tile (the same for every
+// shop) — see src/lib/qr/jeeranQr.ts. The shop's own logo is only in the
+// header, above its name.
 //
 // Text: the app's own faces, embedded — Readex Pro (shop name) and IBM
 // Plex Sans Arabic (body). fontkit (via pdf-lib) does Arabic joining and
@@ -206,7 +209,12 @@ async function logoPng(url: string | null): Promise<Buffer | null> {
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
     if (!res.ok) return null
     const input = Buffer.from(await res.arrayBuffer())
-    return await sharp(input, { limitInputPixels: 40_000_000 }).resize(512, 512, { fit: 'cover' }).png().toBuffer()
+    // contain, not cover: wide or tall logos are shown whole, never cropped.
+    return await sharp(input, { limitInputPixels: 40_000_000 })
+      .resize(512, 512, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
+      .flatten({ background: '#FFFFFF' })
+      .png()
+      .toBuffer()
   } catch {
     return null // a broken logo must never break the sheet — fall back to the Jeeran mark
   }
@@ -256,12 +264,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ busi
 
   // ── Layout pass: header height depends on logo + how many name lines ──
   const logo = await logoPng(business.logo_url)
-  const name = fitName(business.name, display, contentW, 40 * s, 24 * s)
+  const name = fitName(business.name, display, contentW, 34 * s, 22 * s)
   const nameLead = name.size * 1.25
-  const top = H - 54 * s
-  const logoBox = logo ? 110 * s : 64 * s
-  const nameTop = top - logoBox - 24 * s
-  const bandBottom = nameTop - name.lines.length * nameLead - 30 * s
+  const top = H - 44 * s
+  const logoBox = logo ? 86 * s : 56 * s
+  const nameTop = top - logoBox - 16 * s
+  const bandBottom = nameTop - name.lines.length * nameLead - 24 * s
+
+  // Explanation lines (measured now: the QR + text block is centred in the
+  // space between the header band and the footer).
+  const arSize = 19 * s
+  const arLead = arSize * 1.6
+  const enSize = 15 * s
+  const enLead = enSize * 1.5
+  const arLines = wrap(EXPLAIN_AR, bodyBold, arSize, contentW - 20 * s)
+  const enLines = wrap(EXPLAIN_EN, body, enSize, contentW - 20 * s)
+  const textH = arSize * 0.8 + (arLines.length - 1) * arLead + 6 * s + enLines.length * enLead
+  const footY = 38 * s
+  const footSize = 11 * s
+  const footTop = footY + footSize + 14 * s
 
   // Cream header band + hairline frame — the only decoration (no grids or
   // dotted patterns; they muddy cheap prints).
@@ -272,7 +293,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ busi
   // ── Header: shop logo (or the Jeeran mark) + shop name ──
   if (logo) {
     const img = await doc.embedPng(logo)
-    const d = 104 * s
+    const d = 80 * s
     page.drawRectangle({ x: cx - d / 2 - 3 * s, y: top - d - 3 * s, width: d + 6 * s, height: d + 6 * s, color: WHITE, borderColor: LINE, borderWidth: 1.5 * s })
     page.drawImage(img, { x: cx - d / 2, y: top - d, width: d, height: d })
   } else {
@@ -283,35 +304,40 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ busi
     drawBidiLine(page, line, display, name.size, cx, y, NAVY_DEEP, baseDir(business.name))
     y -= nameLead
   }
-  page.drawLine({ start: { x: cx - 28 * s, y: bandBottom + 16 * s }, end: { x: cx + 28 * s, y: bandBottom + 16 * s }, thickness: 4 * s, color: CORAL, lineCap: LineCapStyle.Round })
+  page.drawLine({ start: { x: cx - 28 * s, y: bandBottom + 12 * s }, end: { x: cx + 28 * s, y: bandBottom + 12 * s }, thickness: 4 * s, color: CORAL, lineCap: LineCapStyle.Round })
 
-  // ── QR: pure black on white, 4-module quiet zone, 9 cm at A4 (≥ 6 cm at A5) ──
-  const qrSide = Math.max(9 * CM * s, 6 * CM)
-  const qrPng = await QRCode.toBuffer(scanUrl, { type: 'png', width: 1200, margin: 4, errorCorrectionLevel: 'M', color: { dark: '#000000', light: '#FFFFFF' } })
+  // ── QR: pure black on white, 4-module quiet zone, level H ──
+  // 11.5 cm at A4 (8.1 cm at A5); grows towards 12 cm when the header is
+  // short, shrinks (to 11 cm at most) only if a very long name needs it.
+  const textGap = 32 * s
+  const region = bandBottom - footTop
+  const fixed = 20 * s + textGap + textH
+  const minGap = 18 * s
+  const roomy = region - fixed - 2 * 40 * s // with comfortable gaps
+  const tight = region - fixed - 2 * minGap // the most that fits
+  const qrSide = Math.max(11 * CM * s, Math.min(tight, Math.max(11.5 * CM * s, Math.min(12 * CM * s, roomy))))
+  const slack = Math.max(0, region - fixed - qrSide)
+  const qrPng = await renderJeeranQrPng(scanUrl, 1600)
   const qrImg = await doc.embedPng(qrPng)
-  const qrTop = bandBottom - 34 * s
+  const qrTop = bandBottom - slack * 0.5 - 10 * s
   const qrX = cx - qrSide / 2
   const qrY = qrTop - qrSide
   page.drawRectangle({ x: qrX - 10 * s, y: qrY - 10 * s, width: qrSide + 20 * s, height: qrSide + 20 * s, color: WHITE, borderColor: NAVY, borderWidth: 2 * s })
   page.drawImage(qrImg, { x: qrX, y: qrY, width: qrSide, height: qrSide })
 
   // ── Bilingual explanation: Arabic first, then English ──
-  y = qrY - 10 * s - 44 * s
-  const arSize = 19 * s
-  for (const line of wrap(EXPLAIN_AR, bodyBold, arSize, contentW - 20 * s)) {
+  y = qrY - 10 * s - textGap - arSize * 0.8
+  for (const line of arLines) {
     drawBidiLine(page, line, bodyBold, arSize, cx, y, NAVY_DEEP, 'rtl')
-    y -= arSize * 1.6
+    y -= arLead
   }
   y -= 6 * s
-  const enSize = 15 * s
-  for (const line of wrap(EXPLAIN_EN, body, enSize, contentW - 20 * s)) {
+  for (const line of enLines) {
     drawBidiLine(page, line, body, enSize, cx, y, NAVY, 'ltr')
-    y -= enSize * 1.5
+    y -= enLead
   }
 
   // ── Footer: Jeeran, small ──
-  const footY = 42 * s
-  const footSize = 11 * s
   const brand = 'Jeeran · جيران'
   const brandW = measure(brand, bodyBold, footSize)
   const markSize = 16 * s
