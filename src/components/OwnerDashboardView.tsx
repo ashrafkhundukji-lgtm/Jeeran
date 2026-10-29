@@ -31,7 +31,7 @@ import {
 import { useLocale } from '@/lib/i18n/useLocale'
 import type { Locale } from '@/lib/i18n/locale'
 import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
-import { OWNER_UI_COPY, fill, type OwnerUiCopy } from '@/lib/i18n/ownerUi'
+import { INTL_LOCALE, OWNER_UI_COPY, fill, type OwnerUiCopy } from '@/lib/i18n/ownerUi'
 import { WALLET_HOME_COPY } from '@/lib/i18n/walletHome'
 import { CATEGORY_LABELS } from '@/lib/categories'
 import type { PromotionLevel, PromotionThresholds } from '@/lib/promotion'
@@ -51,6 +51,7 @@ export default function OwnerDashboardView({
   logoUrl,
   coverUrl,
   isSubscriptionActive,
+  exposure,
   adCredits,
   scansHosted,
   customersAcquired,
@@ -73,6 +74,11 @@ export default function OwnerDashboardView({
   logoUrl: string | null
   coverUrl: string | null
   isSubscriptionActive: boolean
+  // shop_exposure_status(): whether customers see this shop at all, and
+  // whether that's only the grace period after the trial/subscription
+  // ended (endsAt = when exposure stops). Null if the lookup failed — then
+  // the plain subscription flag decides the notice, as before.
+  exposure: { exposed: boolean; inGrace: boolean; endsAt: string } | null
   adCredits: number
   scansHosted: number
   customersAcquired: number
@@ -149,7 +155,19 @@ export default function OwnerDashboardView({
           </div>
         </section>
 
-        {!isSubscriptionActive && (
+        {exposure?.inGrace ? (
+          <Notice
+            tone="warning"
+            icon={<AlertIcon size={20} />}
+            action={
+              <a href="/dashboard/billing" className="shrink-0 self-center text-sm font-semibold text-brand-coral underline underline-offset-4">
+                {DASHBOARD_COPY[locale].subscriptionBanner.manageBilling}
+              </a>
+            }
+          >
+            {fill(copy.balance.grace, { date: formatInstant(exposure.endsAt, locale) })}
+          </Notice>
+        ) : (exposure ? !exposure.exposed : !isSubscriptionActive) && (
           <Notice
             tone="warning"
             icon={<AlertIcon size={20} />}
@@ -229,6 +247,16 @@ export default function OwnerDashboardView({
                 />
               </div>
               <WindowNotice campaign={activeCampaign} copy={copy} locale={locale} />
+              {adCredits < activeCampaign.bid_per_view && (
+                <div className="px-4 pb-3">
+                  <Notice tone="warning" icon={<AlertIcon size={18} />}>
+                    {fill(copy.offer.pausedCredits, { bid: activeCampaign.bid_per_view })}{' '}
+                    <a href="/dashboard/billing" className="font-semibold underline underline-offset-4">
+                      {copy.balance.topUp}
+                    </a>
+                  </Notice>
+                </div>
+              )}
               <a
                 href={`/offers/${activeCampaign.id}`}
                 className="flex min-h-12 items-center gap-2 border-t border-brand-line px-4 text-sm font-semibold text-brand-navy active:bg-brand-tint"
@@ -315,6 +343,11 @@ export default function OwnerDashboardView({
 
 // Active (switched on) but outside its dates: customers don't see it and it
 // can't be redeemed — say so on the card instead of implying it's live.
+// A timestamp (not a calendar day like formatDay) shown as its Riyadh date.
+function formatInstant(iso: string, locale: Locale): string {
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Riyadh' }).format(new Date(iso))
+}
+
 function WindowNotice({ campaign, copy, locale }: { campaign: OwnerCampaign; copy: OwnerUiCopy; locale: Locale }) {
   const state = offerWindowState(campaign.start_date, campaign.end_date)
   if (state === 'live') return null

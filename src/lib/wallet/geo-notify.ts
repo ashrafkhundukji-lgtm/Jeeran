@@ -36,9 +36,10 @@
  *    notification_headlines (supabase/migrations/
  *    20261029_notification_headlines.sql), which drives the repeat limit,
  *    the one-time intro and the owner's "seen on lock screens" numbers.
- *    All sends share the per-day slot ledger (claim_notification_slot(),
- *    capped at promotion_settings.max_daily_wallet_notifications — Google's
- *    own hard 3 per object per 24h). The old 06:00 batch and its daily
+ *    All sends share the slot ledger (claim_notification_slot(): at most
+ *    promotion_settings.max_daily_wallet_notifications per member in any
+ *    rolling 24 h — Google's own hard 3 per object per 24h; see
+ *    20261031c_rolling_notification_slots.sql). The old 06:00 batch and its daily
  *    "same top offer" reminder are gone: a member with nothing worth a
  *    headline gets no ping.
  *  - Instant Notify add-on: a paid subscription (business_addons, addon_key
@@ -46,13 +47,14 @@
  *    lets a business's own campaign skip the wait for the next send window and fire its
  *    push right away, via notifyInstantOffer() below, called from
  *    notifyMembersNearBusiness() alongside the existing silent card refresh.
- *    It shares the SAME per-day slot ledger (wallet_members.
- *    notifications_sent_date/notifications_sent_count, via
- *    claim_notification_slot()) that sendWindowNotifications() draws
+ *    It shares the SAME rolling-24h slot ledger (notification_slot_claims,
+ *    via claim_notification_slot()) that sendWindowNotifications() draws
  *    from, so an instant send reduces what's left for the windows rather
  *    than adding capacity beyond promotion_settings.max_daily_wallet_notifications.
  *    Each instant send is also logged as that shop's headline, so the
- *    repeat limit applies to it.
+ *    windows' repeat limit counts it (the instant send itself isn't
+ *    subject to that limit) and it counts toward the member's ping for
+ *    the day.
  *    Does NOT change card content/ranking (nearby_active_offers() is
  *    untouched) — only which offers get an actual lock-screen push, and
  *    only for offers that already made this member's card (see
@@ -60,8 +62,8 @@
  */
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { patchMembershipObject, notifyNewOffer, notifyHeadline, type NearbyOffer } from './google-membership-pass'
-import { pickHeadline, type Candidate, type HeadlineKind, type HeadlineSettings, type MemberHistory } from './headlines'
+import { patchMembershipObject, notifyHeadline, type NearbyOffer } from './google-membership-pass'
+import { pickForShop, pickHeadline, type Candidate, type HeadlineKind, type HeadlineSettings, type MemberHistory } from './headlines'
 import { resolveOfferContent } from './offer-locale'
 import { INSTANT_NOTIFY_ADDON_KEY } from '@/lib/billing/catalog'
 import type { Locale } from '@/lib/i18n/locale'
@@ -161,21 +163,18 @@ export async function notifyMembersNearBusiness(businessLat: number, businessLng
   }
   if (!addon?.is_active) return
 
-  const { data: settings, error: settingsError } = await supabaseAdmin
-    .from('promotion_settings')
-    .select('max_daily_wallet_notifications')
-    .limit(1)
-    .maybeSingle()
-  if (settingsError) {
-    console.error('notifyMembersNearBusiness: promotion_settings lookup failed', { businessId, err: settingsError })
+  let settings: NotifySettings
+  try {
+    settings = await loadNotifySettings()
+  } catch (err) {
+    console.error('notifyMembersNearBusiness: promotion_settings lookup failed', { businessId, err })
     return
   }
-  const cap = settings?.max_daily_wallet_notifications ?? 3
-  if (cap <= 0) return // admin has paused pushes entirely
+  if (settings.cap <= 0) return // admin has paused pushes entirely
 
   await Promise.all(
     memberList.map((m) =>
-      notifyInstantOffer(m, businessId, cap).catch((err) => {
+      notifyInstantOffer(m, businessId, settings).catch((err) => {
         console.error('notifyInstantOffer failed', { memberId: m.id, businessId, err })
       }),
     ),
@@ -184,12 +183,14 @@ export async function notifyMembersNearBusiness(businessLat: number, businessLng
 
 /**
  * Instant Notify add-on: fires an immediate lock-screen push for THIS
- * business's own offer to one member, ahead of the next send window.
- * Same version-diff spam check and shared slot ledger as
- * sendWindowNotifications() — an instant subscription buys priority/timing, never a bypass of
- * "genuinely new/changed content only."
+ * business's own offer to one member, ahead of the next send window. The
+ * ping is a normal headline (notifyHeadline(): this shop as the headline,
+ * plus the same "also near you" names). Limits: the shared slot ledger
+ * (max_daily_wallet_notifications, Google's 3 per card) and no repeat of an
+ * unchanged offer. The windows' daily base limit and 7-day repeat limit do
+ * NOT apply — that immediacy is what the subscription buys.
  */
-async function notifyInstantOffer(member: WalletMember, businessId: string, cap: number) {
+async function notifyInstantOffer(member: WalletMember, businessId: string, { cap, headline: settings }: NotifySettings) {
   if (!member.google_object_id) return
 
   // Independent recompute, same as refreshMember()
@@ -210,19 +211,27 @@ async function notifyInstantOffer(member: WalletMember, businessId: string, cap:
   // on the card either, so it doesn't get an instant push — the add-on only
   // accelerates WHEN an already card-eligible offer notifies, never WHETHER
   // it's eligible.
-  const offer = ((offers ?? []) as NearbyOffer[]).find((o) => o.business_id === businessId)
-  if (!offer) return
+  if (!((offers ?? []) as NearbyOffer[]).some((o) => o.business_id === businessId)) return
 
-  // Same {offer_id: offer_updated_at} version-diff technique the send
-  // windows maintain in notified_offer_versions (NOT
-  // last_notified_offers, which tracks card content, not pushes) — an offer
-  // that hasn't changed since it last consumed a slot doesn't re-consume one
-  // just because the business is a paying instant-notify subscriber.
-  // `?? {}` covers refreshMember()'s callers, which build a WalletMember
-  // literal without this field (they never read it) — see that interface's
-  // comment.
+  // Never re-send an offer this member was already pinged about in this
+  // exact version ({offer_id: offer_updated_at}, the same map the windows
+  // write) — so toggling or re-saving unchanged content can't spend a slot.
+  // This is the only per-offer guard: the windows' daily base limit and
+  // 7-day repeat limit deliberately don't apply to Instant Notify.
   const alreadyNotified = member.notified_offer_versions ?? {}
-  if (alreadyNotified[offer.offer_id] === offer.offer_updated_at) return
+  const own = ((offers ?? []) as NearbyOffer[]).find((o) => o.business_id === businessId)
+  if (own && alreadyNotified[own.offer_id] === own.offer_updated_at) return
+
+  const { data: candidates, error: candidatesError } = await supabaseAdmin.rpc('notification_candidates', {
+    p_lat: member.home_lat,
+    p_lng: member.home_lng,
+    p_radius_km: member.push_radius_km,
+  })
+  if (candidatesError) throw candidatesError
+  const now = new Date()
+  const history = await loadMemberHistory(member.id, settings, now)
+  const pick = pickForShop((candidates ?? []) as Candidate[], businessId, history, settings, now)
+  if (!pick) return
 
   // Atomic claim against the SAME per-day ledger sendWindowNotifications() draws
   // from — whichever caller's claim lands first wins the slot
@@ -242,9 +251,9 @@ async function notifyInstantOffer(member: WalletMember, businessId: string, cap:
   try {
     const preferredLanguage = member.preferred_language ?? null
     const resolvedTitle = preferredLanguage
-      ? (await resolveOfferContent([offer], preferredLanguage)).get(offer.offer_id)?.title
+      ? (await resolveOfferContent([pick.headline], preferredLanguage)).get(pick.headline.offer_id)?.title
       : undefined
-    await notifyNewOffer(member.google_object_id, offer, preferredLanguage, resolvedTitle)
+    await notifyHeadline(member.google_object_id, pick, preferredLanguage, resolvedTitle)
   } catch (err) {
     // Give the claimed slot back — a transient send failure shouldn't
     // permanently burn a slot from today's shared budget for nothing (see
@@ -260,10 +269,12 @@ async function notifyInstantOffer(member: WalletMember, businessId: string, cap:
   await supabaseAdmin
     .from('wallet_members')
     .update({
-      notified_offer_versions: { ...alreadyNotified, [offer.offer_id]: offer.offer_updated_at },
+      notified_offer_versions: { ...(member.notified_offer_versions ?? {}), [pick.headline.offer_id]: pick.headline.offer_updated_at },
     })
     .eq('id', member.id)
-  await recordHeadline(member.id, offer, 'instant', [])
+  // An intro stays an intro whatever triggered it, so a window won't
+  // introduce the same shop again.
+  await recordHeadline(member.id, pick.headline, pick.kind === 'intro' ? 'intro' : 'instant', pick.mentions)
 }
 
 /** Periodic sweep across every registered member. */
@@ -399,7 +410,49 @@ async function forEachLimit<T>(items: T[], limit: number, fn: (item: T) => Promi
   )
 }
 
-async function loadNotifySettings(): Promise<{ cap: number; headline: HeadlineSettings }> {
+interface NotifySettings {
+  cap: number
+  headline: HeadlineSettings
+}
+
+interface HeadlineRow {
+  business_id: string
+  kind: string
+  sent_at: string
+}
+
+const emptyHistory = (): MemberHistory => ({ lastHeadlineAt: new Map(), introduced: new Set(), sentToday: 0 })
+
+// Intros only matter within newShopDays of a shop's first offer, so the
+// same lookback as the repeat limit covers them.
+function historySince(settings: HeadlineSettings, now: Date): string {
+  const lookbackDays = Math.max(settings.repeatDays, settings.newShopDays) + 1
+  return new Date(now.getTime() - lookbackDays * 86_400_000).toISOString()
+}
+
+function addToHistory(h: MemberHistory, r: HeadlineRow, dayStart: Date) {
+  const at = new Date(r.sent_at)
+  const prev = h.lastHeadlineAt.get(r.business_id)
+  if (!prev || at > prev) h.lastHeadlineAt.set(r.business_id, at)
+  if (r.kind === 'intro') h.introduced.add(r.business_id)
+  if (at >= dayStart) h.sentToday++
+}
+
+// One member's history — for Instant Notify, which fires outside a window.
+async function loadMemberHistory(memberId: string, settings: HeadlineSettings, now: Date): Promise<MemberHistory> {
+  const { data, error } = await supabaseAdmin
+    .from('notification_headlines')
+    .select('business_id, kind, sent_at')
+    .eq('member_id', memberId)
+    .gte('sent_at', historySince(settings, now))
+  if (error) throw error
+  const h = emptyHistory()
+  const dayStart = startOfRiyadhDay(now)
+  for (const r of (data ?? []) as HeadlineRow[]) addToHistory(h, r, dayStart)
+  return h
+}
+
+async function loadNotifySettings(): Promise<NotifySettings> {
   const { data, error } = await supabaseAdmin
     .from('promotion_settings')
     .select(
@@ -455,11 +508,9 @@ export async function sendWindowNotifications(opts: { dryRun?: boolean } = {}): 
   )
   summary.members = members.length
 
-  // Everyone's recent headlines in one pass. Intros only matter within
-  // newShopDays of a shop's first offer, so the same lookback covers them.
-  const lookbackDays = Math.max(settings.repeatDays, settings.newShopDays) + 1
-  const since = new Date(now.getTime() - lookbackDays * 86_400_000).toISOString()
-  const rows = await fetchAll<{ member_id: string; business_id: string; kind: string; sent_at: string }>((from, to) =>
+  // Everyone's recent headlines in one pass.
+  const since = historySince(settings, now)
+  const rows = await fetchAll<HeadlineRow & { member_id: string }>((from, to) =>
     supabaseAdmin
       .from('notification_headlines')
       .select('member_id, business_id, kind, sent_at')
@@ -471,12 +522,8 @@ export async function sendWindowNotifications(opts: { dryRun?: boolean } = {}): 
   const histories = new Map<string, MemberHistory>()
   for (const r of rows) {
     let h = histories.get(r.member_id)
-    if (!h) histories.set(r.member_id, (h = { lastHeadlineAt: new Map(), introduced: new Set(), sentToday: 0 }))
-    const at = new Date(r.sent_at)
-    const prev = h.lastHeadlineAt.get(r.business_id)
-    if (!prev || at > prev) h.lastHeadlineAt.set(r.business_id, at)
-    if (r.kind === 'intro') h.introduced.add(r.business_id)
-    if (at >= dayStart) h.sentToday++
+    if (!h) histories.set(r.member_id, (h = emptyHistory()))
+    addToHistory(h, r, dayStart)
   }
 
   const byShop = new Map<string, WindowSummary['byShop'][number]>()

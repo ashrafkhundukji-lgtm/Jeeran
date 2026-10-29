@@ -40,6 +40,7 @@ export interface OwnerUiCopy {
     empty: string
     topUp: string
     inactive: string
+    grace: string // {date} — exposure stops
   }
   tier: {
     explain: string // a11y label on the badge button
@@ -93,6 +94,7 @@ export interface OwnerUiCopy {
     endedNotice: string // {date}
     scheduledNotice: string // {date}
     spent: string // {n}
+    pausedCredits: string // {bid}
   }
   qr: {
     heading: string
@@ -285,6 +287,7 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       empty: 'نفد رصيدك — لن يظهر عرضك حتى تشحن.',
       topUp: 'شحن الرصيد',
       inactive: 'اشتراكك غير نشط — لن تظهر عروضك للعملاء القريبين.',
+      grace: 'انتهت فترتك التجريبية أو اشتراكك. ستبقى عروضك ظاهرة للعملاء حتى {date}، ثم تتوقف. اشترك لتبقى ظاهرًا.',
     },
     tier: {
       explain: 'ما معنى المستوى؟',
@@ -338,6 +341,7 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       endedNotice: 'انتهت مدة هذا العرض في {date}، ولم يعد يظهر للعملاء أو يُستبدل. عدّل تاريخ الانتهاء أو أوقفه.',
       scheduledNotice: 'هذا العرض مُجدول: يبدأ ظهوره للعملاء في {date}.',
       spent: 'صُرف {n}',
+      pausedCredits: 'عرضك متوقف: رصيدك أقل من سعر العرض ({bid}). لن يراه العملاء حتى تشحن رصيدك.',
     },
     qr: {
       heading: 'ملصق QR لمحلك',
@@ -528,6 +532,7 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       empty: "You're out of credit — your offer won't show until you top up.",
       topUp: 'Top up',
       inactive: "Your subscription is inactive — nearby customers won't see your offers.",
+      grace: 'Your trial or subscription has ended. Customers keep seeing your offers until {date}, then they stop. Subscribe to stay visible.',
     },
     tier: {
       explain: 'What does this tier mean?',
@@ -581,6 +586,7 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       endedNotice: 'This offer ended on {date}. Customers no longer see it and it can’t be redeemed. Change the end date or pause it.',
       scheduledNotice: 'Scheduled: customers start seeing this offer on {date}.',
       spent: '{n} spent',
+      pausedCredits: "Your offer is paused: credits below the bid ({bid}). Customers won't see it until you top up.",
     },
     qr: {
       heading: 'Your QR sheet',
@@ -771,6 +777,7 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       empty: 'بیلنس ختم ہو گیا — ٹاپ اپ کرنے تک آپ کی آفر نظر نہیں آئے گی۔',
       topUp: 'بیلنس ٹاپ اپ کریں',
       inactive: 'آپ کی سبسکرپشن غیر فعال ہے — قریبی گاہک آپ کی آفرز نہیں دیکھیں گے۔',
+      grace: 'آپ کا ٹرائل یا سبسکرپشن ختم ہو گیا ہے۔ گاہک {date} تک آپ کی آفرز دیکھتے رہیں گے، پھر یہ رک جائیں گی۔ نظر آتے رہنے کے لیے سبسکرائب کریں۔',
     },
     tier: {
       explain: 'اس درجے کا کیا مطلب ہے؟',
@@ -824,6 +831,7 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       endedNotice: 'یہ آفر {date} کو ختم ہو گئی۔ گاہک اب اسے نہیں دیکھتے اور یہ ریڈیم نہیں ہو سکتی۔ اختتامی تاریخ بدلیں یا اسے روک دیں۔',
       scheduledNotice: 'شیڈول شدہ: گاہک یہ آفر {date} سے دیکھیں گے۔',
       spent: '{n} خرچ',
+      pausedCredits: 'آپ کی آفر رکی ہوئی ہے: بیلنس بولی ({bid}) سے کم ہے۔ ٹاپ اپ کرنے تک گاہک اسے نہیں دیکھیں گے۔',
     },
     qr: {
       heading: 'آپ کی QR شیٹ',
