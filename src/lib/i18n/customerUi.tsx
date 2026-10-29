@@ -84,8 +84,6 @@ export interface CustomerUiCopy {
     noOffersBody: string
     invite: string
     inviteText: string
-    geoTitle: string
-    geoBody: string
     errorTitle: string
     errorBody: string
   }
@@ -175,8 +173,6 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       noOffersBody: 'نضيف محلات جديدة باستمرار. ادعُ محلك المفضل لينضم إلى جيران.',
       invite: 'ادعُ محلًا في حيّك',
       inviteText: 'انضم إلى جيران واعرض عروض محلك لسكان الحي:',
-      geoTitle: 'لم نتمكن من تحديد موقعك',
-      geoBody: 'فعّل إذن الموقع في المتصفح لنعرض لك العروض الأقرب إليك.',
       errorTitle: 'حدث خطأ',
       errorBody: 'تعذّر تحميل العروض. تحقق من اتصالك وحاول مرة أخرى.',
     },
@@ -250,8 +246,6 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       noOffersBody: 'New shops join all the time. Invite your favourite one to Jeeran.',
       invite: 'Invite a shop near you',
       inviteText: 'Join Jeeran and show your shop’s offers to the neighbourhood:',
-      geoTitle: "We couldn't find your location",
-      geoBody: 'Allow location access in your browser so we can show the offers closest to you.',
       errorTitle: 'Something went wrong',
       errorBody: "We couldn't load offers. Check your connection and try again.",
     },
@@ -326,8 +320,6 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       noOffersBody: 'نئی دکانیں مسلسل شامل ہو رہی ہیں۔ اپنی پسندیدہ دکان کو جیران میں مدعو کریں۔',
       invite: 'اپنے محلے کی دکان کو مدعو کریں',
       inviteText: 'جیران میں شامل ہوں اور اپنی دکان کی آفرز محلے کو دکھائیں:',
-      geoTitle: 'آپ کا مقام معلوم نہیں ہو سکا',
-      geoBody: 'براؤزر میں لوکیشن کی اجازت دیں تاکہ ہم آپ کو قریب ترین آفرز دکھا سکیں۔',
       errorTitle: 'کچھ غلط ہو گیا',
       errorBody: 'آفرز لوڈ نہیں ہو سکیں۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔',
     },
