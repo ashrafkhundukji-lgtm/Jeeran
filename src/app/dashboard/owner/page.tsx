@@ -46,8 +46,15 @@ export default async function OwnerDashboardPage() {
   // bucketed into the last 7 days vs the 7 before. Spend per offer comes
   // from the ad_credit_transfers ledger (20261017c), which only has rows
   // from the day it was introduced onward.
-  const [{ data: weeklyRows, error: weeklyError }, { data: redemptionRows }, { data: transferRows }] = await Promise.all([
+  const [
+    { data: weeklyRows, error: weeklyError },
+    { data: notifyRows, error: notifyError },
+    { data: redemptionRows },
+    { data: transferRows },
+  ] = await Promise.all([
     supabaseAdmin.rpc('get_owner_weekly_metrics', { p_business_id: business.id }),
+    // Lock-screen headlines/mentions (20261029_notification_headlines.sql).
+    supabaseAdmin.rpc('get_owner_notification_metrics', { p_business_id: business.id }),
     campaignIds.length
       ? supabaseAdmin.from('redemptions').select('offer_id').eq('business_id', business.id).in('offer_id', campaignIds)
       : Promise.resolve({ data: [] as { offer_id: string }[] }),
@@ -56,6 +63,7 @@ export default async function OwnerDashboardPage() {
       : Promise.resolve({ data: [] as { offer_id: string; amount: number }[] }),
   ])
   const weekly = weeklyError ? null : weeklyRows?.[0]
+  const notify = notifyError ? null : notifyRows?.[0]
 
   // Per-campaign redemptions — the only per-campaign stat the data model
   // records (no per-campaign view/impression or spend log exists today).
@@ -77,6 +85,15 @@ export default async function OwnerDashboardPage() {
       customersAcquired={metrics?.customers_acquired ?? 0}
       scansWeek={weekly ? { thisWeek: Number(weekly.scans_this_week), lastWeek: Number(weekly.scans_last_week) } : null}
       acquiredWeek={weekly ? { thisWeek: Number(weekly.acquired_this_week), lastWeek: Number(weekly.acquired_last_week) } : null}
+      lockScreen={
+        notify
+          ? {
+              total: Number(notify.headlines_total),
+              week: { thisWeek: Number(notify.headlines_this_week), lastWeek: Number(notify.headlines_last_week) },
+              mentionsThisWeek: Number(notify.mentions_this_week),
+            }
+          : null
+      }
       campaigns={campaigns ?? []}
       redemptionsByCampaign={redemptionsByCampaign}
       spentByCampaign={spentByCampaign}

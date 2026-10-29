@@ -14,6 +14,7 @@ import { LOCALES } from '@/lib/i18n/locale'
 import { DASHBOARD_COPY } from '@/lib/i18n/dashboard'
 import { OWNER_UI_COPY, fill } from '@/lib/i18n/ownerUi'
 import { campaignErrorCopyFor } from '@/lib/campaignErrors'
+import { useClientValue } from './useClientValue'
 
 export interface CampaignFormBusiness {
   id: string
@@ -77,6 +78,8 @@ export default function CampaignForm({
   const [locale] = useLocale()
   const copy = OWNER_UI_COPY[locale]
   const f = copy.form
+  // Client-only (the server render shows nothing): depends on the clock.
+  const nextWindow = useClientValue<NotifyWindow | null>(nextNotifyWindow, null)
   const campaignsCopy = DASHBOARD_COPY[locale].campaigns
   const ids = useId()
 
@@ -373,13 +376,22 @@ export default function CampaignForm({
             {views > 0 ? fill(f.bidEstimate, { n: views.toLocaleString('en'), balance: business.ad_credits.toLocaleString('en') }) : f.bidEstimateNone}
           </p>
           <ul className="mt-3 flex flex-col gap-1.5 text-[13px] leading-relaxed text-brand-muted">
-            {[f.bidExplain, f.bidTier, f.bidReach].map((t) => (
+            {[f.bidExplain, f.bidNotify, f.bidTier, f.bidReach].map((t) => (
               <li key={t} className="flex gap-2">
                 <InfoIcon size={15} className="mt-0.5 shrink-0 text-brand-navy" />
                 <span>{t}</span>
               </li>
             ))}
           </ul>
+          {nextWindow && (
+            <p className={`${HINT} mt-3`}>
+              {fill(f.notifyHint, {
+                when: fill(nextWindow === 'tomorrow-midday' ? f.notifyTomorrow : f.notifyToday, {
+                  time: nextWindow === 'today-evening' ? f.notifyEvening : f.notifyMidday,
+                }),
+              })}
+            </p>
+          )}
         </Card>
 
         {/* Dates */}
@@ -538,4 +550,16 @@ function BackInterceptor({ dirty, onIntercept }: { dirty: boolean; onIntercept: 
     return () => document.removeEventListener('click', onClick, true)
   }, [dirty, onIntercept])
   return null
+}
+
+// The two lock-screen send windows, 12:30 and 19:30 Riyadh (UTC+3, no DST) —
+// the pg_cron schedule for /api/cron/wallet-notify.
+type NotifyWindow = 'today-midday' | 'today-evening' | 'tomorrow-midday'
+
+function nextNotifyWindow(): NotifyWindow {
+  const riyadh = new Date(Date.now() + 3 * 3_600_000)
+  const minutes = riyadh.getUTCHours() * 60 + riyadh.getUTCMinutes()
+  if (minutes < 12 * 60 + 30) return 'today-midday'
+  if (minutes < 19 * 60 + 30) return 'today-evening'
+  return 'tomorrow-midday'
 }

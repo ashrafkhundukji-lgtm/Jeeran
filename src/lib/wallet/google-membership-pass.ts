@@ -631,52 +631,58 @@ export async function notifyNewOffer(
 }
 
 /**
- * Fires a daily-floor "reminder" push when a member had nothing genuinely
- * new/changed to hear about that day (geo-notify.ts's sendDailyNotificationBatch
- * falls back to this instead of sending nothing). Re-surfaces whatever offer
- * is CURRENTLY top-ranked for this member — real content the member may have
- * already seen before, not a content-free "come back" ping — on the product
- * decision that a useful repeat beats silence, but an empty platitude doesn't
- * (confirmed with the user rather than assumed). Caller is responsible for
- * only reaching this when nearbyOffers is non-empty; a member with zero
- * active offers in range gets no push at all, same as before this existed.
+ * Sends one window ping in the headline format (docs/design/
+ * wallet-notification-headlines-spec.md): the headline shop's offer, plus
+ * up to two other shops named under "also near you". The header says why
+ * this shop is the headline — a new shop, a new/changed offer, or an
+ * ordinary bid-weighted pick. Same mechanics as notifyNewOffer() above
+ * (addMessage, TEXT_AND_NOTIFY, Google's 3/object/24h cap, best-effort).
  *
- * Deliberately a separate function from notifyNewOffer() rather than a
- * shared one with a `kind` flag — the header text is the only difference,
- * and keeping them separate makes every call site say in plain English
- * which of the two it's sending, which matters here since this one
- * reverses the original card/notification-decoupling rationale (see this
- * file's header comment and 20260820_notification_batching.sql) for the
- * specific, explicit case of "otherwise today would be silent."
- *
- * Same mechanics as notifyNewOffer(): addMessage, TEXT_AND_NOTIFY, Google's
- * 3/object/24h cap applies identically (and is the same shared
- * claim_notification_slot() ledger — see notifyMemberBatch()'s caller-side
- * comment), best-effort on failure.
+ * Shop names and offer titles are shop-typed text; only the chrome
+ * ("New shop near you", "Also near you:") is translated. Pass titles
+ * already resolved via resolveOfferContent() for a member with a
+ * preferred_language, same as notifyNewOffer().
  */
-export async function notifyReminder(
+export async function notifyHeadline(
   objectId: string,
-  offer: NearbyOffer,
+  ping: { kind: 'intro' | 'draw'; boosted: boolean; headline: NearbyOffer; mentions: NearbyOffer[] },
   preferredLanguage: Locale | null = null,
   resolvedTitle?: string,
 ) {
   const authClient = await client()
-  const title = resolvedTitle ?? offer.offer_title
+  const { headline, mentions } = ping
+  const title = resolvedTitle ?? headline.offer_title
+
+  const [hEn, hAr, hUr] =
+    ping.kind === 'intro'
+      ? ['New shop near you', 'محل جديد بالقرب منك', 'آپ کے قریب نئی دکان']
+      : ping.boosted
+        ? ['New offer nearby', 'عرض جديد بالقرب منك', 'قریب نیا آفر']
+        : ['Near you today', 'اليوم بالقرب منك', 'آج آپ کے قریب']
+
+  const lead = `${headline.business_name}: ${title}`
+  const names = mentions.map((m) => m.business_name)
+  const [bEn, bAr, bUr] = names.length
+    ? [
+        `${lead}
+Also near you: ${names.join(', ')}`,
+        `${lead}
+وأيضًا بالقرب منك: ${names.join('، ')}`,
+        `${lead}
+آپ کے قریب اور بھی: ${names.join('، ')}`,
+      ]
+    : [lead, lead, lead]
 
   await authClient.request({
     url: `${BASE_URL}/genericObject/${objectId}/addMessage`,
     method: 'POST',
     data: {
       message: {
-        header: pick("Don't miss nearby deals", 'لا تفوت العروض القريبة', 'قریبی آفرز مت چھوڑیں', preferredLanguage),
-        localizedHeader: localized(
-          "Don't miss nearby deals",
-          'لا تفوت العروض القريبة',
-          'قریبی آفرز مت چھوڑیں',
-          preferredLanguage,
-        ),
-        body: `${offer.business_name}: ${title}`,
-        id: `reminder-${offer.offer_id}-${Date.now()}`,
+        header: pick(hEn, hAr, hUr, preferredLanguage),
+        localizedHeader: localized(hEn, hAr, hUr, preferredLanguage),
+        body: pick(bEn, bAr, bUr, preferredLanguage),
+        localizedBody: localized(bEn, bAr, bUr, preferredLanguage),
+        id: `${ping.kind}-${headline.offer_id}-${Date.now()}`,
         messageType: 'TEXT_AND_NOTIFY',
       },
     },

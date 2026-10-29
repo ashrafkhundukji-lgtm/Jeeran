@@ -59,6 +59,8 @@ export interface OwnerUiCopy {
     more: string // {n}
     less: string // {n}
     same: string
+    lockScreen: string
+    mentions: string // {n}
   }
   checklist: {
     title: string
@@ -132,6 +134,12 @@ export interface OwnerUiCopy {
     bidExplain: string
     bidTier: string
     bidReach: string
+    bidNotify: string
+    notifyHint: string // {when}
+    notifyToday: string // {time}
+    notifyTomorrow: string // {time}
+    notifyMidday: string
+    notifyEvening: string
     bidEstimate: string // {n} {balance}
     bidEstimateNone: string
     datesLabel: string
@@ -296,6 +304,8 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       more: '{n} أكثر من الأسبوع الماضي',
       less: '{n} أقل من الأسبوع الماضي',
       same: 'مثل الأسبوع الماضي',
+      lockScreen: 'ظهور في إشعارات العملاء',
+      mentions: 'وذُكر محلك {n} مرة أخرى هذا الأسبوع',
     },
     checklist: {
       title: 'أكمل محلك',
@@ -369,6 +379,12 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       bidExplain: 'كلما رفعت السعر، ظهر عرضك أعلى في قائمة العروض القريبة من العميل.',
       bidTier: 'عند تقارب الأسعار، يتقدّم المحل ذو المستوى الأعلى.',
       bidReach: 'السعر لا يوسّع المسافة التي يصل إليها عرضك — ذلك عبر باقة «مدى الوصول» في صفحة الرصيد.',
+      bidNotify: 'السعر الأعلى يمنح عرضك أيضًا حصة أكبر من الإشعارات التي تصل للعملاء القريبين.',
+      notifyHint: 'تصل الإشعارات للعملاء القريبين الساعة 12:30 ظهرًا و7:30 مساءً بتوقيت السعودية، والعرض الجديد أو المعدّل يحصل على أولوية إضافية. الموعد التالي: {when}.',
+      notifyToday: 'اليوم {time}',
+      notifyTomorrow: 'غدًا {time}',
+      notifyMidday: '12:30 ظهرًا',
+      notifyEvening: '7:30 مساءً',
       bidEstimate: 'رصيدك ({balance}) يكفي لـ {n} مشاهدة بهذا السعر.',
       bidEstimateNone: 'رصيدك لا يكفي لمشاهدة واحدة بهذا السعر — اشحن رصيدك.',
       datesLabel: 'مدة العرض',
@@ -531,6 +547,8 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       more: '{n} more than last week',
       less: '{n} fewer than last week',
       same: 'Same as last week',
+      lockScreen: 'Lock-screen headlines',
+      mentions: 'Also mentioned {n} times this week',
     },
     checklist: {
       title: 'Complete your shop',
@@ -604,6 +622,12 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       bidExplain: "The higher the price, the higher your offer appears in a customer's list of nearby offers.",
       bidTier: 'When prices are close, the shop with the higher tier goes first.',
       bidReach: "Price does not widen how far your offer reaches — that's the Reach add-on on the Billing page.",
+      bidNotify: 'A higher price also wins your offer a bigger share of the notifications nearby customers get.',
+      notifyHint: 'Notifications go out to nearby customers at 12:30 pm and 7:30 pm Saudi time, and a new or edited offer gets extra priority. Next: {when}.',
+      notifyToday: 'today at {time}',
+      notifyTomorrow: 'tomorrow at {time}',
+      notifyMidday: '12:30 pm',
+      notifyEvening: '7:30 pm',
       bidEstimate: 'Your credit ({balance}) covers {n} views at this price.',
       bidEstimateNone: "Your credit doesn't cover a single view at this price — top up first.",
       datesLabel: 'Offer dates',
@@ -766,6 +790,8 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       more: 'پچھلے ہفتے سے {n} زیادہ',
       less: 'پچھلے ہفتے سے {n} کم',
       same: 'پچھلے ہفتے جتنے',
+      lockScreen: 'گاہکوں کی اطلاعات میں نمایاں',
+      mentions: 'اس ہفتے مزید {n} بار ذکر ہوا',
     },
     checklist: {
       title: 'اپنی دکان مکمل کریں',
@@ -839,6 +865,12 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       bidExplain: 'قیمت جتنی زیادہ ہو، آپ کی آفر گاہک کی قریبی آفرز کی فہرست میں اتنی اوپر دکھائی دیتی ہے۔',
       bidTier: 'جب قیمتیں قریب ہوں تو اونچے درجے والی دکان پہلے آتی ہے۔',
       bidReach: 'قیمت آپ کی آفر کا فاصلہ نہیں بڑھاتی — اس کے لیے بلنگ صفحے پر “ریچ” ایڈ آن ہے۔',
+      bidNotify: 'زیادہ قیمت آپ کی آفر کو قریبی گاہکوں کی اطلاعات میں بھی بڑا حصہ دیتی ہے۔',
+      notifyHint: 'قریبی گاہکوں کو سعودی وقت کے مطابق دوپہر 12:30 اور شام 7:30 بجے اطلاعات بھیجی جاتی ہیں، اور نئی یا ترمیم شدہ آفر کو اضافی ترجیح ملتی ہے۔ اگلا وقت: {when}۔',
+      notifyToday: 'آج {time}',
+      notifyTomorrow: 'کل {time}',
+      notifyMidday: 'دوپہر 12:30',
+      notifyEvening: 'شام 7:30',
       bidEstimate: 'آپ کا بیلنس ({balance}) اس قیمت پر {n} ویوز کے لیے کافی ہے۔',
       bidEstimateNone: 'آپ کا بیلنس اس قیمت پر ایک ویو کے لیے بھی کافی نہیں — پہلے ٹاپ اپ کریں۔',
       datesLabel: 'آفر کی مدت',

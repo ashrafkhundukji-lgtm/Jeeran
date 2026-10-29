@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { refreshAllMembers, sendDailyNotificationBatch } from '@/lib/wallet/geo-notify'
+import { refreshAllMembers } from '@/lib/wallet/geo-notify'
 
 // Periodic safety-net sweep for the membership pass (src/lib/wallet/geo-notify.ts).
 // Event-driven pushes (campaign activate/deactivate) cover the common case
@@ -9,15 +9,8 @@ import { refreshAllMembers, sendDailyNotificationBatch } from '@/lib/wallet/geo-
 // scratch on a schedule. refreshMember() only PATCHes members whose offer
 // set actually changed, so a no-op sweep is cheap.
 //
-// Also the once-daily home for the batched lock-screen notification job
-// (sendDailyNotificationBatch) — deliberately reusing this cron's existing
-// daily schedule rather than registering a second Vercel Cron job for it
-// (Hobby plan caps cron jobs; "once a day, same fixed time" is exactly what
-// the notification batch wants anyway). Runs after the card-refresh sweep so
-// the batch's own nearby_active_offers() recompute (it does its own,
-// independent of this sweep's) reflects whatever just got synced. See
-// supabase/migrations/20260820_notification_batching.sql for the full
-// card-vs-notification split rationale.
+// Lock-screen pings are NOT sent here any more: they go out in the two daily
+// send windows (src/app/api/cron/wallet-notify/route.ts, fired by pg_cron).
 //
 // Same pattern as src/app/api/cron/keepalive/route.ts (the cron route that's
 // actually wired up): GET handler + `Authorization: Bearer $CRON_SECRET`,
@@ -36,7 +29,6 @@ export async function GET(req: NextRequest) {
   }
 
   await refreshAllMembers()
-  await sendDailyNotificationBatch()
 
   return NextResponse.json({ ok: true, sweptAt: new Date().toISOString() })
 }
