@@ -36,9 +36,10 @@
  *    notification_headlines (supabase/migrations/
  *    20261029_notification_headlines.sql), which drives the repeat limit,
  *    the one-time intro and the owner's "seen on lock screens" numbers.
- *    All sends share the per-day slot ledger (claim_notification_slot(),
- *    capped at promotion_settings.max_daily_wallet_notifications — Google's
- *    own hard 3 per object per 24h). The old 06:00 batch and its daily
+ *    All sends share the slot ledger (claim_notification_slot(): at most
+ *    promotion_settings.max_daily_wallet_notifications per member in any
+ *    rolling 24 h — Google's own hard 3 per object per 24h; see
+ *    20261031c_rolling_notification_slots.sql). The old 06:00 batch and its daily
  *    "same top offer" reminder are gone: a member with nothing worth a
  *    headline gets no ping.
  *  - Instant Notify add-on: a paid subscription (business_addons, addon_key
@@ -46,9 +47,8 @@
  *    lets a business's own campaign skip the wait for the next send window and fire its
  *    push right away, via notifyInstantOffer() below, called from
  *    notifyMembersNearBusiness() alongside the existing silent card refresh.
- *    It shares the SAME per-day slot ledger (wallet_members.
- *    notifications_sent_date/notifications_sent_count, via
- *    claim_notification_slot()) that sendWindowNotifications() draws
+ *    It shares the SAME rolling-24h slot ledger (notification_slot_claims,
+ *    via claim_notification_slot()) that sendWindowNotifications() draws
  *    from, so an instant send reduces what's left for the windows rather
  *    than adding capacity beyond promotion_settings.max_daily_wallet_notifications.
  *    Each instant send is also logged as that shop's headline, so the
