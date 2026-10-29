@@ -52,7 +52,9 @@
  *    from, so an instant send reduces what's left for the windows rather
  *    than adding capacity beyond promotion_settings.max_daily_wallet_notifications.
  *    Each instant send is also logged as that shop's headline, so the
- *    repeat limit applies to it.
+ *    windows' repeat limit counts it (the instant send itself isn't
+ *    subject to that limit) and it counts toward the member's ping for
+ *    the day.
  *    Does NOT change card content/ranking (nearby_active_offers() is
  *    untouched) — only which offers get an actual lock-screen push, and
  *    only for offers that already made this member's card (see
@@ -183,9 +185,10 @@ export async function notifyMembersNearBusiness(businessLat: number, businessLng
  * Instant Notify add-on: fires an immediate lock-screen push for THIS
  * business's own offer to one member, ahead of the next send window. The
  * ping is a normal headline (notifyHeadline(): this shop as the headline,
- * plus the same "also near you" names) and obeys the window rules through
- * pickForShop() — daily limit, repeat limit — and the shared slot ledger.
- * What the subscription buys is timing, never a bypass of those limits.
+ * plus the same "also near you" names). Limits: the shared slot ledger
+ * (max_daily_wallet_notifications, Google's 3 per card) and no repeat of an
+ * unchanged offer. The windows' daily base limit and 7-day repeat limit do
+ * NOT apply — that immediacy is what the subscription buys.
  */
 async function notifyInstantOffer(member: WalletMember, businessId: string, { cap, headline: settings }: NotifySettings) {
   if (!member.google_object_id) return
@@ -210,10 +213,15 @@ async function notifyInstantOffer(member: WalletMember, businessId: string, { ca
   // it's eligible.
   if (!((offers ?? []) as NearbyOffer[]).some((o) => o.business_id === businessId)) return
 
-  // Same picker rules as a send window, with the headline fixed to this
-  // shop. The repeat limit replaces the old notified_offer_versions check:
-  // unchanged content can't re-fire within notify_repeat_days, and even
-  // changed content not within 2 days.
+  // Never re-send an offer this member was already pinged about in this
+  // exact version ({offer_id: offer_updated_at}, the same map the windows
+  // write) — so toggling or re-saving unchanged content can't spend a slot.
+  // This is the only per-offer guard: the windows' daily base limit and
+  // 7-day repeat limit deliberately don't apply to Instant Notify.
+  const alreadyNotified = member.notified_offer_versions ?? {}
+  const own = ((offers ?? []) as NearbyOffer[]).find((o) => o.business_id === businessId)
+  if (own && alreadyNotified[own.offer_id] === own.offer_updated_at) return
+
   const { data: candidates, error: candidatesError } = await supabaseAdmin.rpc('notification_candidates', {
     p_lat: member.home_lat,
     p_lng: member.home_lng,

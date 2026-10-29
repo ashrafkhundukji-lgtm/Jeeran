@@ -151,9 +151,12 @@ function mentionsFor(shops: Candidate[], headline: Candidate): Candidate[] {
     .slice(0, MAX_MENTIONS)
 }
 
-// Instant Notify: the headline is fixed (the paying shop), but every other
-// rule is pickHeadline()'s — daily limit (a second ping only for a new-shop
-// intro), repeat limit, same "also near you" names. Null = not this time.
+// Instant Notify: same headline format as a window ping (this shop as the
+// headline, the same "also near you" names), but NOT the window limits — no
+// daily base limit and no repeat limit. What bounds it is the shared slot
+// ledger (claim_notification_slot, max_daily_wallet_notifications = Google's
+// 3 per card) and, in notifyInstantOffer(), never re-sending an unchanged
+// offer. Null = this shop isn't an eligible candidate for the member.
 export function pickForShop(
   allCandidates: Candidate[],
   businessId: string,
@@ -161,11 +164,9 @@ export function pickForShop(
   s: HeadlineSettings,
   now: Date,
 ): HeadlinePick | null {
-  if (history.sentToday >= Math.max(s.dailyBase, s.dailyWithNews)) return null
   const shops = onePerShop(allCandidates)
   const headline = shops.find((c) => c.business_id === businessId)
-  if (!headline || !passesRepeatLimit(headline, history, now, s)) return null
+  if (!headline) return null
   const intro = isNewShop(headline, now, s) && !history.introduced.has(businessId)
-  if (history.sentToday >= s.dailyBase && !intro) return null
   return { kind: intro ? 'intro' : 'draw', boosted: isBoosted(headline, now, s), headline, mentions: mentionsFor(shops, headline) }
 }
