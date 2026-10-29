@@ -15,6 +15,7 @@ import type { NearbyOffer } from './google-membership-pass'
 // A member who already had a ping today only gets another one for a
 // new-shop intro. (Allowing it for boosted offers too meant two pings every
 // day in a busy area, where some shop has always just edited its offer.)
+// pickForShop() applies the same rules to an Instant Notify send.
 
 export interface Candidate extends NearbyOffer {
   bid_per_view: number
@@ -140,10 +141,31 @@ export function pickHeadline(
     pool.map((c) => weight(c, now, s, radiusKm)),
     rng,
   )
-  const mentions = shops
+  return { kind, boosted: isBoosted(headline, now, s), headline, mentions: mentionsFor(shops, headline) }
+}
+
+function mentionsFor(shops: Candidate[], headline: Candidate): Candidate[] {
+  return shops
     .filter((c) => c.business_id !== headline.business_id)
     .sort((a, b) => b.bid_per_view - a.bid_per_view || a.distance_km - b.distance_km)
     .slice(0, MAX_MENTIONS)
+}
 
-  return { kind, boosted: isBoosted(headline, now, s), headline, mentions }
+// Instant Notify: the headline is fixed (the paying shop), but every other
+// rule is pickHeadline()'s — daily limit (a second ping only for a new-shop
+// intro), repeat limit, same "also near you" names. Null = not this time.
+export function pickForShop(
+  allCandidates: Candidate[],
+  businessId: string,
+  history: MemberHistory,
+  s: HeadlineSettings,
+  now: Date,
+): HeadlinePick | null {
+  if (history.sentToday >= Math.max(s.dailyBase, s.dailyWithNews)) return null
+  const shops = onePerShop(allCandidates)
+  const headline = shops.find((c) => c.business_id === businessId)
+  if (!headline || !passesRepeatLimit(headline, history, now, s)) return null
+  const intro = isNewShop(headline, now, s) && !history.introduced.has(businessId)
+  if (history.sentToday >= s.dailyBase && !intro) return null
+  return { kind: intro ? 'intro' : 'draw', boosted: isBoosted(headline, now, s), headline, mentions: mentionsFor(shops, headline) }
 }

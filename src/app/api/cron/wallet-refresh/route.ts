@@ -12,12 +12,9 @@ import { refreshAllMembers } from '@/lib/wallet/geo-notify'
 // Lock-screen pings are NOT sent here any more: they go out in the two daily
 // send windows (src/app/api/cron/wallet-notify/route.ts, fired by pg_cron).
 //
-// Same pattern as src/app/api/cron/keepalive/route.ts (the cron route that's
-// actually wired up): GET handler + `Authorization: Bearer $CRON_SECRET`,
-// which is what Vercel Cron sends automatically once CRON_SECRET is set — see
-// vercel.json. Deliberately NOT following src/app/api/cron/trials/route.ts's
-// POST-handler shape; that route isn't registered in vercel.json and
-// wouldn't receive Vercel Cron's GET pings if it were.
+// Same pattern as the other Vercel Cron routes (keepalive, trials): GET
+// handler + `Authorization: Bearer $CRON_SECRET`, which is what Vercel Cron
+// sends automatically once CRON_SECRET is set — see vercel.json.
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 

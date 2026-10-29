@@ -51,6 +51,7 @@ export default async function OwnerDashboardPage() {
     { data: notifyRows, error: notifyError },
     { data: redemptionRows },
     { data: transferRows },
+    { data: exposureRows, error: exposureError },
   ] = await Promise.all([
     supabaseAdmin.rpc('get_owner_weekly_metrics', { p_business_id: business.id }),
     // Lock-screen headlines/mentions (20261029_notification_headlines.sql).
@@ -61,9 +62,13 @@ export default async function OwnerDashboardPage() {
     campaignIds.length
       ? supabaseAdmin.from('ad_credit_transfers').select('offer_id, amount').eq('from_business_id', business.id).in('offer_id', campaignIds)
       : Promise.resolve({ data: [] as { offer_id: string; amount: number }[] }),
+    // Same rule customers are served by (shop_is_exposed(), 20261030_launch_integrity_eligibility.sql):
+    // visible or not, and whether that's only thanks to the grace period.
+    supabaseAdmin.rpc('shop_exposure_status', { p_business_id: business.id }),
   ])
   const weekly = weeklyError ? null : weeklyRows?.[0]
   const notify = notifyError ? null : notifyRows?.[0]
+  const exposureRow = exposureError ? null : exposureRows?.[0]
 
   // Per-campaign redemptions — the only per-campaign stat the data model
   // records (no per-campaign view/impression or spend log exists today).
@@ -80,6 +85,11 @@ export default async function OwnerDashboardPage() {
       logoUrl={business.logo_url ?? null}
       coverUrl={business.cover_url ?? null}
       isSubscriptionActive={business.is_subscription_active}
+      exposure={
+        exposureRow
+          ? { exposed: Boolean(exposureRow.exposed), inGrace: Boolean(exposureRow.in_grace), endsAt: exposureRow.exposure_ends_at as string }
+          : null
+      }
       adCredits={metrics?.ad_credits ?? business.ad_credits}
       scansHosted={metrics?.scans_hosted ?? 0}
       customersAcquired={metrics?.customers_acquired ?? 0}
