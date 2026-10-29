@@ -26,36 +26,33 @@
  *        unchanged-offers early-out as (1)/(2).
  *  - The actual notification (Google's addMessage, messageType:
  *    TEXT_AND_NOTIFY — what makes it an Android lock-screen push, not just
- *    card text) is NOT sent by either of the above anymore. It's sent
- *    exclusively by sendDailyNotificationBatch(), a separate once-daily
- *    batch also wired into the wallet-refresh cron (reusing that cron's
- *    existing daily schedule rather than adding a second cron job — Vercel
- *    Hobby caps cron jobs, and there's no reason this needs its own
- *    schedule when "once a day, same fixed time" is exactly what's wanted).
- *    Capped at promotion_settings.max_daily_wallet_notifications (default
- *    3 — Google's own hard per-object/24h limit, not an arbitrary choice;
- *    see that column's comment for why it's configurable down to 1 later).
- *  - Daily floor: a member with nothing genuinely new/changed that day used
- *    to get silence, by design. Confirmed with the user this reads as the
- *    app going quiet rather than as "nothing to report," so
- *    notifyMemberBatch() now falls back to notifyReminder() — re-surfacing
- *    whatever offer is currently top-ranked for that member, even if
- *    they've seen it before — whenever the real-content loop sends nothing.
- *    A member with zero active offers in range still gets nothing; there's
- *    no useful content to repeat. Shares the exact same per-day slot ledger
- *    as everything else here, so it can never push the object past Google's
- *    3/24h cap.
+ *    card text) is NOT sent by either of the above. It's sent by
+ *    sendWindowNotifications(), run twice a day (12:30 and 19:30 Riyadh) by
+ *    pg_cron via src/app/api/cron/wallet-notify/route.ts. Each ping has one
+ *    HEADLINE shop plus up to two "also near you" names, picked by
+ *    headlines.ts (new-shop intro → bid × freshness × distance draw, with a
+ *    per-shop repeat limit). Spec: docs/design/
+ *    wallet-notification-headlines-spec.md. Every ping is logged in
+ *    notification_headlines (supabase/migrations/
+ *    20261029_notification_headlines.sql), which drives the repeat limit,
+ *    the one-time intro and the owner's "seen on lock screens" numbers.
+ *    All sends share the per-day slot ledger (claim_notification_slot(),
+ *    capped at promotion_settings.max_daily_wallet_notifications — Google's
+ *    own hard 3 per object per 24h). The old 06:00 batch and its daily
+ *    "same top offer" reminder are gone: a member with nothing worth a
+ *    headline gets no ping.
  *  - Instant Notify add-on: a paid subscription (business_addons, addon_key
  *    'instant_notify' — see supabase/migrations/20260823_instant_notify_addon.sql)
- *    lets a business's own campaign skip the once-daily wait and fire its
+ *    lets a business's own campaign skip the wait for the next send window and fire its
  *    push right away, via notifyInstantOffer() below, called from
  *    notifyMembersNearBusiness() alongside the existing silent card refresh.
  *    It shares the SAME per-day slot ledger (wallet_members.
  *    notifications_sent_date/notifications_sent_count, via
- *    claim_notification_slot()) that sendDailyNotificationBatch() draws
- *    from, so an instant send reduces what's left for the batch rather than
- *    adding capacity beyond promotion_settings.max_daily_wallet_notifications
- *    — see notifyMemberBatch()'s own comment for the batch side of this.
+ *    claim_notification_slot()) that sendWindowNotifications() draws
+ *    from, so an instant send reduces what's left for the windows rather
+ *    than adding capacity beyond promotion_settings.max_daily_wallet_notifications.
+ *    Each instant send is also logged as that shop's headline, so the
+ *    repeat limit applies to it.
  *    Does NOT change card content/ranking (nearby_active_offers() is
  *    untouched) — only which offers get an actual lock-screen push, and
  *    only for offers that already made this member's card (see
@@ -63,7 +60,8 @@
  */
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { patchMembershipObject, notifyNewOffer, notifyReminder, type NearbyOffer } from './google-membership-pass'
+import { patchMembershipObject, notifyNewOffer, notifyHeadline, type NearbyOffer } from './google-membership-pass'
+import { pickHeadline, type Candidate, type HeadlineKind, type HeadlineSettings, type MemberHistory } from './headlines'
 import { resolveOfferContent } from './offer-locale'
 import { INSTANT_NOTIFY_ADDON_KEY } from '@/lib/billing/catalog'
 import type { Locale } from '@/lib/i18n/locale'
@@ -91,7 +89,7 @@ interface WalletMember {
   // notified_offer_versions below, populated here because
   // members_within_radius() (the RPC notifyMembersNearBusiness uses) does
   // `select *` off wallet_members — used by notifyInstantOffer() to apply
-  // the exact same version-diff spam guard the daily batch uses, so a
+  // the exact same version-diff spam guard the send windows maintain, so a
   // paid instant-notify subscription can't re-fire for unchanged content.
   // Optional: refreshMember()'s other callers (e.g. src/app/api/wallet/
   // membership/create/route.ts) build a WalletMember literal without it —
@@ -115,12 +113,10 @@ interface NotifiableMember {
   home_lat: number
   home_lng: number
   push_radius_km: number
-  // Same {offer_id: offer_updated_at} version-comparison technique as
-  // WalletMember.last_notified_offers above, but a separate, independent
-  // instance of it scoped to notification slots — see
-  // supabase/migrations/20260820_notification_batching.sql.
+  // Same {offer_id: offer_updated_at} map notifyInstantOffer() checks, so an
+  // offer already pushed by a window isn't re-pushed by Instant Notify for
+  // unchanged content.
   notified_offer_versions: Record<string, string>
-  // See WalletMember.preferred_language above — same column, same meaning.
   preferred_language: Locale | null
 }
 
@@ -188,16 +184,15 @@ export async function notifyMembersNearBusiness(businessLat: number, businessLng
 
 /**
  * Instant Notify add-on: fires an immediate lock-screen push for THIS
- * business's own offer to one member, ahead of whatever the once-daily
- * batch would otherwise do. Deliberately mirrors notifyMemberBatch()'s
- * guard sequence exactly (same version-diff spam check, same shared slot
- * ledger) — an instant subscription buys priority/timing, never a bypass of
+ * business's own offer to one member, ahead of the next send window.
+ * Same version-diff spam check and shared slot ledger as
+ * sendWindowNotifications() — an instant subscription buys priority/timing, never a bypass of
  * "genuinely new/changed content only."
  */
 async function notifyInstantOffer(member: WalletMember, businessId: string, cap: number) {
   if (!member.google_object_id) return
 
-  // Independent recompute, same as notifyMemberBatch() and refreshMember()
+  // Independent recompute, same as refreshMember()
   // each doing their own — see this file's header comment on why that's the
   // existing, deliberate pattern rather than threading one result through.
   const { data: offers, error } = await supabaseAdmin.rpc('nearby_active_offers', {
@@ -218,8 +213,8 @@ async function notifyInstantOffer(member: WalletMember, businessId: string, cap:
   const offer = ((offers ?? []) as NearbyOffer[]).find((o) => o.business_id === businessId)
   if (!offer) return
 
-  // Same {offer_id: offer_updated_at} version-diff technique
-  // notifyMemberBatch() uses against notified_offer_versions (NOT
+  // Same {offer_id: offer_updated_at} version-diff technique the send
+  // windows maintain in notified_offer_versions (NOT
   // last_notified_offers, which tracks card content, not pushes) — an offer
   // that hasn't changed since it last consumed a slot doesn't re-consume one
   // just because the business is a paying instant-notify subscriber.
@@ -229,7 +224,7 @@ async function notifyInstantOffer(member: WalletMember, businessId: string, cap:
   const alreadyNotified = member.notified_offer_versions ?? {}
   if (alreadyNotified[offer.offer_id] === offer.offer_updated_at) return
 
-  // Atomic claim against the SAME per-day ledger notifyMemberBatch() draws
+  // Atomic claim against the SAME per-day ledger sendWindowNotifications() draws
   // from — whichever caller's claim lands first wins the slot
   // (first-come-first-served by claim timestamp, the confirmed
   // contention-resolution rule for multiple premium businesses competing for
@@ -268,6 +263,7 @@ async function notifyInstantOffer(member: WalletMember, businessId: string, cap:
       notified_offer_versions: { ...alreadyNotified, [offer.offer_id]: offer.offer_updated_at },
     })
     .eq('id', member.id)
+  await recordHeadline(member.id, offer, 'instant', [])
 }
 
 /** Periodic sweep across every registered member. */
@@ -327,7 +323,7 @@ export async function refreshMember(member: WalletMember, opts: { force?: boolea
   if (!opts.force && offerVersionsEqual(newVersions, oldVersions)) return // nothing changed -> skip the API call
 
   // Card only — silent, immediate. No notifyNewOffer() call here anymore;
-  // that's exclusively sendDailyNotificationBatch()'s job now (see the
+  // that's exclusively sendWindowNotifications()'s job now (see the
   // file-level comment above). This is precisely the fix: an offer changing
   // used to fire an actual lock-screen push right here, every time.
   await patchMembershipObject(member.google_object_id, member.id, nearbyOffers, member.preferred_language ?? null)
@@ -335,7 +331,7 @@ export async function refreshMember(member: WalletMember, opts: { force?: boolea
   // Log reach: one row per unique (member, offer) ever shown on the card,
   // powering the reach -> redeemed conversion-rate metric on the
   // dashboards. Despite the table name, this is card-appearance reach, not
-  // the lock-screen push batch below — pre-dates that distinction existing
+  // the lock-screen pings (notification_headlines) — pre-dates that distinction existing
   // at all. ignoreDuplicates makes this a no-op on repeat appearances in the
   // top-5 list so it doesn't inflate reach counts or overwrite the original
   // notified_at.
@@ -359,185 +355,203 @@ export async function refreshMember(member: WalletMember, opts: { force?: boolea
     .eq('id', member.id)
 }
 
-/**
- * The once-daily batched lock-screen notification job — the ONLY caller of
- * notifyNewOffer() anywhere in the app now. Wired into the same
- * wallet-refresh cron as refreshAllMembers() (src/app/api/cron/wallet-refresh/route.ts),
- * so it runs once a day at that cron's fixed schedule rather than needing a
- * second Vercel Cron job.
- *
- * Reads the cap from promotion_settings.max_daily_wallet_notifications
- * (default 3, Google's own hard per-object/24h limit — see that column's
- * migration comment) once per run, not once per member.
- */
-export async function sendDailyNotificationBatch() {
-  const { data: settings, error: settingsError } = await supabaseAdmin
-    .from('promotion_settings')
-    .select('max_daily_wallet_notifications')
-    .limit(1)
-    .maybeSingle()
-  if (settingsError) throw settingsError
-  const cap = settings?.max_daily_wallet_notifications ?? 3
-  if (cap <= 0) return // admin has paused pushes entirely
+// ── Send windows (headline pings) ────────────────────────────────────────
 
-  const { data: members, error } = await supabaseAdmin
-    .from('wallet_members')
-    .select('id, google_object_id, home_lat, home_lng, push_radius_km, notified_offer_versions, preferred_language')
-    .not('google_object_id', 'is', null)
-  if (error) throw error
-
-  await Promise.all((members as NotifiableMember[]).map((m) => notifyMemberBatch(m, cap)))
+export interface WindowSummary {
+  dryRun: boolean
+  members: number
+  sent: { intro: number; draw: number }
+  noPick: number
+  capped: number
+  failed: number
+  // Headline counts per shop this run, with the shop's bid — what the
+  // dry run is for: checking shares look right before going live.
+  byShop: { business_id: string; business_name: string; bid_per_view: number; intro: number; draw: number }[]
 }
 
-async function notifyMemberBatch(member: NotifiableMember, cap: number) {
-  if (!member.google_object_id) return
-  // Narrowed local, not member.google_object_id — so the daily-floor
-  // fallback below (defined after this point, still closing over `member`)
-  // keeps TypeScript's null-check without re-deriving it.
-  const objectId = member.google_object_id
+// Riyadh is UTC+3 all year (no DST).
+const RIYADH_OFFSET_MS = 3 * 3_600_000
 
-  // Deliberately platform-wide, same as refreshMember() — ranks ANY
-  // registered business's active campaigns within radius, not just wherever
-  // this member originally scanned.
-  const { data: offers, error } = await supabaseAdmin.rpc('nearby_active_offers', {
-    p_lat: member.home_lat,
-    p_lng: member.home_lng,
-    p_radius_km: member.push_radius_km,
-    p_limit: 5,
-  })
+function startOfRiyadhDay(now: Date): Date {
+  const local = new Date(now.getTime() + RIYADH_OFFSET_MS)
+  return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) - RIYADH_OFFSET_MS)
+}
+
+// PostgREST returns at most 1000 rows per request; page through.
+async function fetchAll<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
+  const out: T[] = []
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await page(from, from + 999)
+    if (error) throw error
+    out.push(...(data ?? []))
+    if (!data || data.length < 1000) return out
+  }
+}
+
+// Bounded concurrency: each member costs a few round trips; firing all of
+// them at once at scale would swamp the pool.
+async function forEachLimit<T>(items: T[], limit: number, fn: (item: T) => Promise<void>) {
+  let next = 0
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) await fn(items[next++])
+    }),
+  )
+}
+
+async function loadNotifySettings(): Promise<{ cap: number; headline: HeadlineSettings }> {
+  const { data, error } = await supabaseAdmin
+    .from('promotion_settings')
+    .select(
+      'max_daily_wallet_notifications, notify_boost_factor, notify_boost_hours, notify_repeat_days, notify_new_shop_days, notify_daily_base, notify_daily_with_news',
+    )
+    .limit(1)
+    .maybeSingle()
   if (error) throw error
+  return {
+    cap: data?.max_daily_wallet_notifications ?? 3,
+    headline: {
+      boostFactor: Number(data?.notify_boost_factor ?? 3),
+      boostHours: data?.notify_boost_hours ?? 48,
+      repeatDays: data?.notify_repeat_days ?? 7,
+      newShopDays: data?.notify_new_shop_days ?? 7,
+      dailyBase: data?.notify_daily_base ?? 1,
+      dailyWithNews: data?.notify_daily_with_news ?? 2,
+    },
+  }
+}
 
-  const nearbyOffers = (offers ?? []) as NearbyOffer[]
-  const alreadyNotified = member.notified_offer_versions ?? {}
+async function recordHeadline(memberId: string, offer: NearbyOffer, kind: HeadlineKind | 'instant', mentions: NearbyOffer[]) {
+  const { error } = await supabaseAdmin.from('notification_headlines').insert({
+    member_id: memberId,
+    business_id: offer.business_id,
+    offer_id: offer.offer_id,
+    kind,
+    mentioned_business_ids: mentions.map((m) => m.business_id),
+  })
+  if (error) console.error('notification_headlines insert failed', { memberId, offerId: offer.offer_id, err: error })
+}
 
-  // "New since last notification" — same {offer_id: offer_updated_at}
-  // version-comparison technique offer-content-diffing already established
-  // for the card (offerVersionsEqual/last_notified_offers above), just
-  // checked against the separate notified_offer_versions tracker: an offer
-  // only earns a slot if we've never sent a push for this exact version of
-  // it before, so a re-edited offer can earn a fresh ping but an unchanged
-  // one won't re-consume a slot on a later day.
-  // Daily floor: nothing genuinely new this run — fall back to re-surfacing
-  // the current top offer rather than letting the day pass in silence. A
-  // member with zero active offers in range (nearbyOffers empty) still gets
-  // nothing from this closure; see its own early-out.
-  const sendReminderFallback = async () => {
-    const top = nearbyOffers[0]
-    if (!top) return
+/**
+ * One send window: for every member with a saved pass, pick at most one
+ * headline (headlines.ts) and send it. `dryRun` picks exactly the same way
+ * but claims no slot, sends nothing and writes nothing — it only returns the
+ * summary, so the spread per shop can be reviewed before going live.
+ */
+export async function sendWindowNotifications(opts: { dryRun?: boolean } = {}): Promise<WindowSummary> {
+  const dryRun = Boolean(opts.dryRun)
+  const now = new Date()
+  const { cap, headline: settings } = await loadNotifySettings()
+  const summary: WindowSummary = { dryRun, members: 0, sent: { intro: 0, draw: 0 }, noPick: 0, capped: 0, failed: 0, byShop: [] }
+  if (cap <= 0) return summary // admin has paused pushes entirely
 
-    const { data: claimed, error: claimError } = await supabaseAdmin.rpc('claim_notification_slot', {
-      p_member_id: member.id,
-      p_cap: cap,
-    })
-    if (claimError) throw claimError
-    if (!claimed) return // today's shared budget is already spent
-
-    try {
-      const resolvedTitle = member.preferred_language
-        ? (await resolveOfferContent([top], member.preferred_language)).get(top.offer_id)?.title
-        : undefined
-      await notifyReminder(objectId, top, member.preferred_language, resolvedTitle)
-    } catch (err) {
-      console.error('notifyReminder failed in daily batch', { memberId: member.id, offerId: top.offer_id, err })
-      try {
-        await supabaseAdmin.rpc('release_notification_slot', { p_member_id: member.id })
-      } catch {
-        // best-effort
-      }
-      return
-    }
-
-    // top.offer_updated_at already matches what's in alreadyNotified (it's
-    // excluded from `candidates` precisely because it does) — this write is
-    // idempotent on notified_offer_versions and only actually moves
-    // last_notification_batch_at forward, which is the point: record that
-    // this member's daily floor was served today.
-    await supabaseAdmin
+  const members = await fetchAll<NotifiableMember>((from, to) =>
+    supabaseAdmin
       .from('wallet_members')
-      .update({
-        notified_offer_versions: { ...alreadyNotified, [top.offer_id]: top.offer_updated_at },
-        last_notification_batch_at: new Date().toISOString(),
-      })
-      .eq('id', member.id)
+      .select('id, google_object_id, home_lat, home_lng, push_radius_km, notified_offer_versions, preferred_language')
+      .not('google_object_id', 'is', null)
+      .order('id')
+      .range(from, to),
+  )
+  summary.members = members.length
+
+  // Everyone's recent headlines in one pass. Intros only matter within
+  // newShopDays of a shop's first offer, so the same lookback covers them.
+  const lookbackDays = Math.max(settings.repeatDays, settings.newShopDays) + 1
+  const since = new Date(now.getTime() - lookbackDays * 86_400_000).toISOString()
+  const rows = await fetchAll<{ member_id: string; business_id: string; kind: string; sent_at: string }>((from, to) =>
+    supabaseAdmin
+      .from('notification_headlines')
+      .select('member_id, business_id, kind, sent_at')
+      .gte('sent_at', since)
+      .order('id')
+      .range(from, to),
+  )
+  const dayStart = startOfRiyadhDay(now)
+  const histories = new Map<string, MemberHistory>()
+  for (const r of rows) {
+    let h = histories.get(r.member_id)
+    if (!h) histories.set(r.member_id, (h = { lastHeadlineAt: new Map(), introduced: new Set(), sentToday: 0 }))
+    const at = new Date(r.sent_at)
+    const prev = h.lastHeadlineAt.get(r.business_id)
+    if (!prev || at > prev) h.lastHeadlineAt.set(r.business_id, at)
+    if (r.kind === 'intro') h.introduced.add(r.business_id)
+    if (at >= dayStart) h.sentToday++
   }
 
-  const candidates = nearbyOffers.filter((o) => alreadyNotified[o.offer_id] !== o.offer_updated_at)
-  if (!candidates.length) {
-    await sendReminderFallback()
-    return
-  }
+  const byShop = new Map<string, WindowSummary['byShop'][number]>()
 
-  // nearby_active_offers() already returns its rows in ranked order
-  // (bid-bucket -> tier tiebreak -> exact bid -> distance — see
-  // supabase/migrations/20260818c_promotion_tier_tiebreaker.sql), so walking
-  // candidates in this order and claiming one slot at a time still sends the
-  // highest-ranked new offers first, same priority the card itself uses.
-  //
-  // Each candidate now claims from claim_notification_slot() — the SAME
-  // per-day ledger notifyInstantOffer() (the Instant Notify add-on path)
-  // decrements from — instead of a fixed candidates.slice(0, cap). That's
-  // the reconciliation: any slots an instant send already spent earlier
-  // today are already reflected in wallet_members.notifications_sent_count,
-  // so this loop naturally stops at whatever's actually left rather than
-  // trusting a flat `cap` and over-sending. Sequential, not Promise.all:
-  // these all hit the same object's addMessage endpoint, and Google's 3/24h
-  // cap is per-object — no reason to race several PATCHes against the same
-  // object concurrently.
-  // Resolved once for the whole candidate list (not per-offer inside the
-  // loop below) — same one-query-per-batch-item philosophy as the settings
-  // lookup in sendDailyNotificationBatch, just scoped to this member's
-  // candidates instead of every member.
-  const resolvedTitles = member.preferred_language
-    ? await resolveOfferContent(candidates, member.preferred_language)
-    : undefined
-
-  const sentVersions: Record<string, string> = {}
-  for (const offer of candidates) {
-    const { data: claimed, error: claimError } = await supabaseAdmin.rpc('claim_notification_slot', {
-      p_member_id: member.id,
-      p_cap: cap,
-    })
-    if (claimError) throw claimError
-    if (!claimed) break // today's shared budget is spent — nothing left for the rest of this batch
-
+  await forEachLimit(members, 10, async (member) => {
+    const objectId = member.google_object_id
+    if (!objectId) return
     try {
-      await notifyNewOffer(
-        member.google_object_id,
-        offer,
-        member.preferred_language,
-        resolvedTitles?.get(offer.offer_id)?.title,
-      )
-      sentVersions[offer.offer_id] = offer.offer_updated_at
-    } catch (err) {
-      // Best-effort per offer: a failed send (e.g. transient error, or
-      // Google's quota if something else somehow already sent to this
-      // object today) doesn't mark that offer as notified, so it's
-      // eligible to retry tomorrow — and doesn't stop the rest of this
-      // member's batch from attempting. Give the claimed slot back so the
-      // failure doesn't permanently burn it for nothing.
-      console.error('notifyNewOffer failed in daily batch', { memberId: member.id, offerId: offer.offer_id, err })
-      try {
-        await supabaseAdmin.rpc('release_notification_slot', { p_member_id: member.id })
-      } catch {
-        // best-effort
+      const { data, error } = await supabaseAdmin.rpc('notification_candidates', {
+        p_lat: member.home_lat,
+        p_lng: member.home_lng,
+        p_radius_km: member.push_radius_km,
+      })
+      if (error) throw error
+      const history = histories.get(member.id) ?? { lastHeadlineAt: new Map(), introduced: new Set<string>(), sentToday: 0 }
+      const pick = pickHeadline((data ?? []) as Candidate[], history, settings, member.push_radius_km, now)
+      if (!pick) {
+        summary.noPick++
+        return
       }
-    }
-  }
-  if (!Object.keys(sentVersions).length) {
-    // Every real candidate this run failed to send (transient errors, or
-    // today's shared budget ran out before any of them claimed a slot) —
-    // same "don't let the day go silent" floor as the no-candidates path
-    // above. sendReminderFallback does its own claim_notification_slot
-    // check, so this correctly no-ops if the budget really is exhausted.
-    await sendReminderFallback()
-    return
-  }
 
-  await supabaseAdmin
-    .from('wallet_members')
-    .update({
-      notified_offer_versions: { ...alreadyNotified, ...sentVersions },
-      last_notification_batch_at: new Date().toISOString(),
-    })
-    .eq('id', member.id)
+      if (!dryRun) {
+        const { data: claimed, error: claimError } = await supabaseAdmin.rpc('claim_notification_slot', {
+          p_member_id: member.id,
+          p_cap: cap,
+        })
+        if (claimError) throw claimError
+        if (!claimed) {
+          summary.capped++
+          return
+        }
+        try {
+          const resolvedTitle = member.preferred_language
+            ? (await resolveOfferContent([pick.headline], member.preferred_language)).get(pick.headline.offer_id)?.title
+            : undefined
+          await notifyHeadline(objectId, pick, member.preferred_language, resolvedTitle)
+        } catch (err) {
+          console.error('notifyHeadline failed', { memberId: member.id, offerId: pick.headline.offer_id, err })
+          summary.failed++
+          try {
+            await supabaseAdmin.rpc('release_notification_slot', { p_member_id: member.id })
+          } catch {
+            // best-effort
+          }
+          return
+        }
+        await recordHeadline(member.id, pick.headline, pick.kind, pick.mentions)
+        await supabaseAdmin
+          .from('wallet_members')
+          .update({
+            notified_offer_versions: {
+              ...(member.notified_offer_versions ?? {}),
+              [pick.headline.offer_id]: pick.headline.offer_updated_at,
+            },
+            last_notification_batch_at: now.toISOString(),
+          })
+          .eq('id', member.id)
+      }
+
+      summary.sent[pick.kind]++
+      const shop = byShop.get(pick.headline.business_id) ?? {
+        business_id: pick.headline.business_id,
+        business_name: pick.headline.business_name,
+        bid_per_view: pick.headline.bid_per_view,
+        intro: 0,
+        draw: 0,
+      }
+      shop[pick.kind]++
+      byShop.set(pick.headline.business_id, shop)
+    } catch (err) {
+      console.error('sendWindowNotifications: member failed', { memberId: member.id, err })
+      summary.failed++
+    }
+  })
+
+  summary.byShop = [...byShop.values()].sort((a, b) => b.intro + b.draw - (a.intro + a.draw))
+  return summary
 }

@@ -77,7 +77,7 @@ export function getBillingCatalog(): CatalogEntry[] {
       label: '5,000 Credits',
       amountUsd: 90,
     }),
-    // Instant Notify: bypasses the once-daily notification batch so this
+    // Instant Notify: skips the wait for the next send window so this
     // business's campaign fires its lock-screen push immediately and claims
     // a slot ahead of non-premium contenders — see src/lib/wallet/geo-notify.ts
     // notifyInstantOffer(). Does NOT affect nearby_active_offers() card

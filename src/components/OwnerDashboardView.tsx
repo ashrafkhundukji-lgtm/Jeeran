@@ -56,6 +56,7 @@ export default function OwnerDashboardView({
   customersAcquired,
   scansWeek,
   acquiredWeek,
+  lockScreen,
   campaigns: initialCampaigns,
   redemptionsByCampaign,
   spentByCampaign,
@@ -77,6 +78,9 @@ export default function OwnerDashboardView({
   customersAcquired: number
   scansWeek: WeekStat
   acquiredWeek: WeekStat
+  // Lock-screen pings where this shop was the headline / was named under
+  // "also near you" (get_owner_notification_metrics). Null if the lookup failed.
+  lockScreen: { total: number; week: WeekStat; mentionsThisWeek: number } | null
   campaigns: OwnerCampaign[]
   redemptionsByCampaign: Record<string, number>
   spentByCampaign: Record<string, number>
@@ -165,6 +169,16 @@ export default function OwnerDashboardView({
         <section className="grid grid-cols-2 gap-3">
           <StatTile value={scansHosted} label={copy.stats.scansHosted} week={scansWeek} copy={copy} />
           <StatTile value={customersAcquired} label={copy.stats.customersAcquired} week={acquiredWeek} copy={copy} />
+          {lockScreen && (
+            <StatTile
+              value={lockScreen.total}
+              label={copy.stats.lockScreen}
+              week={lockScreen.week}
+              copy={copy}
+              extra={lockScreen.mentionsThisWeek > 0 ? fill(copy.stats.mentions, { n: lockScreen.mentionsThisWeek }) : undefined}
+              className="col-span-2"
+            />
+          )}
         </section>
 
         <SetupChecklist
@@ -358,10 +372,24 @@ function BalanceCard({
   )
 }
 
-function StatTile({ value, label, week, copy }: { value: number; label: string; week: WeekStat; copy: OwnerUiCopy }) {
+function StatTile({
+  value,
+  label,
+  week,
+  copy,
+  extra,
+  className = '',
+}: {
+  value: number
+  label: string
+  week: WeekStat
+  copy: OwnerUiCopy
+  extra?: string
+  className?: string
+}) {
   const diff = week ? week.thisWeek - week.lastWeek : 0
   return (
-    <Card className="flex flex-col p-4">
+    <Card className={`flex flex-col p-4 ${className}`}>
       <span className="font-display text-[30px] leading-none font-bold text-brand-navy-deep">
         <bdi dir="ltr">{value.toLocaleString('en')}</bdi>
       </span>
@@ -374,6 +402,7 @@ function StatTile({ value, label, week, copy }: { value: number; label: string; 
             {diff < 0 && <TrendDownIcon size={14} className="shrink-0" />}
             {diff === 0 ? copy.stats.same : fill(diff > 0 ? copy.stats.more : copy.stats.less, { n: Math.abs(diff) })}
           </span>
+          {extra && <span>{extra}</span>}
         </span>
       )}
     </Card>
