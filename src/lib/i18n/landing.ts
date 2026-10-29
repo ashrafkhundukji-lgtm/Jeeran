@@ -11,7 +11,8 @@ import { FREE_TRIAL_MONTHS } from './trial'
 //     (get_top_ads() has no distance filter); only the customer's saved
 //     Wallet card is filtered to offers near them. Wording says "other
 //     shops" for the QR page and "near you" only for the card.
-//   - Google Wallet only (no Apple Wallet), and nothing that implies the
+//   - Google Wallet only (no Apple Wallet) — the hero says the card works
+//     on Android for now — and nothing that implies the
 //     pass is open to everyone while the issuer is still in test mode.
 export interface LandingCopy {
   brand: string
@@ -68,7 +69,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       sub: 'استضف رمز QR يعرض عروض محلات أخرى واكسب نقاطًا إعلانية، ثم استخدمها لعرض عروضك عند رموزهم. بلا وكالة إعلانية وبلا هدر.',
       ctaOwner: 'أنا صاحب محل',
       ctaCustomer: 'أنا عميل: تصفح العروض',
-      assurances: [`مجاني لأول ${FREE_TRIAL_MONTHS} أشهر`, 'بلا تطبيق للعميل', 'عروض قريبة على بطاقة العميل'],
+      assurances: [`مجاني لأول ${FREE_TRIAL_MONTHS} أشهر`, 'البطاقة تعمل على أندرويد حاليًا', 'عروض قريبة على بطاقة العميل'],
       photoAlt: 'شارع في حي سعودي تقليدي عند الغروب، تحفّه أشجار النخيل والمحلات',
     },
     sampleCard: { label: 'مثال على البطاقة', title: 'عضويتك في شبكة جيران', codeLabel: 'رمز الاسترداد' },
@@ -129,7 +130,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       sub: "Host a QR code that shows other shops' offers and earn ad credits, then spend them to show your own offers at their codes. No ad agency, no wasted spend.",
       ctaOwner: "I'm a shop owner",
       ctaCustomer: "I'm a customer: browse offers",
-      assurances: [`Free for the first ${FREE_TRIAL_MONTHS} months`, 'No app for customers', "Nearby offers on the customer's card"],
+      assurances: [`Free for the first ${FREE_TRIAL_MONTHS} months`, 'The card works on Android for now', "Nearby offers on the customer's card"],
       photoAlt: 'A traditional Saudi neighborhood street at sunset, lined with palm trees and shops',
     },
     sampleCard: { label: 'Example card', title: 'Your Jeeran membership', codeLabel: 'Redeem code' },
@@ -190,7 +191,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       sub: 'ایک QR کوڈ رکھیں جو دوسری دکانوں کے آفرز دکھائے اور ایڈ کریڈٹس کمائیں، پھر انہیں اپنے آفرز ان کے کوڈز پر دکھانے کے لیے استعمال کریں۔ نہ کوئی ایڈ ایجنسی، نہ ضائع خرچ۔',
       ctaOwner: 'میں دکان کا مالک ہوں',
       ctaCustomer: 'میں گاہک ہوں: آفرز دیکھیں',
-      assurances: [`پہلے ${FREE_TRIAL_MONTHS} مہینے مفت`, 'گاہک کے لیے کوئی ایپ نہیں', 'گاہک کے کارڈ پر قریبی آفرز'],
+      assurances: [`پہلے ${FREE_TRIAL_MONTHS} مہینے مفت`, 'کارڈ فی الحال اینڈرائیڈ پر چلتا ہے', 'گاہک کے کارڈ پر قریبی آفرز'],
       photoAlt: 'غروبِ آفتاب کے وقت ایک روایتی سعودی محلے کی گلی، کھجور کے درختوں اور دکانوں کے ساتھ',
     },
     sampleCard: { label: 'کارڈ کی مثال', title: 'جیران میں آپ کی رکنیت', codeLabel: 'ریڈیم کوڈ' },

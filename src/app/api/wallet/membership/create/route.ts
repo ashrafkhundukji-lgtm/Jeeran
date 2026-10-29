@@ -27,6 +27,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createMembershipObject, buildSaveUrl, ensureMembershipClass, type NearbyOffer } from '@/lib/wallet/google-membership-pass'
 import { recordRescanTouchpoint } from '@/lib/wallet/rescan-credit'
 import { refreshMember } from '@/lib/wallet/geo-notify'
+import { isIOSUserAgent } from '@/lib/platform'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,6 +49,14 @@ const SIGNUP_BONUS_CREDITS = 5
 const DAILY_SIGNUP_BONUS_CAP = 20
 
 export async function POST(req: NextRequest) {
+  // No Apple Wallet pass yet: an iPhone/iPad can't hold the card, so refuse
+  // before anything is written — no member row, no touchpoint, no signup or
+  // rescan credit. The scan page already shows iPhone visitors a notice
+  // instead of the button; this also covers a direct call.
+  if (isIOSUserAgent(req.headers.get('user-agent'))) {
+    return NextResponse.json({ error: 'ios_not_supported' }, { status: 409 })
+  }
+
   const body = await req.json().catch(() => null)
   const businessId: string | undefined = body?.businessId
   const lat: number | undefined = body?.lat
