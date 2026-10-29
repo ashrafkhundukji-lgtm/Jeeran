@@ -12,7 +12,8 @@ import SearchField from '@/components/customer/SearchField'
 import OfferCard, { type CardOffer } from '@/components/customer/OfferCard'
 import { CategoryIcon, ChevronForwardIcon, PinIcon, WalletIcon } from '@/components/customer/icons'
 import { DiscountBadge, DistanceText, PRESS } from '@/components/customer/primitives'
-import { GeoDeniedState, NoOffersState } from '@/components/customer/States'
+import { GeoDeniedState } from '@/components/customer/States'
+import RadiusSettings, { WidenRadiusState } from '@/components/customer/RadiusSettings'
 
 // The four quick-filter wells on Home (artboard Main.dc.html). Each opens
 // the Offers tab pre-filtered to that category.
@@ -25,10 +26,13 @@ const HOME_CATEGORIES = ['cafe', 'salon', 'dry-clean', 'auto']
 // Search hands off to the Shops tab (?q=), which searches beyond the radius.
 export default function WalletHomeView({
   token,
+  radiusKm,
   offers,
   otherCount,
 }: {
   token: string
+  // wallet_members.push_radius_km — what "near you" means for this member.
+  radiusKm: number
   offers: CardOffer[]
   otherCount: number
 }) {
@@ -101,7 +105,7 @@ export default function WalletHomeView({
             </div>
           </a>
         ) : (
-          <NoOffersState locale={locale} />
+          <WidenRadiusState token={token} radiusKm={radiusKm} locale={locale} />
         )}
 
         <nav aria-label={copy.home.categoriesLabel} className="flex justify-between gap-2.5">
@@ -138,6 +142,8 @@ export default function WalletHomeView({
             </div>
           </section>
         )}
+
+        <RadiusSettings token={token} radiusKm={radiusKm} locale={locale} />
       </div>
 
       <BottomNav token={token} active="home" />

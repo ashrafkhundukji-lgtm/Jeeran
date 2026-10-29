@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
     let objectId = existing.google_object_id
     if (!objectId && homeLat != null && homeLng != null) {
       try {
-        objectId = await createAndStoreMembershipObject(existing.id, homeLat, homeLng)
+        objectId = await createAndStoreMembershipObject(existing.id, homeLat, homeLng, existing.push_radius_km)
       } catch (err) {
         console.error('retry: createMembershipObject failed for existing member', { memberId: existing.id, err })
       }
@@ -218,7 +218,7 @@ export async function POST(req: NextRequest) {
       home_lng: homeLng,
       signup_ip: requestIp,
     })
-    .select('id')
+    .select('id, push_radius_km')
     .single()
 
   if (insertErr || !member) {
@@ -267,7 +267,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const objectId = await createAndStoreMembershipObject(member.id, homeLat, homeLng)
+  const objectId = await createAndStoreMembershipObject(member.id, homeLat, homeLng, member.push_radius_km)
 
   const saveUrl = await buildSaveUrl(objectId)
 
@@ -280,11 +280,13 @@ export async function POST(req: NextRequest) {
 // (see the null google_object_id branch above) so the two can't drift.
 // Throws on failure — callers decide whether that should surface as a 500
 // (first-time signup) or degrade to saveUrl: null (retry on an existing row).
-async function createAndStoreMembershipObject(memberId: string, homeLat: number, homeLng: number): Promise<string> {
+// radiusKm is the member's own push_radius_km, so the first card shows the
+// same offers as /wallet/home (it used to hard-code 5 km).
+async function createAndStoreMembershipObject(memberId: string, homeLat: number, homeLng: number, radiusKm: number): Promise<string> {
   const { data: initialOffers } = await supabaseAdmin.rpc('nearby_active_offers', {
     p_lat: homeLat,
     p_lng: homeLng,
-    p_radius_km: 5,
+    p_radius_km: radiusKm,
     p_limit: 5,
   })
 
@@ -293,7 +295,7 @@ async function createAndStoreMembershipObject(memberId: string, homeLat: number,
   // wired up anywhere.
   await ensureMembershipClass()
 
-  const objectId = await createMembershipObject(memberId, (initialOffers ?? []) as NearbyOffer[])
+  const objectId = await createMembershipObject(memberId, (initialOffers ?? []) as NearbyOffer[], null, radiusKm)
 
   // Set immediately — object creation via the REST API already succeeded,
   // we don't need to wait for the save-event callback to know it exists.

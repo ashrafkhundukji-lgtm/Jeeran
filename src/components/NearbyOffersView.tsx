@@ -12,6 +12,7 @@ import SearchField from '@/components/customer/SearchField'
 import CategoryChips from '@/components/customer/CategoryChips'
 import OfferCard, { type CardOffer } from '@/components/customer/OfferCard'
 import { EmptyState, NoOffersState } from '@/components/customer/States'
+import { WidenRadiusState } from '@/components/customer/RadiusSettings'
 import { SearchIcon } from '@/components/customer/icons'
 
 // The Offers tab (artboard Offers.dc.html). Order is exactly what
@@ -22,10 +23,13 @@ import { SearchIcon } from '@/components/customer/icons'
 export default function NearbyOffersView({
   offers,
   token,
+  radiusKm,
   initialCategory = null,
 }: {
   offers: CardOffer[]
   token?: string
+  // The member's push_radius_km — with a token, an empty list offers to widen it.
+  radiusKm?: number
   initialCategory?: string | null
 }) {
   const [locale] = useLocale()
@@ -69,7 +73,11 @@ export default function NearbyOffersView({
         </div>
 
         {offers.length === 0 ? (
-          <NoOffersState locale={locale} />
+          token && radiusKm != null ? (
+            <WidenRadiusState token={token} radiusKm={radiusKm} locale={locale} />
+          ) : (
+            <NoOffersState locale={locale} />
+          )
         ) : (
           <>
             <SearchField

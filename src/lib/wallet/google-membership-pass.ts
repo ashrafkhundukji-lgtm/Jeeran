@@ -12,6 +12,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { GoogleAuth } from 'google-auth-library'
 import { loadGoogleWalletCredentials, signRS256Jwt } from './google'
 import { signMemberToken } from './member-token'
+import { nextRadius } from './radius'
 import { resolveOfferContent, type ResolvedOfferContent } from './offer-locale'
 import type { Locale } from '@/lib/i18n/locale'
 import passBrand from './pass-brand.json'
@@ -378,11 +379,29 @@ function offersToImageModules(offers: NearbyOffer[]) {
 // a raw memberId or raw lat/lng in the URL — keeps both out of a link that
 // can end up in browser history/referrers, and the target page verifies it
 // server-side the same way /api/redeem already does for the barcode.
-function offersToLinksModule(memberId: string, offers: NearbyOffer[], preferredLanguage: Locale | null) {
+function offersToLinksModule(memberId: string, offers: NearbyOffer[], preferredLanguage: Locale | null, radiusKm: number | null) {
   const shown = offers.slice(0, MAX_OFFERS_SHOWN)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
-  const uris = shown.map((o, i) => {
+  // Empty card: first link is "Widen to X km". It opens the Home tab's
+  // radius section, where widening is one tap — a card link can't change
+  // the setting itself, since a GET that changes state would also fire for
+  // link previews and prefetches.
+  const widenTo = !offers.length && radiusKm != null ? nextRadius(radiusKm) : null
+  const widen =
+    appUrl && widenTo
+      ? [
+          {
+            id: 'widen_radius',
+            uri: `${appUrl}/wallet/home?token=${signMemberToken(memberId)}#radius`,
+            description: pick(`Widen to ${widenTo} km`, `وسّع إلى ${widenTo} كم`, `${widenTo} کلومیٹر تک بڑھائیں`, preferredLanguage),
+            localizedDescription: localized(`Widen to ${widenTo} km`, `وسّع إلى ${widenTo} كم`, `${widenTo} کلومیٹر تک بڑھائیں`, preferredLanguage),
+          },
+        ]
+      : []
+
+  const uris: { id: string; uri: string; description: string; localizedDescription: unknown }[] = [...widen]
+  uris.push(...shown.map((o, i) => {
     const n = i + 1
     const suffix = shown.length > 1 ? ` – ${o.business_name}` : ''
 
@@ -407,7 +426,7 @@ function offersToLinksModule(memberId: string, offers: NearbyOffer[], preferredL
       description: `${pick('Directions', 'الاتجاهات', 'راستہ دیکھیں', preferredLanguage)}${suffix}`,
       localizedDescription: localizedWithSuffix('Directions', 'الاتجاهات', 'راستہ دیکھیں', suffix, preferredLanguage),
     }
-  })
+  }))
 
   // Was gated on `offers.length > MAX_OFFERS_SHOWN` (omitted when there's
   // nothing beyond the top 2, so as never to be a dead-end button) — a real
@@ -480,9 +499,10 @@ export async function createMembershipObject(
   memberId: string,
   initialOffers: NearbyOffer[],
   preferredLanguage: Locale | null = null,
+  radiusKm: number | null = null,
 ) {
   const authClient = await client()
-  const object = await buildMembershipObject(memberId, initialOffers, preferredLanguage)
+  const object = await buildMembershipObject(memberId, initialOffers, preferredLanguage, radiusKm)
 
   await authClient.request({
     url: `${BASE_URL}/genericObject`,
@@ -504,6 +524,7 @@ export async function buildMembershipObject(
   memberId: string,
   initialOffers: NearbyOffer[],
   preferredLanguage: Locale | null = null,
+  radiusKm: number | null = null,
 ) {
   const { issuerId } = loadGoogleWalletCredentials()
   const objectId = `${issuerId}.member_${memberId}`
@@ -515,10 +536,10 @@ export async function buildMembershipObject(
     state: 'ACTIVE',
     cardTitle: localized('Jeeran Offers', 'عروض جيران', 'جیران آفرز', preferredLanguage),
     header: localized('Nearby deals for you', 'عروض قريبة منك', 'آپ کے قریب آفرز', preferredLanguage),
-    textModulesData: offersToTextModules(initialOffers, resolvedContent),
+    textModulesData: offersToTextModules(initialOffers, resolvedContent, radiusKm, preferredLanguage),
     merchantLocations: offersToMerchantLocations(initialOffers),
     imageModulesData: offersToImageModules(initialOffers),
-    linksModuleData: offersToLinksModule(memberId, initialOffers, preferredLanguage),
+    linksModuleData: offersToLinksModule(memberId, initialOffers, preferredLanguage, radiusKm),
     hexBackgroundColor: PASS_BRAND.hexBackgroundColor,
     logo: { sourceUri: { uri: PASS_BRAND.logoUrl } },
     heroImage: { sourceUri: { uri: PASS_BRAND.heroImageUrl } },
@@ -538,11 +559,14 @@ export async function buildMembershipObject(
  * set on a Message sent through the dedicated addMessage endpoint — not by
  * embedding an untyped `messages` array in a general object PATCH like this.
  */
+// radiusKm (wallet_members.push_radius_km) only matters when `offers` is
+// empty: the card then says "No offers within X km" with a widen link.
 export async function patchMembershipObject(
   objectId: string,
   memberId: string,
   offers: NearbyOffer[],
   preferredLanguage: Locale | null = null,
+  radiusKm: number | null = null,
 ) {
   const authClient = await client()
   const resolvedContent = preferredLanguage ? await resolveOfferContent(offers, preferredLanguage) : undefined
@@ -561,14 +585,14 @@ export async function patchMembershipObject(
       // ar/ur for those on their next refresh instead of leaving them stuck.
       cardTitle: localized('Jeeran Offers', 'عروض جيران', 'جیران آفرز', preferredLanguage),
       header: localized('Nearby deals for you', 'عروض قريبة منك', 'آپ کے قریب آفرز', preferredLanguage),
-      textModulesData: offersToTextModules(offers, resolvedContent),
+      textModulesData: offersToTextModules(offers, resolvedContent, radiusKm, preferredLanguage),
       // Rides the same trigger as textModulesData above (campaign
       // activate/deactivate, periodic sweep) — no separate update path.
       // See offersToMerchantLocations() for why this is what actually makes
       // offers "follow" the customer, not home_lat/home_lng.
       merchantLocations: offersToMerchantLocations(offers),
       imageModulesData: offersToImageModules(offers),
-      linksModuleData: offersToLinksModule(memberId, offers, preferredLanguage),
+      linksModuleData: offersToLinksModule(memberId, offers, preferredLanguage, radiusKm),
       // Same value as at creation; re-sent so passes created before the
       // redeem code existed pick up the code under the barcode on their
       // next refresh.
@@ -689,7 +713,42 @@ Also near you: ${names.join(', ')}`,
   })
 }
 
-function offersToTextModules(offers: NearbyOffer[], resolvedContent?: Map<string, ResolvedOfferContent>) {
+function offersToTextModules(
+  offers: NearbyOffer[],
+  resolvedContent: Map<string, ResolvedOfferContent> | undefined,
+  radiusKm: number | null,
+  preferredLanguage: Locale | null,
+) {
+  // Nothing in range: say so plainly and point at the one-tap "widen"
+  // (offersToLinksModule adds the matching link). Never widened for them.
+  if (!offers.length && radiusKm != null) {
+    const r = radiusKm
+    const n = nextRadius(r)
+    return [
+      {
+        id: 'no_offers',
+        localizedHeader: localized(
+          `No offers within ${r} km right now`,
+          `لا توجد عروض ضمن ${r} كم الآن`,
+          `اس وقت ${r} کلومیٹر کے اندر کوئی آفر نہیں`,
+          preferredLanguage,
+        ),
+        localizedBody: n
+          ? localized(
+              `Tap "Widen to ${n} km" below to see more shops.`,
+              `اضغط "وسّع إلى ${n} كم" بالأسفل لترى محلات أكثر.`,
+              `مزید دکانیں دیکھنے کے لیے نیچے "${n} کلومیٹر تک بڑھائیں" پر ٹیپ کریں۔`,
+              preferredLanguage,
+            )
+          : localized(
+              "New shops join all the time — we'll add their offers here.",
+              'تنضم محلات جديدة باستمرار، وسنضيف عروضها هنا.',
+              'نئی دکانیں مسلسل شامل ہو رہی ہیں — ان کی آفرز یہاں آ جائیں گی۔',
+              preferredLanguage,
+            ),
+      },
+    ]
+  }
   return offers.slice(0, MAX_OFFERS_SHOWN).map((o, i) => {
     const title = resolvedContent?.get(o.offer_id)?.title ?? o.offer_title
     return {

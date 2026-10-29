@@ -14,6 +14,7 @@ import { SearchIcon, StoreIcon } from '@/components/customer/icons'
 import { DiscountBadge, DistanceText } from '@/components/customer/primitives'
 import ShopRow from '@/components/customer/ShopRow'
 import { EmptyState, ErrorState, InviteShopButton } from '@/components/customer/States'
+import { RadiusEntry, WidenRadiusState } from '@/components/customer/RadiusSettings'
 import type { NearbyBusiness } from '@/lib/wallet/nearby-businesses'
 
 // Chip row + always-visible flat list, same shape as NearbyOffersView.tsx
@@ -52,11 +53,15 @@ type RemoteSearch = { query: string; results: NearbyBusiness[]; radiusKm: number
 export default function NearbyShopsView({
   shops,
   token,
+  radiusKm,
   initialQuery = '',
   initialScope = 'near',
   logos = {},
 }: {
   shops: NearbyBusiness[]
+  // The member's push_radius_km: shown as a "change" row, and offered as
+  // "widen" when nothing nearby has an offer.
+  radiusKm?: number
   // business_id → businesses.logo_url for the shops the page fetched;
   // search results carry their own logo_url (/api/wallet/search).
   logos?: Record<string, string>
@@ -218,6 +223,14 @@ export default function NearbyShopsView({
           </div>
         )}
 
+        {token && radiusKm != null && scope === 'near' && <RadiusEntry token={token} radiusKm={radiusKm} locale={locale} />}
+
+        {/* Nothing within the radius has an offer: say so and offer to widen,
+            above whatever shops (without offers) are listed. */}
+        {token && radiusKm != null && scope === 'near' && !query && !shops.some((s) => s.has_active_offer) && (
+          <WidenRadiusState token={token} radiusKm={radiusKm} locale={locale} />
+        )}
+
         {(shops.length > 0 || token) && (
           <>
             <SearchField
@@ -254,7 +267,10 @@ export default function NearbyShopsView({
             <span className="sr-only">{copy.loadingAll}</span>
           </div>
         ) : baseShops.length === 0 && !query ? (
-          <EmptyState icon={<StoreIcon size={28} />} title={copy.empty} action={<InviteShopButton locale={locale} />} />
+          // With a token the widen state above already covers this.
+          !(token && radiusKm != null) && (
+            <EmptyState icon={<StoreIcon size={28} />} title={copy.empty} action={<InviteShopButton locale={locale} />} />
+          )
         ) : sectioned && visibleShops.length > 0 ? (
           <div className="flex flex-col gap-3">
             {nearbyResults.length > 0 && sectionLabel(copy.nearbySection)}

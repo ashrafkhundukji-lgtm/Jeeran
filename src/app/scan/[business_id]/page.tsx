@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { fetchOfferEndDates } from '@/lib/offerEndDates'
 import { haversineKm } from '@/lib/display'
 import ScanView from '@/components/ScanView'
+import { isIOSRequest } from '@/lib/platform'
 import type { CardOffer } from '@/components/customer/OfferCard'
 
 // Apple Wallet (SaveToWalletButton) is intentionally not rendered here — its
@@ -21,9 +22,12 @@ export default async function ScanPage({
   const { business_id } = await params
   const host = await getHostBusiness(business_id)
   if (!host) notFound()
+  // No Apple Wallet pass yet: iPhone visitors get a notice instead of the
+  // Google Wallet button (ScanView), and the offers as usual.
+  const ios = await isIOSRequest()
 
   if (host.isFrozen) {
-    return <ScanView hostId={host.id} hostName={host.name} frozen offers={[]} />
+    return <ScanView hostId={host.id} hostName={host.name} frozen offers={[]} ios={ios} />
   }
 
   // Ranking and selection stay entirely get_top_ads()'s. The lookups below
@@ -66,5 +70,5 @@ export default async function ScanPage({
     }
   })
 
-  return <ScanView hostId={host.id} hostName={host.name} hostLogoUrl={hostShop?.logo_url ?? null} offers={offers} />
+  return <ScanView hostId={host.id} hostName={host.name} hostLogoUrl={hostShop?.logo_url ?? null} offers={offers} ios={ios} />
 }

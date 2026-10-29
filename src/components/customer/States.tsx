@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react'
 import type { Locale } from '@/lib/i18n/locale'
 import { CUSTOMER_UI_COPY } from '@/lib/i18n/customerUi'
-import { LocateOffIcon, RefreshIcon, ShareIcon, TagIcon } from './icons'
+import { LocateOffIcon, RefreshIcon, ShareIcon, SmartphoneIcon, TagIcon } from './icons'
 import { PRESS } from './primitives'
 
 // Empty / error / loading states shared by the customer screens.
@@ -47,6 +47,23 @@ export function InviteShopButton({ locale }: { locale: Locale }) {
       <ShareIcon size={18} />
       {copied ? copy.linkCopied : copy.empty.invite}
     </button>
+  )
+}
+
+// "Jeeran cards work on Android for now" — shown to iPhone visitors in place
+// of the Google Wallet button (scan page) or under the hero CTAs (landing,
+// `tone="dark"` on the navy hero).
+export function IosNotice({ text, tone = 'light' }: { text: string; tone?: 'light' | 'dark' }) {
+  return (
+    <p
+      role="status"
+      className={`flex items-start gap-3 rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+        tone === 'dark' ? 'bg-white/12 text-white' : 'bg-brand-tint text-brand-navy-deep'
+      }`}
+    >
+      <SmartphoneIcon size={20} className={`mt-0.5 shrink-0 ${tone === 'dark' ? 'text-white' : 'text-brand-navy'}`} />
+      <span>{text}</span>
+    </p>
   )
 }
 

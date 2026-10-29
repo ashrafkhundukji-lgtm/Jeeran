@@ -56,6 +56,7 @@ export default async function NearbyShopsPage({
         shops={shopRows}
         logos={logos}
         token={token}
+        radiusKm={Number(member.push_radius_km)}
         initialQuery={q ?? ''}
         initialScope={scope === 'all' ? 'all' : 'near'}
       />

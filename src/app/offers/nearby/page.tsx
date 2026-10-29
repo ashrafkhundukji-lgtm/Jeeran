@@ -71,6 +71,7 @@ export default async function NearbyOffersPage({
       <NearbyOffersView
         offers={nearbyOffers.map((o) => nearbyOfferToCard(o, token, endDates, images))}
         token={token}
+        radiusKm={Number(member.push_radius_km)}
         initialCategory={category && CATEGORIES.includes(category) ? category : null}
       />
     </>
