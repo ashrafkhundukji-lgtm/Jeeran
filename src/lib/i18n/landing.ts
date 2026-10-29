@@ -87,7 +87,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
         },
         {
           title: 'استرداد عبر Google Wallet',
-          body: 'يحفظ العميل عضويته في Google Wallet ويستردّ عرضك في المحل. بلا تطبيق ولا قسائم ورقية.',
+          body: 'يحفظ العميل عضويته في Google Wallet على هاتف أندرويد ويستردّ عرضك في المحل. بلا قسائم ورقية.',
         },
       ],
     },
@@ -96,7 +96,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       heading: 'امسح، احفظ، استفد',
       rows: [
         { title: 'امسح رمز المحل', body: 'تجده على طاولة المحل، ويعرض لك عروضًا من محلات أخرى في جيران.' },
-        { title: 'احفظ العضوية', body: 'بطاقة واحدة في Google Wallet تعرض العروض القريبة منك، بلا حساب ولا تطبيق.' },
+        { title: 'احفظ العضوية', body: 'بطاقة واحدة في Google Wallet على أندرويد تعرض العروض القريبة منك، بلا حساب. دعم آيفون قادم قريبًا.' },
         { title: 'استرد عرضك', body: 'أظهر رمز البطاقة للمحل واحصل على العرض.' },
       ],
       photoAlt: 'شارع في حي سعودي عند الغروب',
@@ -106,7 +106,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       heading: 'بسيط، وللحيّ',
       points: [
         { title: 'ابدأ مجانًا', body: `أول ${FREE_TRIAL_MONTHS} أشهر مجانًا، والنقاط الأولى تأتي من أول عرض يُعرض عندك.` },
-        { title: 'بلا تطبيق', body: 'العميل يمسح الرمز ويحفظ بطاقته في Google Wallet مباشرة.' },
+        { title: 'في Google Wallet', body: 'العميل يمسح الرمز ويحفظ بطاقته في Google Wallet على هاتف أندرويد مباشرة. دعم آيفون قادم قريبًا.' },
         { title: 'عروض قريبة من العميل', body: 'بطاقة العميل تعرض عروض المحلات القريبة من موقعه، فيصل عرضك إلى من هم حولك.' },
       ],
     },
@@ -148,7 +148,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
         },
         {
           title: 'Redeemed with Google Wallet',
-          body: 'Customers save their membership in Google Wallet and redeem your offer in person. No app, no paper coupons.',
+          body: 'Customers save their membership in Google Wallet on an Android phone and redeem your offer in person. No paper coupons.',
         },
       ],
     },
@@ -157,7 +157,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       heading: 'Scan, save, enjoy',
       rows: [
         { title: "Scan the shop's code", body: "You'll find it on the counter. It shows you offers from other shops on Jeeran." },
-        { title: 'Save the membership', body: 'One card in Google Wallet that shows offers near you. No account, no app.' },
+        { title: 'Save the membership', body: 'One card in Google Wallet on Android that shows offers near you. No account needed. iPhone is coming soon.' },
         { title: 'Redeem your offer', body: "Show the card's code at the shop and get the offer." },
       ],
       photoAlt: 'A Saudi neighborhood street at sunset',
@@ -167,7 +167,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       heading: 'Simple, and made for the neighborhood',
       points: [
         { title: 'Start free', body: `The first ${FREE_TRIAL_MONTHS} months are free, and your first credits come from the first offer shown at your place.` },
-        { title: 'No app', body: 'Customers scan the code and save their card straight to Google Wallet.' },
+        { title: 'In Google Wallet', body: 'Customers scan the code and save their card straight to Google Wallet on Android. iPhone is coming soon.' },
         { title: 'Offers near the customer', body: "The customer's card shows offers from shops near them, so your offer reaches people around you." },
       ],
     },
@@ -209,7 +209,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
         },
         {
           title: 'Google Wallet سے ریڈیم',
-          body: 'گاہک اپنی رکنیت Google Wallet میں محفوظ کرتا ہے اور دکان پر آ کر آپ کا آفر حاصل کرتا ہے۔ نہ ایپ، نہ کاغذی کوپن۔',
+          body: 'گاہک اپنی رکنیت اینڈرائیڈ فون پر Google Wallet میں محفوظ کرتا ہے اور دکان پر آ کر آپ کا آفر حاصل کرتا ہے۔ کوئی کاغذی کوپن نہیں۔',
         },
       ],
     },
@@ -218,7 +218,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       heading: 'اسکین کریں، محفوظ کریں، فائدہ اٹھائیں',
       rows: [
         { title: 'دکان کا کوڈ اسکین کریں', body: 'یہ کاؤنٹر پر ملے گا، اور آپ کو جیران پر دوسری دکانوں کے آفرز دکھاتا ہے۔' },
-        { title: 'رکنیت محفوظ کریں', body: 'Google Wallet میں ایک کارڈ جو آپ کے قریب کے آفرز دکھاتا ہے۔ نہ اکاؤنٹ، نہ ایپ۔' },
+        { title: 'رکنیت محفوظ کریں', body: 'اینڈرائیڈ پر Google Wallet میں ایک کارڈ جو آپ کے قریب کے آفرز دکھاتا ہے۔ کسی اکاؤنٹ کی ضرورت نہیں۔ آئی فون جلد آ رہا ہے۔' },
         { title: 'اپنا آفر حاصل کریں', body: 'دکان پر کارڈ کا کوڈ دکھائیں اور آفر حاصل کریں۔' },
       ],
       photoAlt: 'غروبِ آفتاب کے وقت ایک سعودی محلے کی گلی',
@@ -228,7 +228,7 @@ export const LANDING_COPY: Record<Locale, LandingCopy> = {
       heading: 'آسان، اور محلے کے لیے',
       points: [
         { title: 'مفت شروع کریں', body: `پہلے ${FREE_TRIAL_MONTHS} مہینے مفت، اور پہلے کریڈٹس آپ کے یہاں دکھائے گئے پہلے آفر سے آتے ہیں۔` },
-        { title: 'کوئی ایپ نہیں', body: 'گاہک کوڈ اسکین کر کے اپنا کارڈ سیدھا Google Wallet میں محفوظ کرتا ہے۔' },
+        { title: 'Google Wallet میں', body: 'گاہک کوڈ اسکین کر کے اپنا کارڈ اینڈرائیڈ پر سیدھا Google Wallet میں محفوظ کرتا ہے۔ آئی فون جلد آ رہا ہے۔' },
         { title: 'گاہک کے قریب آفرز', body: 'گاہک کا کارڈ اس کے قریب کی دکانوں کے آفرز دکھاتا ہے، اس لیے آپ کا آفر آپ کے آس پاس کے لوگوں تک پہنچتا ہے۔' },
       ],
     },

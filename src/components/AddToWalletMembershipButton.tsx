@@ -170,7 +170,7 @@ export default function AddToWalletMembershipButton({
 
   const trust = [
     { Icon: CheckIcon, label: copy.trustFree },
-    { Icon: SmartphoneIcon, label: copy.trustNoApp },
+    { Icon: SmartphoneIcon, label: copy.trustAndroid },
     { Icon: TrashIcon, label: copy.trustRemove },
   ]
 

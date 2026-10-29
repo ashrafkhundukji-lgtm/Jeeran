@@ -41,8 +41,6 @@ export interface CustomerUiCopy {
     noCardOffer: string
     categoriesLabel: string
     featured: string
-    locationCurrent: string
-    locationEnable: string
   }
   offers: {
     title: string
@@ -67,7 +65,7 @@ export interface CustomerUiCopy {
     addToWallet: string
     saving: string
     trustFree: string
-    trustNoApp: string
+    trustAndroid: string
     trustRemove: string
     offersFrom: (name: string) => ReactNode
     youreIn: string
@@ -86,8 +84,6 @@ export interface CustomerUiCopy {
     noOffersBody: string
     invite: string
     inviteText: string
-    geoTitle: string
-    geoBody: string
     errorTitle: string
     errorBody: string
   }
@@ -122,8 +118,6 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       noCardOffer: 'لا توجد عروض على بطاقتك الآن. سنضيفها فور توفرها.',
       categoriesLabel: 'الفئات',
       featured: 'عروض مميزة قربك',
-      locationCurrent: 'موقعك الحالي',
-      locationEnable: 'فعّل الموقع',
     },
     offers: {
       title: 'عروض قريبة منك',
@@ -155,11 +149,11 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       welcome: 'أهلًا بك في جيران',
       atShop: (name) => <>أنت الآن في {shop(name)}، وهذه عروض من محلات أخرى في جيران.</>,
       cardTitle: 'بطاقتك الدائمة في Wallet',
-      cardBody: 'احفظها مرة واحدة وستصلك العروض القريبة تلقائيًا، بدون تطبيق.',
+      cardBody: 'احفظها مرة واحدة في Google Wallet على هاتف أندرويد وستصلك العروض القريبة تلقائيًا. دعم آيفون قادم قريبًا.',
       addToWallet: 'أضف إلى Google Wallet',
       saving: 'جارٍ التجهيز…',
       trustFree: 'مجانًا',
-      trustNoApp: 'بدون تحميل تطبيق',
+      trustAndroid: 'لهواتف أندرويد حاليًا',
       trustRemove: 'احذفها متى شئت',
       offersFrom: (name) => <>عروض مختارة لزوار {shop(name)}</>,
       youreIn: 'تم! أنت معنا',
@@ -179,8 +173,6 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       noOffersBody: 'نضيف محلات جديدة باستمرار. ادعُ محلك المفضل لينضم إلى جيران.',
       invite: 'ادعُ محلًا في حيّك',
       inviteText: 'انضم إلى جيران واعرض عروض محلك لسكان الحي:',
-      geoTitle: 'لم نتمكن من تحديد موقعك',
-      geoBody: 'فعّل إذن الموقع في المتصفح لنعرض لك العروض الأقرب إليك.',
       errorTitle: 'حدث خطأ',
       errorBody: 'تعذّر تحميل العروض. تحقق من اتصالك وحاول مرة أخرى.',
     },
@@ -206,8 +198,6 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       noCardOffer: "Nothing on your card yet. We'll add offers as soon as they're available.",
       categoriesLabel: 'Categories',
       featured: 'Featured near you',
-      locationCurrent: 'Your location',
-      locationEnable: 'Turn on location',
     },
     offers: {
       title: 'Offers near you',
@@ -232,11 +222,11 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       welcome: 'Welcome to Jeeran',
       atShop: (name) => <>You&apos;re at {shop(name)}. Here are offers from other shops on Jeeran.</>,
       cardTitle: 'Your permanent card in Wallet',
-      cardBody: 'Save it once and nearby offers reach you automatically — no app needed.',
+      cardBody: 'Save it once in Google Wallet on your Android phone and nearby offers reach you automatically. iPhone is coming soon.',
       addToWallet: 'Add to Google Wallet',
       saving: 'Preparing…',
       trustFree: 'Free',
-      trustNoApp: 'No app to install',
+      trustAndroid: 'Android phones for now',
       trustRemove: 'Remove anytime',
       offersFrom: (name) => <>Offers picked for {shop(name)}&apos;s visitors</>,
       youreIn: "You're in!",
@@ -256,8 +246,6 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       noOffersBody: 'New shops join all the time. Invite your favourite one to Jeeran.',
       invite: 'Invite a shop near you',
       inviteText: 'Join Jeeran and show your shop’s offers to the neighbourhood:',
-      geoTitle: "We couldn't find your location",
-      geoBody: 'Allow location access in your browser so we can show the offers closest to you.',
       errorTitle: 'Something went wrong',
       errorBody: "We couldn't load offers. Check your connection and try again.",
     },
@@ -284,8 +272,6 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       noCardOffer: 'ابھی آپ کے کارڈ پر کوئی آفر نہیں۔ دستیاب ہوتے ہی شامل کر دیں گے۔',
       categoriesLabel: 'کیٹگریز',
       featured: 'آپ کے قریب نمایاں آفرز',
-      locationCurrent: 'آپ کا مقام',
-      locationEnable: 'لوکیشن آن کریں',
     },
     offers: {
       title: 'آپ کے قریب آفرز',
@@ -310,11 +296,11 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       welcome: 'جیران میں خوش آمدید',
       atShop: (name) => <>آپ ابھی {shop(name)} میں ہیں، اور یہ جیران پر دوسری دکانوں کی آفرز ہیں۔</>,
       cardTitle: 'Wallet میں آپ کا مستقل کارڈ',
-      cardBody: 'ایک بار محفوظ کریں، قریبی آفرز خود بخود آپ تک پہنچیں گی — کسی ایپ کے بغیر۔',
+      cardBody: 'اینڈرائیڈ فون پر Google Wallet میں ایک بار محفوظ کریں، قریبی آفرز خود بخود آپ تک پہنچیں گی۔ آئی فون جلد آ رہا ہے۔',
       addToWallet: 'Google Wallet میں شامل کریں',
       saving: 'تیار ہو رہا ہے…',
       trustFree: 'مفت',
-      trustNoApp: 'کوئی ایپ نہیں',
+      trustAndroid: 'فی الحال اینڈرائیڈ فونز کے لیے',
       trustRemove: 'جب چاہیں ہٹائیں',
       offersFrom: (name) => <>{shop(name)} کے مہمانوں کے لیے منتخب آفرز</>,
       youreIn: 'آپ شامل ہو گئے!',
@@ -334,8 +320,6 @@ export const CUSTOMER_UI_COPY: Record<Locale, CustomerUiCopy> = {
       noOffersBody: 'نئی دکانیں مسلسل شامل ہو رہی ہیں۔ اپنی پسندیدہ دکان کو جیران میں مدعو کریں۔',
       invite: 'اپنے محلے کی دکان کو مدعو کریں',
       inviteText: 'جیران میں شامل ہوں اور اپنی دکان کی آفرز محلے کو دکھائیں:',
-      geoTitle: 'آپ کا مقام معلوم نہیں ہو سکا',
-      geoBody: 'براؤزر میں لوکیشن کی اجازت دیں تاکہ ہم آپ کو قریب ترین آفرز دکھا سکیں۔',
       errorTitle: 'کچھ غلط ہو گیا',
       errorBody: 'آفرز لوڈ نہیں ہو سکیں۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔',
     },

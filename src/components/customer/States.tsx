@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react'
 import type { Locale } from '@/lib/i18n/locale'
 import { CUSTOMER_UI_COPY } from '@/lib/i18n/customerUi'
-import { LocateOffIcon, RefreshIcon, ShareIcon, SmartphoneIcon, TagIcon } from './icons'
+import { RefreshIcon, ShareIcon, SmartphoneIcon, TagIcon } from './icons'
 import { PRESS } from './primitives'
 
 // Empty / error / loading states shared by the customer screens.
@@ -99,18 +99,6 @@ export function ErrorState({ locale, onRetry }: { locale: Locale; onRetry: () =>
       icon={<RefreshIcon size={28} />}
       title={copy.empty.errorTitle}
       body={copy.empty.errorBody}
-      action={<RetryButton label={copy.retry} onRetry={onRetry} />}
-    />
-  )
-}
-
-export function GeoDeniedState({ locale, onRetry }: { locale: Locale; onRetry: () => void }) {
-  const copy = CUSTOMER_UI_COPY[locale]
-  return (
-    <EmptyState
-      icon={<LocateOffIcon size={28} />}
-      title={copy.empty.geoTitle}
-      body={copy.empty.geoBody}
       action={<RetryButton label={copy.retry} onRetry={onRetry} />}
     />
   )

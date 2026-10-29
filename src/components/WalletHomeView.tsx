@@ -1,18 +1,16 @@
 'use client'
 
-import { useState } from 'react'
 import { useLocale } from '@/lib/i18n/useLocale'
 import { getDir } from '@/lib/i18n/locale'
 import { CUSTOMER_UI_COPY } from '@/lib/i18n/customerUi'
 import { CATEGORY_LABELS } from '@/lib/categories'
 import CustomerPage from '@/components/customer/CustomerPage'
-import AppHeader, { useGeoPermission } from '@/components/customer/AppHeader'
+import AppHeader from '@/components/customer/AppHeader'
 import BottomNav, { NAV_CLEARANCE } from '@/components/customer/BottomNav'
 import SearchField from '@/components/customer/SearchField'
 import OfferCard, { type CardOffer } from '@/components/customer/OfferCard'
 import { CategoryIcon, ChevronForwardIcon, PinIcon, WalletIcon } from '@/components/customer/icons'
 import { DiscountBadge, DistanceText, PRESS } from '@/components/customer/primitives'
-import { GeoDeniedState } from '@/components/customer/States'
 import RadiusSettings, { WidenRadiusState } from '@/components/customer/RadiusSettings'
 
 // The four quick-filter wells on Home (artboard Main.dc.html). Each opens
@@ -40,22 +38,12 @@ export default function WalletHomeView({
   const dir = getDir(locale)
   const copy = CUSTOMER_UI_COPY[locale]
   const q = `?token=${encodeURIComponent(token)}`
-  const geo = useGeoPermission()
-  // Only explain a denial the customer just ran into — not on every visit.
-  const [askedGeo, setAskedGeo] = useState(false)
   const topOffer = offers[0] ?? null
-
-  function requestGeo() {
-    setAskedGeo(true)
-    geo.request()
-  }
 
   return (
     <CustomerPage dir={dir} lang={locale} clearance={NAV_CLEARANCE}>
       <div className="flex flex-col gap-4 px-6 pt-5">
-        <AppHeader locale={locale} geo={geo.state} onRequestGeo={requestGeo} />
-
-        {askedGeo && geo.state === 'denied' && <GeoDeniedState locale={locale} onRetry={geo.request} />}
+        <AppHeader locale={locale} />
 
         <div className="flex flex-col gap-1">
           <h1 className="font-display text-[30px] leading-[1.25] font-bold text-brand-navy-deep">{copy.home.greeting}</h1>
