@@ -8,6 +8,8 @@ import { useLocale } from '@/lib/i18n/useLocale'
 import SiteHeader from '@/components/site/SiteHeader'
 import SiteFooter from '@/components/site/SiteFooter'
 import { BookmarkIcon, QrIcon, RouteIcon, ScanIcon, TagIcon, CardIcon } from '@/components/customer/icons'
+import { IosNotice } from '@/components/customer/States'
+import { IOS_NOTICE_COPY } from '@/lib/i18n/radiusSettings'
 
 // Landing page (approved mockup: downloads/handoff/landing-auth/landing.html).
 // Navy/coral/cream on the shared brand tokens, Readex Pro + IBM Plex Sans
@@ -23,7 +25,9 @@ const FOCUS_LIGHT = 'focus-visible:outline-2 focus-visible:outline-offset-2 focu
 const BTN = 'inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-6 font-display text-base font-semibold transition-colors motion-reduce:transition-none'
 const BTN_PRIMARY = `${BTN} bg-brand-coral text-white hover:bg-[#B5330F]`
 
-export default function LandingPage() {
+// `ios`: iPhone/iPad visitor (src/lib/platform.ts) — the hero adds a one-line
+// "Android for now" notice. Android and desktop render exactly as before.
+export default function LandingPage({ ios = false }: { ios?: boolean }) {
   const [locale, setLocale] = useLocale()
   const copy = LANDING_COPY[locale]
   const dir = getDir(locale)
@@ -42,7 +46,7 @@ export default function LandingPage() {
 
   return (
     <div dir={dir} lang={locale} className="min-h-screen bg-brand-cream font-body text-brand-navy-deep">
-      <Hero copy={copy} locale={locale} setLocale={setLocale} ctaRef={heroCtaRef} />
+      <Hero copy={copy} locale={locale} setLocale={setLocale} ctaRef={heroCtaRef} iosNotice={ios ? IOS_NOTICE_COPY[locale].landing : null} />
       <main>
         <HowItWorks copy={copy} />
         <ForCustomers copy={copy} />
@@ -79,11 +83,13 @@ function Hero({
   locale,
   setLocale,
   ctaRef,
+  iosNotice,
 }: {
   copy: LandingCopy
   locale: Locale
   setLocale: (l: Locale) => void
   ctaRef: React.RefObject<HTMLAnchorElement | null>
+  iosNotice: string | null
 }) {
   return (
     <div className="relative isolate overflow-hidden bg-brand-navy-deep text-white">
@@ -113,6 +119,11 @@ function Hero({
               {copy.hero.ctaCustomer}
             </a>
           </div>
+          {iosNotice && (
+            <div className="mt-4 max-w-[34em]">
+              <IosNotice text={iosNotice} tone="dark" />
+            </div>
+          )}
           <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-brand-tint-2">
             {copy.hero.assurances.map((a) => (
               <li key={a} className="flex items-center gap-2">

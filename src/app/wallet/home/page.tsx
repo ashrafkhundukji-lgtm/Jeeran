@@ -53,6 +53,7 @@ export default async function WalletHomePage({
       <WalletLocaleSync preferred={member.preferred_language} />
       <WalletHomeView
         token={token}
+        radiusKm={Number(member.push_radius_km)}
         offers={nearbyOffers.map((o) => nearbyOfferToCard(o, token, endDates, images))}
         otherCount={Math.max(nearbyOffers.length - 1, 0)}
       />

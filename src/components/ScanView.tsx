@@ -10,7 +10,8 @@ import { ShopAvatar } from '@/components/customer/primitives'
 import OfferCard, { type CardOffer } from '@/components/customer/OfferCard'
 import AddToWalletMembershipButton from '@/components/AddToWalletMembershipButton'
 import { CheckIcon, StoreIcon } from '@/components/customer/icons'
-import { EmptyState, NoOffersState } from '@/components/customer/States'
+import { EmptyState, IosNotice, NoOffersState } from '@/components/customer/States'
+import { IOS_NOTICE_COPY } from '@/lib/i18n/radiusSettings'
 
 // QR scan landing (artboard Scan.dc.html). The Google Wallet button is the
 // platform's #1 conversion, so it's the biggest thing on the page, inside
@@ -28,12 +29,18 @@ export default function ScanView({
   hostLogoUrl = null,
   offers,
   frozen = false,
+  ios = false,
 }: {
   hostId: string
   hostName: string
   hostLogoUrl?: string | null
   offers: CardOffer[]
   frozen?: boolean
+  // iPhone/iPad (server-side user-agent check, src/lib/platform.ts): there's
+  // no Apple Wallet card yet, so the Google Wallet button — which would
+  // register them and then dead-end on Google's save page — is replaced by
+  // a plain notice. The offers below stay.
+  ios?: boolean
 }) {
   const [locale, setLocale] = useLocale()
 
@@ -87,6 +94,8 @@ export default function ScanView({
       <div className="relative mx-6 -mt-[62px] rounded-3xl bg-white p-5 shadow-brand-overlap">
         {frozen ? (
           <EmptyState icon={<StoreIcon size={28} />} title={copy.scan.unavailable} />
+        ) : ios ? (
+          <IosNotice text={IOS_NOTICE_COPY[locale].scan} />
         ) : (
           <AddToWalletMembershipButton businessId={hostId} onConfirmed={() => setVisitRecorded(true)} />
         )}
