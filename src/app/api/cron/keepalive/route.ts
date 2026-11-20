@@ -21,5 +21,13 @@ export async function GET(req: NextRequest) {
   const { error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ ok: true, pingedAt: new Date().toISOString() })
+  // Retention for rate_limit_hits (hashed IP / device keys): nothing is
+  // needed past the longest window (24 h); keep 2 days at most.
+  const { error: pruneErr, count: pruned } = await supabaseAdmin
+    .from('rate_limit_hits')
+    .delete({ count: 'exact' })
+    .lt('hit_at', new Date(Date.now() - 2 * 86_400_000).toISOString())
+  if (pruneErr) console.error('cron/keepalive: rate_limit_hits prune failed', pruneErr.message)
+
+  return NextResponse.json({ ok: true, pingedAt: new Date().toISOString(), rateLimitRowsPruned: pruned ?? 0 })
 }

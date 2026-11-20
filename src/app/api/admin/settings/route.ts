@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPromotionThresholds, updatePromotionThresholds } from '@/lib/promotion'
+import { requireAdminApi } from '@/lib/adminAuth'
+import { logAdminAction } from '@/lib/adminAudit'
 
 export const dynamic = 'force-dynamic'
 
-// No auth gate here — matches the admin overview page's current posture
-// ("no login required yet, do not expose this URL publicly", see
-// src/app/api/admin/shops/[id]/freeze/route.ts's identical comment). Worth
-// flagging specifically for this route more than the others: unlike the
-// read-only admin views or a single-shop freeze toggle, this one changes
-// ranking-affecting config (and, as of Phase 4 item 9, milestone bonus
-// amounts) for the whole platform. Lock down alongside the rest of /admin
-// when admin auth is added.
+// Admins only (ADMIN_EMAILS, src/lib/adminAuth.ts). PATCH changes
+// ranking and milestone bonus config for the whole platform, so every
+// change is written to admin_audit_log.
 export async function GET() {
+  const admin = await requireAdminApi()
+  if (!admin.ok) return admin.response
   const thresholds = await getPromotionThresholds()
   return NextResponse.json(thresholds)
 }
 
 export async function PATCH(req: NextRequest) {
+  const admin = await requireAdminApi()
+  if (!admin.ok) return admin.response
   const body = await req.json().catch(() => null)
   const silverThreshold = Number(body?.silverThreshold)
   const goldThreshold = Number(body?.goldThreshold)
@@ -44,6 +45,13 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Thresholds must be strictly increasing: silver < gold < platinum' }, { status: 400 })
   }
 
+  const before = await getPromotionThresholds()
+  try {
+    await logAdminAction(admin.user, 'settings.update', null, { before, after: fields })
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ error: 'Could not record the change; nothing was changed' }, { status: 500 })
+  }
   await updatePromotionThresholds(fields)
   return NextResponse.json({ success: true })
 }

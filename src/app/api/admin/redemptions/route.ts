@@ -3,24 +3,19 @@
  * brought into shops" numbers, plus a leaderboard of which shops are
  * benefiting most.
  *
- * Auth is a deliberate stub: there is no admin authentication anywhere in
- * this app yet (src/app/admin/page.tsx is currently unauthenticated too —
- * see getAdminOverview() in src/lib/admin.ts). That's a real gap outside
- * this feature's scope, not something to paper over here with a throwaway
- * check. This route stays locked down (always 401) until real admin auth
- * exists.
+ * Admins only (ADMIN_EMAILS, src/lib/adminAuth.ts): 401 not signed in,
+ * 403 signed in but not an admin.
  */
 
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { requireAdminApi } from '@/lib/adminAuth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const isAdmin = await getIsAuthenticatedAdmin()
-  if (!isAdmin) {
-    return NextResponse.json({ error: 'not authenticated as admin' }, { status: 401 })
-  }
+  const admin = await requireAdminApi()
+  if (!admin.ok) return admin.response
 
   const [
     { data: summary, error: summaryErr },
@@ -39,9 +34,3 @@ export async function GET() {
   return NextResponse.json({ summary, topBusinesses, conversion })
 }
 
-async function getIsAuthenticatedAdmin(): Promise<boolean> {
-  // TODO: no admin auth mechanism exists in the app yet. Needs a real
-  // decision (role column? allowlisted email? separate admin table?) before
-  // this route — or src/app/admin/page.tsx itself — can be unlocked.
-  return false
-}
