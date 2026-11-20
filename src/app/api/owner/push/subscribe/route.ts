@@ -31,8 +31,11 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
   if (findErr) return NextResponse.json({ error: findErr.message }, { status: 500 })
 
-  // The same browser signed into another owner account earlier: it may move
-  // over only if it proves it holds the subscription (same keys).
+  // A phone that signed into another owner account earlier holds the same
+  // endpoint: the subscription MOVES to this owner and shop (the old owner
+  // stops getting pushes on it). The phone proves it holds the subscription
+  // by sending the same keys; an endpoint with other keys is someone else's
+  // phone and is refused, so nobody can redirect another owner's pushes.
   if (existing && existing.owner_id !== caller.userId && (existing.p256dh !== p256dh || existing.auth !== auth)) {
     return NextResponse.json({ error: 'This subscription belongs to another account' }, { status: 403 })
   }
@@ -47,9 +50,13 @@ export async function POST(req: NextRequest) {
     // Keep the existing label when none is sent (service-worker renewal).
     ...(cleanLabel(body.label) || !existing ? { user_agent_label: cleanLabel(body.label) } : {}),
   }
-  const { data: saved, error: saveErr } = existing
-    ? await supabaseAdmin.from('owner_push_subscriptions').update(row).eq('id', existing.id).select('id').single()
-    : await supabaseAdmin.from('owner_push_subscriptions').insert(row).select('id').single()
+  // Upsert on the endpoint: one row per phone, never a unique-constraint
+  // failure (also covers two taps racing each other).
+  const { data: saved, error: saveErr } = await supabaseAdmin
+    .from('owner_push_subscriptions')
+    .upsert(row, { onConflict: 'endpoint' })
+    .select('id')
+    .single()
   if (saveErr) return NextResponse.json({ error: saveErr.message }, { status: 500 })
 
   // Preferences row (defaults: everything on) + the language pushes use.

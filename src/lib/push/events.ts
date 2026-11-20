@@ -107,7 +107,19 @@ export function onTrialEnding(businessId: string, trialEndsAt: string) {
 
 // Daily sweeps (trials cron): offers that stopped showing because of time
 // (end date passed, trial grace over), and signup summaries still pending.
+// Retention: the send log is only needed for the throttle (longest window:
+// 30 days for the trial warning) and the signups count; older rows go.
+export const PUSH_LOG_RETENTION_DAYS = 30
+
+export async function prunePushLog() {
+  const cutoff = new Date(Date.now() - PUSH_LOG_RETENTION_DAYS * 86_400_000).toISOString()
+  const { error, count } = await supabaseAdmin.from('owner_push_log').delete({ count: 'exact' }).lt('sent_at', cutoff)
+  if (error) throw error
+  return count ?? 0
+}
+
 export function scheduleDailySweeps() {
+  background('push log retention', prunePushLog)
   background('daily sweeps', async () => {
     const { data: ids, error } = await supabaseAdmin.rpc('owner_offer_state_sweep_ids')
     if (error) throw error
