@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse, after } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getRequestAuth } from '@/lib/requestAuth'
 import { hasActiveCampaign } from '@/lib/campaigns'
 import { notifyMembersNearBusiness } from '@/lib/wallet/geo-notify'
 import { regenerateAutoTranslations } from '@/lib/translate'
 
 async function handleToggle(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  supabase: SupabaseClient,
   id: string,
   isActive: boolean,
 ) {
@@ -83,7 +84,7 @@ async function handleToggle(
 }
 
 async function handleEdit(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  supabase: SupabaseClient,
   id: string,
   body: {
     title?: string
@@ -188,10 +189,8 @@ async function handleEdit(
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Cookie session (website) or verified bearer token (owner app).
+  const { supabase, user } = await getRequestAuth(req)
   if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
   const body = await req.json().catch(() => null)

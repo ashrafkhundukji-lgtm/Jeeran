@@ -1,0 +1,18 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    // Node types for the unit tests (node:test); TS 6 loads no @types by default.
+    "types": ["node"],
+    "paths": {
+      // The app's own code.
+      "~/*": ["./src/*"],
+      // Shared, framework-free modules from the website (copy, categories),
+      // imported through src/shared/web.ts only. Their own "@/lib/..." imports
+      // resolve here too.
+      "@/lib/*": ["../src/lib/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  "exclude": ["node_modules", "android", "ios", "dist"]
+}

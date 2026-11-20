@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { getRequestAuth } from '@/lib/requestAuth'
 
 export async function POST(req: NextRequest) {
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Cookie session (website) or verified bearer token (owner app).
+  const { supabase, user } = await getRequestAuth(req)
   if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
   const body = await req.json().catch(() => null)
