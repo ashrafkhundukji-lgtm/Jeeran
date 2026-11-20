@@ -120,29 +120,33 @@ self.addEventListener('push', (event) => {
   event.waitUntil(self.registration.showNotification(title, options))
 })
 
-self.addEventListener('notificationclick', (event) => {
+// Focus an open app window on the deep link, else open one.
+async function openTarget(target) {
+  const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+  for (const client of windows) {
+    if (!new URL(client.url).pathname.startsWith('/dashboard/')) continue
+    try {
+      await client.focus()
+    } catch {
+      // Focus needs the click's user activation; navigating still works.
+    }
+    try {
+      await client.navigate(target)
+      return 'navigated'
+    } catch {
+      // Not controlled by this worker — try the next window or open one.
+    }
+  }
+  await self.clients.openWindow(target)
+  return 'opened'
+}
+
+function onNotificationClick(event) {
   event.notification.close()
-  const target = safeUrl(event.notification.data && event.notification.data.url)
-  event.waitUntil(
-    (async () => {
-      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-      for (const client of windows) {
-        const path = new URL(client.url).pathname
-        if (!path.startsWith('/dashboard/')) continue
-        await client.focus()
-        if ('navigate' in client) {
-          try {
-            await client.navigate(target)
-            return
-          } catch {
-            // Not controlled yet — fall through to openWindow.
-          }
-        }
-      }
-      await self.clients.openWindow(target)
-    })(),
-  )
-})
+  event.waitUntil(openTarget(safeUrl(event.notification.data && event.notification.data.url)))
+}
+
+self.addEventListener('notificationclick', onNotificationClick)
 
 // The push service rotated this subscription: register the new one.
 self.addEventListener('pushsubscriptionchange', (event) => {

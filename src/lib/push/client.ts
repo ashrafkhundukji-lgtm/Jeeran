@@ -57,6 +57,24 @@ export function deviceLabel(): string {
   return `${os} · ${browser}`
 }
 
+function activeWorker(reg: ServiceWorkerRegistration): Promise<ServiceWorker> {
+  if (reg.active) return Promise.resolve(reg.active)
+  const pending = reg.installing ?? reg.waiting
+  if (!pending) return Promise.reject(new Error('no service worker'))
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('service worker did not activate')), 15000)
+    pending.addEventListener('statechange', () => {
+      if (pending.state === 'activated') {
+        clearTimeout(timer)
+        resolve(pending)
+      } else if (pending.state === 'redundant') {
+        clearTimeout(timer)
+        reject(new Error('service worker became redundant'))
+      }
+    })
+  })
+}
+
 export type SubscribeOutcome = 'subscribed' | 'denied' | 'dismissed' | 'unsupported' | 'not-configured' | 'error'
 
 // Must be called from a tap: asks for permission, subscribes, registers
@@ -71,7 +89,10 @@ export async function subscribeThisDevice(locale: string): Promise<SubscribeOutc
   try {
     const reg = await ownerRegistration()
     if (!reg) return 'error'
-    await navigator.serviceWorker.ready
+    // Not navigator.serviceWorker.ready: it never resolves on a document
+    // that was created outside /dashboard/ (e.g. /login, then a client-side
+    // push to the dashboard). Wait on our own registration instead.
+    await activeWorker(reg)
     const sub =
       (await reg.pushManager.getSubscription()) ??
       (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(vapid) }))
