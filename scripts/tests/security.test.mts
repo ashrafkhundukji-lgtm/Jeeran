@@ -43,7 +43,8 @@ test('device id must be a UUID', () => {
 
 test('limits: finite, generous for shared mobile networks, bonus stricter per shop than overall', () => {
   for (const l of Object.values(LIMITS)) assert.ok(l.max > 0 && l.windowSeconds > 0)
-  assert.ok(LIMITS.bonusPerIpPerShop.max >= 5 && LIMITS.bonusPerIpPerShop.max <= LIMITS.bonusPerIp.max)
+  assert.equal(LIMITS.bonusPerIpPerShop.max, 50)
+  assert.equal(LIMITS.bonusPerIp.max, 100)
   assert.equal(LIMITS.bonusPerIp.windowSeconds, 86400)
   assert.ok(LIMITS.passPerDevice.max <= LIMITS.passPerIp.max)
 })

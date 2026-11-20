@@ -12,8 +12,8 @@ export const LIMITS = {
   // Signup bonus (POST /api/wallet/membership/create). The member is always
   // created; only the BONUS is skipped past these. Generous because many
   // phones on one mobile network can share an IP.
-  bonusPerIpPerShop: { max: 10, windowSeconds: DAY },
-  bonusPerIp: { max: 30, windowSeconds: DAY },
+  bonusPerIpPerShop: { max: 50, windowSeconds: DAY },
+  bonusPerIp: { max: 100, windowSeconds: DAY },
 } as const
 
 // First hop of x-forwarded-for (set by Vercel's edge), else x-real-ip.
