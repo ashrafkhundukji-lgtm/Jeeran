@@ -7,10 +7,8 @@ import ScanView from '@/components/ScanView'
 import { isIOSRequest } from '@/lib/platform'
 import type { CardOffer } from '@/components/customer/OfferCard'
 
-// Apple Wallet (SaveToWalletButton) is intentionally not rendered here — its
-// add-confirmation signal isn't wired up yet (see the component's own
-// comment), so it's not ready for the live scan page. Re-add the import and
-// the <SaveToWalletButton /> render in ScanView once that's confirmed working.
+// No Apple Wallet pass yet (the old per-offer Apple button and its credit
+// callback were retired; an Apple membership pass will need its own flow).
 
 export const dynamic = 'force-dynamic'
 

@@ -28,6 +28,8 @@ import { createMembershipObject, buildSaveUrl, ensureMembershipClass, type Nearb
 import { recordRescanTouchpoint } from '@/lib/wallet/rescan-credit'
 import { refreshMember } from '@/lib/wallet/geo-notify'
 import { isIOSUserAgent } from '@/lib/platform'
+import { LIMITS } from '@/lib/abuseLimits'
+import { hashedClientIp, rateLimitHit } from '@/lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -260,10 +262,13 @@ export async function POST(req: NextRequest) {
     .eq('signup_bonus_paid', true)
     .gte('created_at', startOfTodayUtc.toISOString())
 
+  let ipSkip: BonusSkip | null = null
   if (capCheckErr) {
-    console.error('signup bonus cap check failed — skipping bonus', { businessId, memberId: member.id, capCheckErr })
+    logBonusSkipped('cap_check_failed', businessId, member.id, { error: capCheckErr.message })
   } else if ((todaysBonusCount ?? 0) >= DAILY_SIGNUP_BONUS_CAP) {
-    console.log('signup bonus cap reached — skipping bonus', { businessId, memberId: member.id, todaysBonusCount })
+    logBonusSkipped('shop_daily_cap', businessId, member.id, { todaysBonusCount })
+  } else if ((ipSkip = await bonusIpSkip(req, businessId))) {
+    logBonusSkipped(ipSkip, businessId, member.id)
   } else {
     const { error: bonusErr } = await supabaseAdmin.rpc('pay_signup_bonus', {
       p_business_id: businessId,
@@ -337,4 +342,27 @@ function setCookieIfNew(res: NextResponse, deviceId: string, isNew: boolean) {
     sameSite: 'lax',
     path: '/',
   })
+}
+
+// Per-IP limit on the signup BONUS (never on the member itself): the daily
+// cap above is per shop and keyed by a cookie anyone can clear. The IP is
+// hashed (src/lib/rateLimit.ts) and kept only for the 24-hour window.
+// Generous on purpose — many phones on one mobile network share an IP:
+// 50 bonuses per IP per shop and 100 per IP across all shops, per 24 hours
+// (LIMITS in src/lib/abuseLimits.ts). Returns why the bonus is skipped, or
+// null when it may be paid. No IP (shouldn't happen behind Vercel): skipped.
+type BonusSkip = 'cap_check_failed' | 'shop_daily_cap' | 'no_ip' | 'ip_per_shop_limit' | 'ip_overall_limit'
+
+async function bonusIpSkip(req: NextRequest, businessId: string): Promise<BonusSkip | null> {
+  const ip = hashedClientIp(req.headers)
+  if (!ip) return 'no_ip'
+  if (!(await rateLimitHit(`bonus:ip:${ip}:${businessId}`, LIMITS.bonusPerIpPerShop))) return 'ip_per_shop_limit'
+  if (!(await rateLimitHit(`bonus:ip:${ip}`, LIMITS.bonusPerIp))) return 'ip_overall_limit'
+  return null
+}
+
+// One structured line per skipped bonus (Vercel function logs), so abuse
+// shows up as a pattern: filter on "signup_bonus_skipped".
+function logBonusSkipped(reason: BonusSkip, businessId: string, memberId: string, extra: Record<string, unknown> = {}) {
+  console.warn(JSON.stringify({ event: 'signup_bonus_skipped', reason, businessId, memberId, ...extra }))
 }
