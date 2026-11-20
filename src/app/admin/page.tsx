@@ -1,9 +1,11 @@
 import { getAdminOverview } from '@/lib/admin'
 import AdminShopsList from '@/components/AdminShopsList'
+import { requireAdminPage } from '@/lib/adminAuth'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminPage() {
+  await requireAdminPage('/admin')
   const { shops, totals } = await getAdminOverview()
 
   return (

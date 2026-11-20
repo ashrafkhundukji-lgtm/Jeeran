@@ -28,6 +28,8 @@ import { createMembershipObject, buildSaveUrl, ensureMembershipClass, type Nearb
 import { recordRescanTouchpoint } from '@/lib/wallet/rescan-credit'
 import { refreshMember } from '@/lib/wallet/geo-notify'
 import { isIOSUserAgent } from '@/lib/platform'
+import { LIMITS } from '@/lib/abuseLimits'
+import { hashedClientIp, rateLimitHit } from '@/lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -264,6 +266,8 @@ export async function POST(req: NextRequest) {
     console.error('signup bonus cap check failed — skipping bonus', { businessId, memberId: member.id, capCheckErr })
   } else if ((todaysBonusCount ?? 0) >= DAILY_SIGNUP_BONUS_CAP) {
     console.log('signup bonus cap reached — skipping bonus', { businessId, memberId: member.id, todaysBonusCount })
+  } else if (!(await bonusAllowedForIp(req, businessId))) {
+    console.log('signup bonus per-IP limit reached — skipping bonus', { businessId, memberId: member.id })
   } else {
     const { error: bonusErr } = await supabaseAdmin.rpc('pay_signup_bonus', {
       p_business_id: businessId,
@@ -337,4 +341,17 @@ function setCookieIfNew(res: NextResponse, deviceId: string, isNew: boolean) {
     sameSite: 'lax',
     path: '/',
   })
+}
+
+// Per-IP limit on the signup BONUS (never on the member itself): the daily
+// cap above is per shop and keyed by a cookie anyone can clear. The IP is
+// hashed (src/lib/rateLimit.ts) and kept only for the 24-hour window.
+// Generous on purpose — many phones on one mobile network share an IP:
+// 10 bonuses per IP per shop and 30 per IP across all shops, per 24 hours.
+// No IP (shouldn't happen behind Vercel): no bonus.
+async function bonusAllowedForIp(req: NextRequest, businessId: string): Promise<boolean> {
+  const ip = hashedClientIp(req.headers)
+  if (!ip) return false
+  if (!(await rateLimitHit(`bonus:ip:${ip}:${businessId}`, LIMITS.bonusPerIpPerShop))) return false
+  return rateLimitHit(`bonus:ip:${ip}`, LIMITS.bonusPerIp)
 }

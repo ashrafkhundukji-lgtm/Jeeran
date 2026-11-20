@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { getHostBusiness } from '@/lib/matchmaking'
-import { getCampaignForClaim } from '@/lib/wallet/data'
+import { guardPassRequest } from '@/lib/wallet/passGuard'
 import { buildCouponPass } from '@/lib/wallet/buildPass'
 import { signClaimToken } from '@/lib/wallet/hmac'
 import { WalletNotConfiguredError } from '@/lib/wallet/certificates'
@@ -11,31 +10,16 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  // Anonymous, but rate limited and eligibility-checked (src/lib/wallet/passGuard.ts).
   const body = await req.json().catch(() => null)
-  const campaignId: string | undefined = body?.campaign_id
-  const hostBusinessId: string | undefined = body?.host_business_id
+  const guard = await guardPassRequest(req, body)
+  if (!guard.ok) return guard.response
+  const { campaign, host } = guard
+  const campaignId = campaign.id
 
-  if (!campaignId || !hostBusinessId) {
-    return NextResponse.json({ error: 'campaign_id and host_business_id are required' }, { status: 400 })
-  }
-
-  const [campaign, host] = await Promise.all([
-    getCampaignForClaim(campaignId),
-    getHostBusiness(hostBusinessId),
-  ])
-
-  if (!campaign || !campaign.isActive) {
-    return NextResponse.json({ error: 'Campaign not found or inactive' }, { status: 404 })
-  }
-  if (!host) {
-    return NextResponse.json({ error: 'Host business not found' }, { status: 404 })
-  }
-
-  // Minted here (not by the ledger transaction) because the pass has to be
-  // built and downloaded before /api/wallet/callback ever runs — see
-  // src/lib/wallet/hmac.ts. Threaded through to callback via a response
-  // header (the body is the binary pass) so it can be stored on the
-  // scans_and_claims row that transaction creates.
+  // Signed claim token for the pass barcode (src/lib/wallet/hmac.ts). The
+  // old credit callback that used to record it was retired; this route only
+  // builds the pass (and returns 501 until Apple signing exists).
   const claimToken = randomUUID()
   const hash = signClaimToken(claimToken)
   const barcodeMessage = `jeeran://validate?claim=${claimToken}&hash=${hash}`

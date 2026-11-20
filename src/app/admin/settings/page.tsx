@@ -1,9 +1,11 @@
 import { getPromotionThresholds } from '@/lib/promotion'
 import PromotionSettingsForm from '@/components/PromotionSettingsForm'
+import { requireAdminPage } from '@/lib/adminAuth'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminSettingsPage() {
+  await requireAdminPage('/admin/settings')
   const thresholds = await getPromotionThresholds()
 
   return (
