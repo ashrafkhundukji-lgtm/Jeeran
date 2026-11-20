@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { hasActiveCampaign } from '@/lib/campaigns'
 import { notifyMembersNearBusiness } from '@/lib/wallet/geo-notify'
 import { regenerateAutoTranslations } from '@/lib/translate'
+import { onOfferMaybeChanged } from '@/lib/push/events'
 
 export const dynamic = 'force-dynamic'
 
@@ -110,6 +111,10 @@ export async function POST(req: NextRequest) {
       }),
     )
   }
+
+  // Owner app: record the offer's showing/not-showing state (pushes only on
+  // a change into not showing). after() inside.
+  onOfferMaybeChanged(business.id)
 
   return NextResponse.json({ campaign })
 }

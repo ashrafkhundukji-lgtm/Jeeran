@@ -48,5 +48,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  // owner-sw.js / owner.webmanifest / owner-offline.html: public owner app
+  // files, fetched without a session — no auth refresh needed.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|owner-sw\\.js|owner\\.webmanifest|owner-offline\\.html|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }

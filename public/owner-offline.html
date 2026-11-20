@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1E3A8A">
+<meta name="robots" content="noindex">
+<title>جيران للمحلات</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #FFF8F1; color: #12296B; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans Arabic", "Noto Nastaliq Urdu", Tahoma, sans-serif;
+    display: flex; min-height: 100dvh; align-items: center; justify-content: center;
+    padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  }
+  main { width: 100%; max-width: 380px; text-align: center; }
+  .card { background: #fff; border: 1px solid #EDE3D6; border-radius: 22px; padding: 28px 22px; }
+  .mark { width: 64px; height: 64px; margin: 0 auto 18px; }
+  .icon { width: 44px; height: 44px; margin: 0 auto 14px; color: #1E3A8A; background: #EAF0FC; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+  h1 { font-size: 21px; line-height: 1.35; margin: 0 0 8px; }
+  p { font-size: 15px; line-height: 1.7; margin: 0 0 22px; color: #5A6385; }
+  button {
+    width: 100%; min-height: 48px; border: 0; border-radius: 16px; background: #1E3A8A; color: #fff;
+    font: inherit; font-size: 16px; font-weight: 600; cursor: pointer;
+  }
+  button:focus-visible { outline: 2px solid #CF3B19; outline-offset: 2px; }
+  button:active { transform: scale(0.98); }
+  @media (prefers-reduced-motion: reduce) { button:active { transform: none; } }
+</style>
+</head>
+<body>
+<main>
+  <svg class="mark" viewBox="75 95 215 235" aria-hidden="true">
+    <path d="M 100 110 L 260 110" stroke="#1E3A8A" stroke-width="24" stroke-linecap="round"/>
+    <path d="M 230 110 C 230 110, 280 180, 230 250 C 180 320, 90 290, 90 220" fill="none" stroke="#1E3A8A" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 230 110 L 230 180" stroke="#1E3A8A" stroke-width="24" stroke-linecap="round"/>
+    <g transform="translate(160, 205)">
+      <path d="M 0 0 C -12 -12, -18 -24, -18 -36 C -18 -50, -8 -58, 0 -58 C 8 -58, 18 -50, 18 -36 C 18 -24, 12 -12, 0 0 Z" fill="#FF6B4A"/>
+      <circle cx="0" cy="-36" r="6" fill="#FFF8F1"/>
+    </g>
+  </svg>
+  <div class="card">
+    <div class="icon" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 13a10 10 0 0 1 5.24-2.76"/><path d="M12 20h.01"/></svg>
+    </div>
+    <h1 id="t">لا يوجد اتصال بالإنترنت</h1>
+    <p id="b">تحقق من الاتصال ثم حاول مرة أخرى. بيانات محلك لا تُحفظ على هذا الهاتف.</p>
+    <button type="button" id="r">إعادة المحاولة</button>
+  </div>
+</main>
+<script>
+  (function () {
+    var copy = {
+      ar: { dir: 'rtl', t: 'لا يوجد اتصال بالإنترنت', b: 'تحقق من الاتصال ثم حاول مرة أخرى. بيانات محلك لا تُحفظ على هذا الهاتف.', r: 'إعادة المحاولة' },
+      en: { dir: 'ltr', t: 'You’re offline', b: 'Check your connection and try again. Your shop’s data is not stored on this phone.', r: 'Try again' },
+      ur: { dir: 'rtl', t: 'انٹرنیٹ کنکشن نہیں ہے', b: 'کنکشن چیک کر کے دوبارہ کوشش کریں۔ آپ کی دکان کا ڈیٹا اس فون پر محفوظ نہیں ہوتا۔', r: 'دوبارہ کوشش کریں' }
+    };
+    var lang = 'ar';
+    try { var saved = localStorage.getItem('jeeran-locale'); if (copy[saved]) lang = saved; } catch (e) {}
+    var c = copy[lang];
+    document.documentElement.lang = lang;
+    document.documentElement.dir = c.dir;
+    document.getElementById('t').textContent = c.t;
+    document.getElementById('b').textContent = c.b;
+    document.getElementById('r').textContent = c.r;
+    document.getElementById('r').addEventListener('click', function () { location.reload(); });
+    window.addEventListener('online', function () { location.reload(); });
+  })();
+</script>
+</body>
+</html>

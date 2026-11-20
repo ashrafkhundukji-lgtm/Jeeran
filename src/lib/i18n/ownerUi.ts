@@ -105,12 +105,6 @@ export interface OwnerUiCopy {
     preparing: string
     failed: string
   }
-  install: {
-    title: string
-    body: string
-    iosBody: string
-    add: string
-  }
   leaderboardRow: string
   form: {
     titleNew: string
@@ -352,12 +346,6 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       preparing: 'جارٍ التجهيز…',
       failed: 'تعذّر تجهيز الملف. حاول مرة أخرى.',
     },
-    install: {
-      title: 'أضف لوحة التحكم إلى الشاشة الرئيسية',
-      body: 'افتحها بلمسة واحدة كل يوم.',
-      iosBody: 'اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».',
-      add: 'إضافة',
-    },
     leaderboardRow: 'أنشط المحلات',
     form: {
       titleNew: 'عرض جديد',
@@ -597,12 +585,6 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       preparing: 'Preparing…',
       failed: "Couldn't prepare the file. Try again.",
     },
-    install: {
-      title: 'Add the dashboard to your home screen',
-      body: 'Open it with one tap every day.',
-      iosBody: 'Tap Share, then “Add to Home Screen”.',
-      add: 'Add',
-    },
     leaderboardRow: 'Most active shops',
     form: {
       titleNew: 'New offer',
@@ -841,12 +823,6 @@ export const OWNER_UI_COPY: Record<Locale, OwnerUiCopy> = {
       shareText: '{name} کی QR شیٹ — پرنٹ کے لیے تیار',
       preparing: 'تیار ہو رہا ہے…',
       failed: 'فائل تیار نہیں ہو سکی۔ دوبارہ کوشش کریں۔',
-    },
-    install: {
-      title: 'ڈیش بورڈ کو ہوم اسکرین پر شامل کریں',
-      body: 'روزانہ ایک ٹیپ میں کھولیں۔',
-      iosBody: 'شیئر دبائیں، پھر “Add to Home Screen”۔',
-      add: 'شامل کریں',
     },
     leaderboardRow: 'سب سے فعال دکانیں',
     form: {
