@@ -31,7 +31,7 @@
   --color-ink-secondary: var(--color-ink-secondary);
   --color-ink-tertiary: var(--color-ink-tertiary);
   --color-border: var(--color-border);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-plex-arabic), sans-serif;
 
   /* Customer-facing brand system (wallet mini-site, offer pages, scan page —
      see docs/design-reference/). Three color families only: navy, coral,
