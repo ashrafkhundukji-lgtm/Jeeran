@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { onOfferMaybeChanged } from '@/lib/push/events'
 
 // No auth gate here — matches the admin overview page's current posture
 // ("no login required yet, do not expose this URL publicly"). Lock this
@@ -23,5 +24,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // Owner app: a freeze stops the offer showing (pushed once, after the response).
+  onOfferMaybeChanged(id)
   return NextResponse.json({ success: true })
 }

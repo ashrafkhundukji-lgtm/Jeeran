@@ -26,6 +26,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthenticatedBusinessId } from '@/lib/business-auth'
 import { verifyMemberToken } from '@/lib/wallet/member-token'
 import { offerWindowState } from '@/lib/offerWindow'
+import { onRedemption } from '@/lib/push/events'
 
 // Manual-entry fallback: the 8-character code printed under the pass barcode
 // (wallet_members.redeem_code, see 20261017e_member_redeem_code.sql). Staff
@@ -175,7 +176,7 @@ export async function POST(req: NextRequest) {
   // (wallet_members.origin_business_id) earns credit on this redemption.
   // Don't fail the customer's redemption over an accounting error — log
   // and let the credit gap get reconciled/alerted separately.
-  const { error: creditErr } = await supabaseAdmin.rpc('claim_ad_credit_transaction_membership', {
+  const { data: creditRows, error: creditErr } = await supabaseAdmin.rpc('claim_ad_credit_transaction_membership', {
     p_member_id: decoded.memberId,
     p_offer_id: offer.id,
     p_redeeming_business_id: businessId,
@@ -218,6 +219,11 @@ export async function POST(req: NextRequest) {
   if (todayErr) {
     console.error('today-redemption count failed', { businessId, todayErr })
   }
+
+  // Owner app pushes (redeemed / credits earned / offer stopped showing):
+  // scheduled with after(), so they never slow or fail this response.
+  const creditsTransferred = creditErr ? 0 : Number((creditRows as { credits_transferred: number }[] | null)?.[0]?.credits_transferred ?? 0)
+  onRedemption({ redeemingBusinessId: businessId, memberId: decoded.memberId, offerTitle: offer.title, creditsTransferred })
 
   return NextResponse.json({
     ok: true,

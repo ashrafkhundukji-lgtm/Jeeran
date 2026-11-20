@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { sendEmail, EmailNotConfiguredError } from '@/lib/email/mailer'
+import { onTrialEnding, scheduleDailySweeps } from '@/lib/push/events'
 
 // Daily trial enforcement, fired by Vercel Cron (vercel.json). Same auth as
 // the other cron routes: GET + `Authorization: Bearer $CRON_SECRET`, which
@@ -77,6 +78,11 @@ export async function GET(req: NextRequest) {
     })
   }
 
+  // Owner app: daily re-check of "is my offer showing" (catches end dates
+  // and trial grace running out) and pending new-customer summaries.
+  // Runs after the response; never affects this cron's result.
+  scheduleDailySweeps()
+
   let warned = 0
   for (const shop of (dueShops ?? []) as DueShop[]) {
     const { data: userData } = await supabaseAdmin.auth.admin.getUserById(shop.owner_id)
@@ -89,6 +95,10 @@ export async function GET(req: NextRequest) {
       continue
     }
     if (!claimed) continue // another run already sent it
+
+    // Owner app push alongside the email (after(); throttled to once per
+    // trial, so a retried email never repeats the push).
+    onTrialEnding(shop.id, shop.trial_ends_at)
 
     const trialEnd = new Date(shop.trial_ends_at)
     const exposureEnd = new Date(trialEnd.getTime() + graceDays * DAY_MS)

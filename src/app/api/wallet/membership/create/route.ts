@@ -28,6 +28,7 @@ import { createMembershipObject, buildSaveUrl, ensureMembershipClass, type Nearb
 import { recordRescanTouchpoint } from '@/lib/wallet/rescan-credit'
 import { refreshMember } from '@/lib/wallet/geo-notify'
 import { isIOSUserAgent } from '@/lib/platform'
+import { onCustomerJoined } from '@/lib/push/events'
 
 export const dynamic = 'force-dynamic'
 
@@ -235,6 +236,10 @@ export async function POST(req: NextRequest) {
   }
 
   await logTouchpoint(member.id, businessId, requestIp)
+
+  // Owner app push: "new customers joined through your QR stand" (collapsed
+  // to one an hour). after() inside — never blocks the customer's pass.
+  onCustomerJoined(businessId)
 
   // Signup bonus: paid ONLY on brand-new member creation, never on the
   // re-attribution path above — otherwise a shop could farm repeat bonuses

@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { hasActiveCampaign } from '@/lib/campaigns'
 import { notifyMembersNearBusiness } from '@/lib/wallet/geo-notify'
 import { regenerateAutoTranslations } from '@/lib/translate'
+import { onOfferMaybeChanged } from '@/lib/push/events'
 
 async function handleToggle(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
@@ -61,6 +62,8 @@ async function handleToggle(
   // toggle response. Wrapped in after() — see the campaign-create route for
   // why an unawaited promise alone isn't safe on Vercel.
   const updated = data[0]
+  // Owner app: switching the offer off/on can change whether it shows.
+  if (updated.creator_type === 'business') onOfferMaybeChanged(updated.creator_id)
   if (updated.creator_type === 'business') {
     const { data: toggledBusiness } = await supabase
       .from('businesses')
@@ -165,6 +168,8 @@ async function handleEdit(
   // after() — see the campaign-create route for why an unawaited promise
   // alone isn't safe on Vercel.
   const updated = data[0]
+  // Owner app: new dates or bid can change whether the offer shows.
+  if (updated.creator_type === 'business') onOfferMaybeChanged(updated.creator_id)
   if (updated.is_active && updated.creator_type === 'business') {
     const { data: editedBusiness } = await supabase
       .from('businesses')
