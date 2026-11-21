@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"scripts/tests/*.test.mts\""
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"scripts/tests/*.test.mts\"",
+    "test:owner-api": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --test-concurrency=1 scripts/tests/owner-api.it.mts"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",

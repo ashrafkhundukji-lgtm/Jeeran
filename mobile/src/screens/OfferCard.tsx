@@ -37,11 +37,15 @@ export function OfferCard({
   pending,
   onToggle,
   disabled,
+  testPrefix = '',
 }: {
   offer: Campaign
   pending: boolean
   onToggle: (next: boolean) => void
   disabled?: boolean
+  // Home and Offers both show the active offer; tabs stay mounted, so the
+  // test ids must differ.
+  testPrefix?: string
 }) {
   const { ui, intl, row, rtl } = useI18n()
   const windowState = offerWindowState(offer.start_date, offer.end_date)
@@ -80,7 +84,7 @@ export function OfferCard({
           accessibilityLabel={fill(ui.offer.toggleLabel, { title: offer.title })}
           trackColor={{ false: colors.line, true: colors.navy }}
           thumbColor={colors.white}
-          testID={`toggle-${offer.id}`}
+          testID={`${testPrefix}toggle-${offer.id}`}
         />
       </View>
       {offer.is_active && windowState === 'ended' && offer.end_date ? (
@@ -90,7 +94,7 @@ export function OfferCard({
         onPress={() => router.push({ pathname: '/offer/[id]', params: { id: offer.id } })}
         accessibilityRole="button"
         accessibilityLabel={`${ui.offer.edit}: ${offer.title}`}
-        testID={`edit-${offer.id}`}
+        testID={`${testPrefix}edit-${offer.id}`}
         style={({ pressed }) => ({
           flexDirection: row,
           alignItems: 'center',

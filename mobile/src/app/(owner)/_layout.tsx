@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router'
+import { Redirect, Stack } from 'expo-router'
 import { View } from 'react-native'
 import { OwnerDataProvider, useOwnerData } from '~/data/OwnerDataProvider'
 import { useI18n } from '~/i18n/I18nProvider'
@@ -10,8 +10,9 @@ import { errorMessage } from '~/screens/errors'
 
 export default function OwnerLayout() {
   const { session } = useAuth()
+  if (!session) return <Redirect href="/login" />
   return (
-    <OwnerDataProvider key={session?.user.id ?? 'none'}>
+    <OwnerDataProvider key={session.user.id}>
       <OwnerGate />
     </OwnerDataProvider>
   )

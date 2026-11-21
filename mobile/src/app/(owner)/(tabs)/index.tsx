@@ -108,7 +108,7 @@ export default function HomeScreen() {
         <Txt variant="heading">{ui.offer.activeHeading}</Txt>
         {toggleError ? <Notice tone="danger">{toggleError}</Notice> : null}
         {active ? (
-          <OfferCard offer={active} pending={pendingId === active.id} onToggle={(next) => toggle(active.id, next)} />
+          <OfferCard offer={active} pending={pendingId === active.id} onToggle={(next) => toggle(active.id, next)} testPrefix="home-" />
         ) : (
           <Card style={{ alignItems: 'stretch' }}>
             <Txt variant="subheading">{ui.offer.emptyTitle}</Txt>

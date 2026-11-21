@@ -53,13 +53,11 @@ function Root({ fontsReady }: { fontsReady: boolean }) {
   }
 
   return (
+    // Signed in or not is enforced by the two group layouts, which redirect:
+    // (owner) → /login without a session, (auth) → / with one.
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.cream } }}>
-      <Stack.Protected guard={!session}>
-        <Stack.Screen name="(auth)" />
-      </Stack.Protected>
-      <Stack.Protected guard={Boolean(session)}>
-        <Stack.Screen name="(owner)" />
-      </Stack.Protected>
+      <Stack.Screen name="(owner)" />
+      <Stack.Screen name="(auth)" />
     </Stack>
   )
 }
