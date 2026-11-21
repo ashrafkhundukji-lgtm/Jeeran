@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse, after } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { getRequestAuth } from '@/lib/requestAuth'
 import { hasActiveCampaign } from '@/lib/campaigns'
 import { notifyMembersNearBusiness } from '@/lib/wallet/geo-notify'
 import { regenerateAutoTranslations } from '@/lib/translate'
@@ -7,10 +7,8 @@ import { regenerateAutoTranslations } from '@/lib/translate'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Cookie session (website) or verified bearer token (owner app).
+  const { supabase, user } = await getRequestAuth(req)
   if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
   const { data: business, error: businessError } = await supabase

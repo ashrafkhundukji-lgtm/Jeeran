@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The native owner app has its own package, lint and typecheck.
+    "mobile/**",
   ]),
 ]);
 
