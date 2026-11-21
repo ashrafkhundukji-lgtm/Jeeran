@@ -72,7 +72,8 @@
           "imageWidth": 140
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "./plugins/withAsciiProjectName"
     ],
     "experiments": {
       "typedRoutes": true
