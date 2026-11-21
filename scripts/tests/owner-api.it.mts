@@ -1,6 +1,7 @@
-// Integration test: the owner app's bearer-token path against the REAL
-// routes and the REAL Supabase project, with temporary test owners that are
-// deleted at the end (counts printed).
+// Integration test: both ways into the routes that use src/lib/requestAuth.ts
+// — the owner app's bearer token AND the website's cookie session — against
+// the REAL routes and the REAL Supabase project, with temporary test owners
+// that are deleted at the end (counts printed).
 //
 // Run (website running locally on BASE_URL with .env.local):
 //   npm run build && npx next start -p 3100
@@ -11,6 +12,7 @@
 import { test, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 
 process.loadEnvFile('.env.local')
 const BASE = process.env.BASE_URL ?? 'http://localhost:3100'
@@ -34,8 +36,26 @@ async function makeOwner(tag: string) {
   return u
 }
 
-async function call(method: string, path: string, opts: { token?: string; auth?: string; body?: unknown } = {}) {
+// The website's session: sign in through @supabase/ssr (the library the
+// website itself uses) and keep the cookies it sets, exactly as a browser
+// would hold them. Returned as a Cookie header.
+async function cookieSessionFor(email: string): Promise<string> {
+  const jar = new Map<string, string>()
+  const ssr = createServerClient(URL_, ANON, {
+    cookies: {
+      getAll: () => [...jar].map(([name, value]) => ({ name, value })),
+      setAll: (list) => list.forEach(({ name, value }) => (value ? jar.set(name, value) : jar.delete(name))),
+    },
+  })
+  const { error } = await ssr.auth.signInWithPassword({ email, password })
+  if (error) throw error
+  assert.ok(jar.size > 0, 'ssr client set session cookies')
+  return [...jar].map(([n, v]) => `${n}=${v}`).join('; ')
+}
+
+async function call(method: string, path: string, opts: { token?: string; auth?: string; cookie?: string; body?: unknown } = {}) {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (opts.cookie) headers.Cookie = opts.cookie
   if (opts.auth !== undefined) headers.Authorization = opts.auth
   else if (opts.token) headers.Authorization = `Bearer ${opts.token}`
   const res = await fetch(`${BASE}${path}`, { method, headers, body: opts.body ? JSON.stringify(opts.body) : undefined })
@@ -55,6 +75,7 @@ const offer = (title: string) => ({
 let a: Awaited<ReturnType<typeof makeOwner>>
 let b: Awaited<ReturnType<typeof makeOwner>>
 let campaignA = ''
+let campaignC = ''
 
 test('setup: two temporary owners', async () => {
   a = await makeOwner('a')
@@ -135,6 +156,82 @@ test("another owner's offer → refused (404, as on the cookie path) and unchang
   assert.equal(sB.json.campaigns.length, 0, "B never sees A's offers")
 })
 
+// ── Website cookie session on the same four routes (must be unchanged) ──
+
+let c: Awaited<ReturnType<typeof makeOwner>>
+let cookieC = ''
+
+test('cookie: website owner, full flow on all four routes → 200', async () => {
+  c = await makeOwner('c')
+  cookieC = await cookieSessionFor(c.email)
+
+  const none = await call('GET', '/api/owner/summary', { cookie: cookieC })
+  assert.equal(none.status, 404)
+  assert.equal(none.json.code, 'no_business')
+
+  const onboard = await call('POST', '/api/onboarding', {
+    cookie: cookieC,
+    body: { fullName: 'IT C', businessName: `TEST cookie C ${run}`, category: 'salon', latitude: null, longitude: null },
+  })
+  assert.equal(onboard.status, 200, JSON.stringify(onboard.json))
+  assert.equal((await call('POST', '/api/onboarding', { cookie: cookieC, body: { fullName: 'x', businessName: 'y', category: 'cafe' } })).status, 409)
+
+  const created = await call('POST', '/api/campaigns', { cookie: cookieC, body: offer('IT offer C') })
+  assert.equal(created.status, 200, JSON.stringify(created.json))
+  campaignC = created.json.campaign.id
+  assert.equal((await call('POST', '/api/campaigns', { cookie: cookieC, body: { ...offer('x'), bid_per_view: 1 } })).status, 400)
+  assert.equal((await call('POST', '/api/campaigns', { cookie: cookieC, body: offer('second while one is active') })).status, 409)
+
+  const edited = await call('PATCH', `/api/campaigns/${campaignC}`, { cookie: cookieC, body: { ...offer('IT offer C edited'), bid_per_view: 7 } })
+  assert.equal(edited.status, 200)
+  assert.equal((await call('PATCH', `/api/campaigns/${campaignC}`, { cookie: cookieC, body: { is_active: false } })).status, 200)
+  assert.equal((await call('PATCH', `/api/campaigns/${campaignC}`, { cookie: cookieC, body: { is_active: true } })).status, 200)
+
+  const summary = await call('GET', '/api/owner/summary', { cookie: cookieC })
+  assert.equal(summary.status, 200)
+  assert.equal(summary.json.business.name, `TEST cookie C ${run}`)
+  const row = summary.json.campaigns.find((x: { id: string }) => x.id === campaignC)
+  assert.deepEqual([row.title, row.bid_per_view, row.is_active], ['IT offer C edited', 7, true])
+})
+
+test("cookie: another owner's offer → refused (404) and unchanged", async () => {
+  const edit = await call('PATCH', `/api/campaigns/${campaignA}`, { cookie: cookieC, body: { ...offer('hijacked'), bid_per_view: 10 } })
+  assert.equal(edit.status, 404)
+  assert.equal((await call('PATCH', `/api/campaigns/${campaignA}`, { cookie: cookieC, body: { is_active: false } })).status, 404)
+  const { data } = await admin.from('campaigns').select('title, bid_per_view, is_active').eq('id', campaignA).single()
+  assert.deepEqual(data, { title: 'IT offer A edited', bid_per_view: 4, is_active: true })
+})
+
+test('cookie: website owner dashboard page renders the shop (page path untouched)', async () => {
+  const res = await fetch(`${BASE}/dashboard/owner`, { headers: { Cookie: cookieC }, redirect: 'manual' })
+  assert.equal(res.status, 200)
+  const html = await res.text()
+  assert.ok(html.includes(`TEST cookie C ${run}`), 'shop name on the page')
+  assert.ok(html.includes('IT offer C edited'), 'offer on the page')
+  const signedOut = await fetch(`${BASE}/dashboard/owner`, { redirect: 'manual' })
+  assert.ok([302, 303, 307, 308].includes(signedOut.status), `signed out → redirect to login (got ${signedOut.status})`)
+})
+
+test('cookie + Authorization header: the header decides, never a fallback to the cookie', async () => {
+  // Valid cookie, broken bearer → 401 (not silently the cookie user).
+  assert.equal((await call('GET', '/api/owner/summary', { cookie: cookieC, auth: 'Bearer not.a.token' })).status, 401)
+  assert.equal((await call('PATCH', `/api/campaigns/${campaignC}`, { cookie: cookieC, auth: 'Bearer x', body: { is_active: false } })).status, 401)
+  // Valid cookie (C) + valid bearer (A) → acts as A only.
+  const both = await call('GET', '/api/owner/summary', { cookie: cookieC, token: a.token })
+  assert.equal(both.status, 200)
+  assert.equal(both.json.business.name, `TEST bearer A ${run}`)
+  const { data } = await admin.from('campaigns').select('is_active').eq('id', campaignC).single()
+  assert.equal(data?.is_active, true, "C's offer untouched by the rejected requests")
+})
+
+test('cookie: signed out (session revoked) → 401', async () => {
+  const anon = createClient(URL_, ANON, { auth: { persistSession: false } })
+  const { data } = await anon.auth.signInWithPassword({ email: c.email, password })
+  await admin.auth.admin.signOut(data.session!.access_token, 'global')
+  const r = await call('GET', '/api/owner/summary', { cookie: cookieC })
+  assert.equal(r.status, 401)
+})
+
 test('signed-out token → 401', async () => {
   const anon = createClient(URL_, ANON, { auth: { persistSession: false } })
   const { data } = await anon.auth.signInWithPassword({ email: b.email, password })
@@ -158,6 +255,6 @@ after(async () => {
     businesses: await count('businesses', 'id', shopIds),
     campaigns: await count('campaigns', 'creator_id', shopIds),
     owner_offer_state: await count('owner_offer_state', 'business_id', shopIds),
-    campaign_auto_translations: campaignA ? await count('campaign_auto_translations', 'campaign_id', [campaignA]) : 0,
+    campaign_auto_translations: await count('campaign_auto_translations', 'campaign_id', [campaignA, campaignC].filter(Boolean)),
   })
 })
