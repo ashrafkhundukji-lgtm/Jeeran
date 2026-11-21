@@ -44,5 +44,14 @@
     "apk:release": "cd android && gradlew.bat assembleRelease",
     "apk:debug": "cd android && gradlew.bat assembleDebug"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "autolinking": {
+      "exclude": [
+        "react-native-reanimated",
+        "react-native-worklets",
+        "react-native-gesture-handler"
+      ]
+    }
+  }
 }
